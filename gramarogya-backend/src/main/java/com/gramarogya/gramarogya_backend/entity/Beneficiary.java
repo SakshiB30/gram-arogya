@@ -1,6 +1,5 @@
 package com.gramarogya.gramarogya_backend.entity;
 
-import com.gramarogya.gramarogya_backend.dto.BeneficiaryResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,8 +34,20 @@ public class Beneficiary {
 
     private String address;
 
+    // Pregnant Woman, Child, TB Patient, Elderly...
     private String category;
 
     private LocalDate dateAdded;
 
+    // Tuberculosis, Diabetes, Hypertension...
+    private String disease;
+
+    // Active, Under Treatment, Recovered, High Risk...
+    private String status;
+
+    // Updated automatically whenever a visit is recorded
+    private LocalDate lastVisitDate;
+
+    // Next scheduled visit
+    private LocalDate nextVisitDate;
 }

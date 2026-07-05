@@ -8,4 +8,9 @@ import java.util.List;
 
 public interface BeneficiaryRepository extends MongoRepository<Beneficiary,String> {
     List<Beneficiary> findByUserId(String userId);
+
+    long countByUserId(String userId);
+
+    long countByUserIdAndCategory(String userId, String category);
+
 }

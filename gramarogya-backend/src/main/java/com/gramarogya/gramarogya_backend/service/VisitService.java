@@ -1,22 +1,26 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.VisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.CreateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.VisitResponseDto;
-import com.gramarogya.gramarogya_backend.entity.Visit;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 public interface VisitService {
 
-    VisitResponseDto addVisit(VisitRequestDto visitRequestDto);
+    VisitResponseDto create(Authentication authentication,
+                            CreateVisitRequestDto dto);
 
-    List<Visit> getAllVisits();
+    List<VisitResponseDto> getAll(Authentication authentication);
 
-    Visit getVisitById(String id);
+    VisitResponseDto getById(Authentication authentication,
+                             String id);
 
-    List<Visit> getVisitsByPatient(String patientId);
+    VisitResponseDto update(Authentication authentication,
+                            String id,
+                            UpdateVisitRequestDto dto);
 
-    void deleteVisit(String id);
-
-    VisitResponseDto updateVisit(String id, VisitRequestDto visitRequestDto);
+    void delete(Authentication authentication,
+                String id);
 }

@@ -1,11 +1,13 @@
 package com.gramarogya.gramarogya_backend.controller;
 
-import com.gramarogya.gramarogya_backend.dto.VisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.CreateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.VisitResponseDto;
-import com.gramarogya.gramarogya_backend.entity.Visit;
+
 import com.gramarogya.gramarogya_backend.service.VisitService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,46 +18,49 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class VisitController {
 
-    private final VisitService visitService;
+    private VisitService visitService;
 
-    // Create a new visit
+    // Create Visit
     @PostMapping
-    public VisitResponseDto addVisit(
-            @Valid @RequestBody VisitRequestDto visitRequestDto) {
+    public VisitResponseDto create(
+            Authentication authentication,
+            @Valid @RequestBody CreateVisitRequestDto dto) {
 
-        return visitService.addVisit(visitRequestDto);
+        return visitService.create(authentication, dto);
     }
 
-    // Get all visits
+    // Get All Visits of Logged-in ASHA
     @GetMapping
-    public List<Visit> getAllVisits() {
-        return visitService.getAllVisits();
+    public List<VisitResponseDto> getAll(Authentication authentication) {
+
+        return visitService.getAll(authentication);
     }
 
-    // Get visit by id
+    // Get Visit By Id
     @GetMapping("/{id}")
-    public Visit getVisitById(@PathVariable String id) {
-        return visitService.getVisitById(id);
+    public VisitResponseDto getById(
+            Authentication authentication,
+            @PathVariable String id) {
+
+        return visitService.getById(authentication, id);
     }
 
-    // Get all visits of a patient
-    @GetMapping("/patient/{patientId}")
-    public List<Visit> getVisitsByPatient(@PathVariable String patientId) {
-        return visitService.getVisitsByPatient(patientId);
-    }
-
+    // Update Visit
     @PutMapping("/{id}")
-    public VisitResponseDto updateVisit(
+    public VisitResponseDto update(
+            Authentication authentication,
             @PathVariable String id,
-            @RequestBody VisitRequestDto visitRequestDto) {
+            @Valid @RequestBody UpdateVisitRequestDto dto) {
 
-        return visitService.updateVisit(id, visitRequestDto);
+        return visitService.update(authentication, id, dto);
     }
 
-    // Delete visit
+    // Delete Visit
     @DeleteMapping("/{id}")
-    public String deleteVisit(@PathVariable String id) {
-        visitService.deleteVisit(id);
-        return "Visit deleted successfully";
+    public void delete(
+            Authentication authentication,
+            @PathVariable String id) {
+
+        visitService.delete(authentication, id);
     }
 }

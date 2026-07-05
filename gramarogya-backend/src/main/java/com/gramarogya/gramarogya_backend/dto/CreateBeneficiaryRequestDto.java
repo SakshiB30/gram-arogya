@@ -6,10 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateBeneficiaryRequestDto {
+
     @NotBlank(message = "Name is required")
     private String name;
 
@@ -28,4 +31,8 @@ public class CreateBeneficiaryRequestDto {
 
     @NotBlank(message = "Category is required")
     private String category;
+
+    private String disease;
+
+    private String status;
 }

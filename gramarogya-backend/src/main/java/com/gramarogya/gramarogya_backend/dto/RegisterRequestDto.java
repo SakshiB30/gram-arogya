@@ -17,19 +17,4 @@ public class RegisterRequestDto {
 
     private Role role;
 
-    public User toEntity() {
-        return new User(
-                null,
-                this.name,
-                this.email,
-                this.password,
-                this.role,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
 }

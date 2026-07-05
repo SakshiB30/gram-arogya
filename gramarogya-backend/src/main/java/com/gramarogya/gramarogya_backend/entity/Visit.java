@@ -18,19 +18,23 @@ public class Visit {
     @Id
     private String id;
 
-    private String patientId;
+    // Beneficiary for whom the visit is made
+    private String beneficiaryId;
 
+    // Logged-in ASHA worker who created the visit
+    private String userId;
+
+    // Automatically set when visit is created
     private LocalDate visitDate;
 
-    private String symptoms;
+    // Example: Home Visit, Follow-up Visit, Immunization Visit
+    private String visitType;
 
-    private String diagnosis;
+    // Example: Completed, Pending, Missed
+    private String status;
 
-    private String medicine;
-
+    // Additional remarks
     private String notes;
 
-    public VisitResponseDto toDTO(){
-        return new VisitResponseDto(this.id, this.patientId, this.visitDate, this.symptoms, this.diagnosis, this.medicine, this.notes);
-    }
+    private LocalDate nextVisitDate;
 }

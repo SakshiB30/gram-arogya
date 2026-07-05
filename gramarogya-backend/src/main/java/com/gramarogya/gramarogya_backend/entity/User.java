@@ -36,19 +36,6 @@ public class User {
     private String state;
     private String profileImage;
 
-    public UserResponseDto toDto() {
-        return new UserResponseDto(
-                this.id,
-                this.name,
-                this.email,
-                this.role,
-                this.phone,
-                this.village,
-                this.district,
-                this.state,
-                this.profileImage
-        );
-    }
 }
 
 

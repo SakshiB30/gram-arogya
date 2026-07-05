@@ -1,6 +1,5 @@
 package com.gramarogya.gramarogya_backend.dto;
 
-import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,6 +8,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class BeneficiaryResponseDto {
+
     private String id;
 
     private String name;
@@ -25,6 +25,13 @@ public class BeneficiaryResponseDto {
 
     private String category;
 
+    private String disease;
+
+    private String status;
+
     private LocalDate dateAdded;
 
+    private LocalDate lastVisitDate;
+
+    private LocalDate nextVisitDate;
 }

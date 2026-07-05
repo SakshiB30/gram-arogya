@@ -3,6 +3,8 @@ package com.gramarogya.gramarogya_backend.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class UpdateBeneficiaryRequestDto {
@@ -20,4 +22,9 @@ public class UpdateBeneficiaryRequestDto {
     private String address;
 
     private String category;
+
+    private String disease;
+
+    private String status;
+
 }

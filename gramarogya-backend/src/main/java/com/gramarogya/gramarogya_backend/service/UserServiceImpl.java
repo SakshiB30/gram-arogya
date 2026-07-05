@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.UpdateProfileRequestDto;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,34 +13,31 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
+    private final UserMapper userMapper;
+
+    private User getUserByEmail(String email) {
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     @Override
     public UserResponseDto getCurrentUser(String email) {
 
-        User user = repository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+        User user = getUserByEmail(email);
 
-        return user.toDto();
+        return userMapper.toResponseDto(user);
     }
 
     @Override
     public UserResponseDto updateProfile(String email,
                                          UpdateProfileRequestDto request) {
 
-        User user = repository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+        User user = getUserByEmail(email);
 
-        user.setName(request.getName());
-        user.setPhone(request.getPhone());
-        user.setVillage(request.getVillage());
-        user.setTaluka(request.getTaluka());
-        user.setDistrict(request.getDistrict());
-        user.setState(request.getState());
+        userMapper.updateEntity(request, user);
 
         repository.save(user);
 
-        return user.toDto();
+        return userMapper.toResponseDto(user);
     }
 }

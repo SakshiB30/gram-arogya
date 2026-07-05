@@ -11,17 +11,17 @@ public class BeneficiaryMapper {
 
     public Beneficiary toEntity(CreateBeneficiaryRequestDto dto) {
 
-        Beneficiary beneficiary = new Beneficiary();
-
-        beneficiary.setName(dto.getName());
-        beneficiary.setAge(dto.getAge());
-        beneficiary.setGender(dto.getGender());
-        beneficiary.setPhone(dto.getPhone());
-        beneficiary.setVillage(dto.getVillage());
-        beneficiary.setAddress(dto.getAddress());
-        beneficiary.setCategory(dto.getCategory());
-
-        return beneficiary;
+        return Beneficiary.builder()
+                .name(dto.getName())
+                .age(dto.getAge())
+                .gender(dto.getGender())
+                .phone(dto.getPhone())
+                .village(dto.getVillage())
+                .address(dto.getAddress())
+                .category(dto.getCategory())
+                .disease(dto.getDisease())
+                .status(dto.getStatus())
+                .build();
     }
 
     public BeneficiaryResponseDto toResponseDto(Beneficiary beneficiary) {
@@ -35,7 +35,11 @@ public class BeneficiaryMapper {
                 .village(beneficiary.getVillage())
                 .address(beneficiary.getAddress())
                 .category(beneficiary.getCategory())
+                .disease(beneficiary.getDisease())
+                .status(beneficiary.getStatus())
                 .dateAdded(beneficiary.getDateAdded())
+                .lastVisitDate(beneficiary.getLastVisitDate())
+                .nextVisitDate(beneficiary.getNextVisitDate())
                 .build();
     }
 
@@ -49,5 +53,7 @@ public class BeneficiaryMapper {
         beneficiary.setVillage(dto.getVillage());
         beneficiary.setAddress(dto.getAddress());
         beneficiary.setCategory(dto.getCategory());
+        beneficiary.setDisease(dto.getDisease());
+        beneficiary.setStatus(dto.getStatus());
     }
 }

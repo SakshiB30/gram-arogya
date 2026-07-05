@@ -30,7 +30,8 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         String email = authentication.getName();
 
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
     }
 
     private Beneficiary getBeneficiaryForCurrentUser(Authentication authentication,
@@ -39,7 +40,8 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         User currentUser = getCurrentUser(authentication);
 
         Beneficiary beneficiary = beneficiaryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Beneficiary not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Beneficiary not found"));
 
         if (!beneficiary.getUserId().equals(currentUser.getId())) {
             throw new UnauthorizedException("Unauthorized");
@@ -59,7 +61,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         beneficiary.setUserId(currentUser.getId());
         beneficiary.setDateAdded(LocalDate.now());
 
-        beneficiaryRepository.save(beneficiary);
+        beneficiary = beneficiaryRepository.save(beneficiary);
 
         return beneficiaryMapper.toResponseDto(beneficiary);
     }
@@ -95,7 +97,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         beneficiaryMapper.updateEntity(dto, beneficiary);
 
-        beneficiaryRepository.save(beneficiary);
+        beneficiary = beneficiaryRepository.save(beneficiary);
 
         return beneficiaryMapper.toResponseDto(beneficiary);
     }

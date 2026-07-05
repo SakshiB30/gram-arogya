@@ -5,6 +5,7 @@ import com.gramarogya.gramarogya_backend.dto.LoginResponseDto;
 import com.gramarogya.gramarogya_backend.dto.RegisterRequestDto;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -16,26 +17,26 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtService jwtService;
+    private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final JwtService jwtService;
+
+    private final UserMapper userMapper;
 
     @Override
     public UserResponseDto register(RegisterRequestDto registerRequestDto) {
 
-        User user = registerRequestDto.toEntity();
-
+        User user = userMapper.toEntity(registerRequestDto);
         user.setPassword(
                 passwordEncoder.encode(registerRequestDto.getPassword())
         );
 
         user = userRepository.save(user);
 
-        return user.toDto();
+        return userMapper.toResponseDto(user);
     }
 
     @Override

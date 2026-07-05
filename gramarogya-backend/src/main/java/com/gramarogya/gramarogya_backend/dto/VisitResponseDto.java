@@ -1,6 +1,5 @@
 package com.gramarogya.gramarogya_backend.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,15 +15,13 @@ public class VisitResponseDto {
 
     private String id;
 
-    private String patientId;
+    private String beneficiaryId;
 
     private LocalDate visitDate;
 
-    private String symptoms;
+    private String visitType;
 
-    private String diagnosis;
-
-    private String medicine;
+    private String status;
 
     private String notes;
 }
