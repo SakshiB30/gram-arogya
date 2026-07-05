@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 public class UpdateProfileRequestDto {
 
-
     @Size(min = 2, max = 50)
     private String name;
 
