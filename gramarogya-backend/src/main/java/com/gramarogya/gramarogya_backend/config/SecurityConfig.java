@@ -27,6 +27,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
+                .cors(cors -> {})      // <-- ADD THIS
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

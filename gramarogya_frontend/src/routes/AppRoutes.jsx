@@ -14,12 +14,15 @@ import Register from "../pages/auth/Register";
 
 // Main Pages
 import Dashboard from "../pages/dashboard/Dashboard";
-import Patients from "../pages/patients/Patients";
+import Beneficiary from "../pages/beneficiary/Beneficiary";
 import DailyReport from "../pages/reports/DailyReport";
 import MyReports from "../pages/reports/MyReports";
 import VerifyReports from "../pages/verification/VerifyReports";
 import MedicineInventory from "../pages/medicines/MedicineInventory";
 import ProtectedRoute from "./ProtectedRoute";
+import BeneficiaryDetail from "../pages/beneficiary/beneficiaryDetail";
+import AddBeneficiary from "../pages/beneficiary/AddBeneficiary";
+import EditBeneficiary from "../pages/beneficiary/EditBeneficiary";
 
 const AppRoutes = () => {
 
@@ -49,11 +52,14 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="patients" element={<Patients />} />
+          <Route path="beneficiary" element={<Beneficiary />} />
           <Route path="medicine-inventory" element={<MedicineInventory />} />
           <Route path="daily-report" element={<DailyReport />} />
           <Route path="my-reports" element={<MyReports />} />
           <Route path="verify-reports" element={<VerifyReports />} />
+          <Route path="beneficiaries/:id" element={<BeneficiaryDetail />}/>
+          <Route path="beneficiaries/add" element={<AddBeneficiary />} />
+          <Route path="beneficiaries/edit/:id" element={<EditBeneficiary />} />
         </Route>
 
         {/* Invalid Route */}

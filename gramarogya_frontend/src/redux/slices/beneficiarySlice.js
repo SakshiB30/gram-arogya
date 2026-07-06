@@ -44,7 +44,7 @@ export const createBeneficiary = createAsyncThunk(
   "beneficiaries/createBeneficiary",
   async (beneficiaryData, thunkAPI) => {
     try {
-      return await beneficiaryService.createBeneficiary(patientData);
+      return await beneficiaryService.createBeneficiary(beneficiaryData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message ||

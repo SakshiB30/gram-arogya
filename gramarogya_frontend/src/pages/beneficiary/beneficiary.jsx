@@ -2,8 +2,10 @@ import React from "react";
 import { Users, User, Smile, ArrowUp, ArrowDown, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPatients } from "../../redux/slices/beneficiarySlice";
-
+import { useNavigate } from "react-router-dom";
+import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
+import { Plus } from "lucide-react";
+import { deleteBeneficiary } from "../../redux/slices/beneficiarySlice";
 
 const STATUS_STYLES = {
   ACTIVE: "bg-green-100 text-green-700",
@@ -11,8 +13,9 @@ const STATUS_STYLES = {
   PENDING: "bg-yellow-100 text-yellow-700",
 };
 
-export default function Patients({ onOpenPatient = () => {} }) {
+export default function Beneficiary({ onOpenBeneficiary = () => {} }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const {
     beneficiaries,
@@ -32,7 +35,7 @@ export default function Patients({ onOpenPatient = () => {} }) {
     return <p>Error loading beneficiaries: {error}</p>;
   }
 
-  const totalPatients = beneficiaries.length;
+  const totalBeneficiaries = beneficiaries.length;
 
   const pregnantWomen = beneficiaries.filter(
     (b) => b.category === "PREGNANT_WOMAN"
@@ -44,8 +47,8 @@ export default function Patients({ onOpenPatient = () => {} }) {
 
     const stats = [
   {
-    label: "Total Patients",
-    value: totalPatients,
+    label: "Total Beneficiaries",
+    value: totalBeneficiaries,
     icon: Users,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
@@ -66,12 +69,23 @@ export default function Patients({ onOpenPatient = () => {} }) {
   },
 ];
 
+  const handleDelete = async (id) => {
+  if (!window.confirm("Delete this beneficiary?")) return;
+
+  const result = await dispatch(deleteBeneficiary(id));
+
+  if (deleteBeneficiary.fulfilled.match(result)) {
+    alert("Beneficiary deleted successfully");
+  } else {
+    alert(result.payload || "Delete failed");
+  }
+};
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Patients</h1>
-        <p className="mt-1 text-slate-500">Overview of registered patients across all villages.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Beneficiaries</h1>
+        <p className="mt-1 text-slate-500">Overview of registered beneficiaries across all villages.</p>
       </div>
 
       {/* Stat cards */}
@@ -147,19 +161,41 @@ export default function Patients({ onOpenPatient = () => {} }) {
 </span>
       </td>
 
-      <td className="px-6 py-4 text-right">
-        <button
-          onClick={() => onOpenPatient(p)}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
-        >
-          View <ChevronRight size={14} />
-        </button>
-      </td>
+      <td className="px-6 py-4 text-right space-x-3">
+
+  <button
+    onClick={() => navigate(`/app/beneficiaries/${p.id}`)}
+    className="text-blue-600 hover:underline"
+  >
+    View
+  </button>
+
+  <button
+    onClick={() => navigate(`/app/beneficiaries/edit/${p.id}`)}
+    className="text-green-600 hover:underline"
+  >
+    Edit
+  </button>
+
+  <button
+    onClick={() => handleDelete(p.id)}
+    className="text-red-600 hover:underline"
+  >
+    Delete
+  </button>
+
+</td>
     </tr>
   ))}
 </tbody>
         </table>
       </div>
+      <button
+    onClick={() => navigate("/app/beneficiaries/add")}
+    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white">
+    <Plus size={10} />
+    Add Beneficiary
+</button>
     </div>
   );
 }
