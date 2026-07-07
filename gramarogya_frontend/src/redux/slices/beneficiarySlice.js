@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import beneficiaryService from "../../services/beneficiaryService";;
+import beneficiaryService from "../../services/beneficiaryService";
 
 /* ===========================
    GET ALL PATIENTS

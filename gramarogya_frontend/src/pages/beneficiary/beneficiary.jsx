@@ -7,6 +7,7 @@ import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
 import { Plus } from "lucide-react";
 import { deleteBeneficiary } from "../../redux/slices/beneficiarySlice";
 
+
 const STATUS_STYLES = {
   ACTIVE: "bg-green-100 text-green-700",
   INACTIVE: "bg-red-100 text-red-700",

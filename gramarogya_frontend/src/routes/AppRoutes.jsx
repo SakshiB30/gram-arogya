@@ -23,6 +23,10 @@ import ProtectedRoute from "./ProtectedRoute";
 import BeneficiaryDetail from "../pages/beneficiary/beneficiaryDetail";
 import AddBeneficiary from "../pages/beneficiary/AddBeneficiary";
 import EditBeneficiary from "../pages/beneficiary/EditBeneficiary";
+import Visit from "../pages/visit/Visit";
+import AddVisit from "../pages/visit/AddVisit";
+import EditVisit from "../pages/visit/EditVisit";
+import VisitDetail from "../pages/visit/VisitDetail";
 
 const AppRoutes = () => {
 
@@ -60,6 +64,10 @@ const AppRoutes = () => {
           <Route path="beneficiaries/:id" element={<BeneficiaryDetail />}/>
           <Route path="beneficiaries/add" element={<AddBeneficiary />} />
           <Route path="beneficiaries/edit/:id" element={<EditBeneficiary />} />
+          <Route path="visit" element={<Visit />} />
+          <Route path="visit/add" element={<AddVisit />} />
+          <Route path="visit/edit/:id" element={<EditVisit />} />
+          <Route path="visit/:id" element={<VisitDetail />} />
         </Route>
 
         {/* Invalid Route */}

@@ -52,3 +52,4 @@ const beneficiaryService = {
 };
 
 export default beneficiaryService;
+

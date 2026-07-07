@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.List;
 
 @RestController
@@ -18,7 +19,7 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class VisitController {
 
-    private VisitService visitService;
+    private final VisitService visitService;
 
     // Create Visit
     @PostMapping

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { createBeneficiary } from "../../redux/slices/beneficiarySlice";
 import { ArrowLeft, Save } from "lucide-react";
 
+
 export default function AddBeneficiary() {
   const dispatch = useDispatch();
   const navigate = useNavigate();

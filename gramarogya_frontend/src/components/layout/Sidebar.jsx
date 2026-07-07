@@ -18,6 +18,7 @@ const navItems = [
   { label: "Verify Reports", icon: FileCheck2, path: "/app/verify-reports" },
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiary" },
   { label: "Medicine Inventory", icon: Archive, path: "/app/medicine-inventory" },
+  { label: "Visits", icon: Stethoscope, path: "/app/visit" },
 ];
 
 const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Centre" }) => {
