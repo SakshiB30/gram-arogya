@@ -15,4 +15,6 @@ public interface HealthRecordRepository
 
     // Get all health records of a visit
     List<HealthRecord> findByVisitId(String visitId);
+
+    List<HealthRecord> findTop5ByOrderByCreatedAtDesc();
 }

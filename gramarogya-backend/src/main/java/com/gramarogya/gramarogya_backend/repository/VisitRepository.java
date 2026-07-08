@@ -27,4 +27,14 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
     long countByUserIdAndNextVisitDateAfter(String userId,
                                             LocalDate date);
 
+    List<Visit> findTop5ByUserIdOrderByVisitDateDesc(String userId);
+
+    List<Visit> findByUserIdAndStatus(String userId, String status);
+
+    List<Visit> findByUserIdAndNextVisitDateBetween(
+            String userId,
+            LocalDate start,
+            LocalDate end
+    );
+
 }

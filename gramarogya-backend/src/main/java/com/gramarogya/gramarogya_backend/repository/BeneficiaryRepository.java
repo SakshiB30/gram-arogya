@@ -13,4 +13,15 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
 
     long countByUserIdAndCategory(String userId, String category);
 
+//    List<Beneficiary> findByUserIdAndStatus(String userId, String status);
+
+    List<Beneficiary> findByUserIdAndStatusIgnoreCase(
+            String userId,
+            String status
+    );
+
+    List<Beneficiary> findByUserIdAndCategoryIgnoreCase(
+            String userId,
+            String category
+    );
 }

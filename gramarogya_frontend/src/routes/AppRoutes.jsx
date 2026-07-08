@@ -15,7 +15,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 
 // Dashboard
-import Dashboard from "../pages/dashboard/Dashboard";
+import Dashboard from "../pages/Dashboard";
 
 // Beneficiary
 import BeneficiaryPage from "../pages/BeneficiaryPage";
@@ -28,11 +28,11 @@ import DailyReport from "../pages/reports/DailyReport";
 import MyReports from "../pages/reports/MyReports";
 
 // Verification
-import VerifyReports from "../pages/verification/VerifyReports";
+import VerifyReports from "../pages/VerifyReports";
 
 
 // Medicine
-import MedicineInventory from "../pages/medicines/MedicineInventory";
+import MedicineInventory from "../pages/MedicineInventory";
 
 
 // Visit
