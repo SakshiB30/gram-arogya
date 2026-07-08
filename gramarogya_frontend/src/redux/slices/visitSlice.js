@@ -30,7 +30,7 @@ export const fetchVisitById = createAsyncThunk(
   "visits/fetchById",
   async (id,{rejectWithValue})=>{
     try{
-      return await getVisitById(id);
+      return await visitService.getVisitById(id);
     }
     catch(error){
       return rejectWithValue(
