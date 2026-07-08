@@ -19,6 +19,7 @@ const navItems = [
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiary" },
   { label: "Medicine Inventory", icon: Archive, path: "/app/medicine-inventory" },
   { label: "Visits", icon: Stethoscope, path: "/app/visit" },
+  { label: "Health Records", icon: Stethoscope, path: "/app/health-records" },
 ];
 
 const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Centre" }) => {

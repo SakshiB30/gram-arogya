@@ -27,6 +27,12 @@ import Visit from "../pages/visit/Visit";
 import AddVisit from "../pages/visit/AddVisit";
 import EditVisit from "../pages/visit/EditVisit";
 import VisitDetail from "../pages/visit/VisitDetail";
+import HealthRecordsPage from "../pages/HealthRecordsPage";
+import HealthRecordList from "../components/healthRecords/HealthRecordList";
+import AddHealthRecord from "../components/healthRecords/AddHealthRecord";
+import EditHealthRecord from "../components/healthRecords/EditHealthRecord";
+import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
+
 
 const AppRoutes = () => {
 
@@ -68,6 +74,14 @@ const AppRoutes = () => {
           <Route path="visit/add" element={<AddVisit />} />
           <Route path="visit/edit/:id" element={<EditVisit />} />
           <Route path="visit/:id" element={<VisitDetail />} />
+          <Route path="health-records" element={<HealthRecordsPage />}>
+            <Route index element={<HealthRecordList />} />
+            <Route path="add" element={<AddHealthRecord />} />
+            <Route path="edit/:id" element={<EditHealthRecord />} />
+            <Route path=":id" element={<HealthRecordDetail />} />
+          </Route>
+
+
         </Route>
 
         {/* Invalid Route */}
