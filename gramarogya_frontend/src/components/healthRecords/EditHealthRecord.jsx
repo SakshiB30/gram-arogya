@@ -82,24 +82,33 @@ const EditHealthRecord = () => {
   };
 
   return (
-    <div className="container-fluid">
-      <div className="card shadow">
+    <div className="mx-auto max-w-6xl">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-        <div className="card-header">
-          <h3>Edit Health Record</h3>
+        {/* Header */}
+        <div className="border-b border-slate-200 px-8 py-6">
+          <h3 className="text-2xl font-bold text-slate-900">
+            Edit Health Record
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Update beneficiary health information.
+          </p>
         </div>
 
-        <div className="card-body">
-
+        {/* Body */}
+        <div className="p-8">
           <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-            <div className="row">
-
-              <div className="col-md-6 mb-3">
-                <label>Beneficiary</label>
+              {/* Beneficiary */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Beneficiary
+                </label>
 
                 <select
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="beneficiaryId"
                   value={formData.beneficiaryId}
                   onChange={handleChange}
@@ -114,11 +123,14 @@ const EditHealthRecord = () => {
                 </select>
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label>Visit</label>
+              {/* Visit */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Visit
+                </label>
 
                 <select
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="visitId"
                   value={formData.visitId}
                   onChange={handleChange}
@@ -133,84 +145,105 @@ const EditHealthRecord = () => {
                 </select>
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label>Blood Pressure</label>
+              {/* Blood Pressure */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Blood Pressure
+                </label>
 
                 <input
                   type="text"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="bloodPressure"
                   value={formData.bloodPressure}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label>Weight</label>
+              {/* Weight */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Weight
+                </label>
 
                 <input
                   type="number"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="weight"
                   value={formData.weight}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label>Temperature</label>
+              {/* Temperature */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Temperature
+                </label>
 
                 <input
                   type="number"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="temperature"
                   value={formData.temperature}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label>Hemoglobin</label>
+              {/* Hemoglobin */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Hemoglobin
+                </label>
 
                 <input
                   type="number"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="hemoglobin"
                   value={formData.hemoglobin}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-12 mb-3">
-                <label>Diagnosis</label>
+              {/* Diagnosis */}
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Diagnosis
+                </label>
 
                 <input
                   type="text"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="diagnosis"
                   value={formData.diagnosis}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-12 mb-3">
-                <label>Prescription</label>
+              {/* Prescription */}
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Prescription
+                </label>
 
                 <textarea
                   rows="3"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="prescription"
                   value={formData.prescription}
                   onChange={handleChange}
                 />
               </div>
 
-              <div className="col-md-12 mb-3">
-                <label>Notes</label>
+              {/* Notes */}
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Notes
+                </label>
 
                 <textarea
                   rows="3"
-                  className="form-control"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
@@ -219,21 +252,27 @@ const EditHealthRecord = () => {
 
             </div>
 
-            <button className="btn btn-primary me-2">
-              Update
-            </button>
+            {/* Footer */}
+            <div className="mt-8 flex justify-end gap-3 border-t border-slate-200 pt-6">
+              <button
+                type="button"
+                onClick={() => navigate("/app/health-records")}
+                className="rounded-xl border border-slate-300 px-6 py-3 font-medium text-slate-700 transition hover:bg-slate-100"
+              >
+                Cancel
+              </button>
 
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => navigate("/app/health-records")}
-            >
-              Cancel
-            </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+              >
+                Update
+              </button>
+            </div>
 
           </form>
-
         </div>
+
       </div>
     </div>
   );
