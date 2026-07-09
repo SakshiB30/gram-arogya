@@ -13,13 +13,11 @@ import {
 
 const navItems = [
   { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
-  { label: "Daily Report", icon: ClipboardList, path: "/app/daily-report" },
-  { label: "My Reports", icon: BarChart2, path: "/app/my-reports" },
-  { label: "Verify Reports", icon: FileCheck2, path: "/app/verify-reports" },
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiaries" },
   { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Visits", icon: Stethoscope, path: "/app/visit" },
   { label: "Health Records", icon: Stethoscope, path: "/app/health-records" },
+  { label: "Reports", icon: BarChart2, path: "/app/reports" },
 ];
 
 const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Centre" }) => {

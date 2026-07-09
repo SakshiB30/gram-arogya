@@ -5,6 +5,7 @@ import visitReducer from "./slices/visitSlice";
 import healthRecordReducer from "./slices/healthRecordSlice";
 import dashboardReducer from "./slices/dashboardSlice";
 import inventoryReducer from "./slices/inventorySlice";
+import reportReducer from "./slices/reportSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     healthRecords: healthRecordReducer,
     dashboard: dashboardReducer,
     inventory: inventoryReducer, 
+    reports: reportReducer,
   },
 });
 

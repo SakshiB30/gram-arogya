@@ -24,11 +24,8 @@ import AddBeneficiary from "../components/beneficiary/AddBeneficiary";
 import EditBeneficiary from "../components/beneficiary/EditBeneficiary";
 
 // Reports
-import DailyReport from "../pages/reports/DailyReport";
-import MyReports from "../pages/reports/MyReports";
+import ReportsPage from "../pages/ReportsPage";
 
-// Verification
-import VerifyReports from "../pages/VerifyReports";
 
 
 // Medicine
@@ -298,37 +295,13 @@ element={<EditVisit />}
 
 
 {/* ==================
-    REPORTS
+        REPORTS
 ================== */}
 
-
 <Route
-
-path="daily-report"
-
-element={<DailyReport />}
-
+  path="reports"
+  element={<ReportsPage />}
 />
-
-
-<Route
-
-path="my-reports"
-
-element={<MyReports />}
-
-/>
-
-
-<Route
-
-path="verify-reports"
-
-element={<VerifyReports />}
-
-/>
-
-
 
 
 
