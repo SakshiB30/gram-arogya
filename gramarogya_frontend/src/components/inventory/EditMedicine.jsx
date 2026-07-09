@@ -1,35 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  getMedicineById,
+  updateMedicine,
+} from "../../redux/slices/inventorySlice";
 
 const initialState = {
-  id: "",
   name: "",
   type: "",
   batch: "",
   stock: "",
   expiryDate: "",
-  status: "Available",
 };
 
-export default function EditMedicine({
-  open,
-  medicine,
-  onClose,
-  onSubmit,
-  loading = false,
-}) {
+export default function EditMedicine() {
+  const { id } = useParams();
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { medicine, loading } = useSelector(
+    (state) => state.inventory
+  );
+
   const [formData, setFormData] = useState(initialState);
+
+  useEffect(() => {
+    dispatch(getMedicineById(id));
+  }, [dispatch, id]);
 
   useEffect(() => {
     if (medicine) {
       setFormData({
-        id: medicine.id || "",
         name: medicine.name || "",
         type: medicine.type || "",
         batch: medicine.batch || "",
         stock: medicine.stock || "",
         expiryDate: medicine.expiryDate || "",
-        status: medicine.status || "Available",
       });
     }
   }, [medicine]);
@@ -43,153 +52,141 @@ export default function EditMedicine({
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    onSubmit({
-      ...formData,
-      stock: Number(formData.stock),
-    });
+    await dispatch(
+      updateMedicine({
+        id,
+        ...formData,
+        stock: Number(formData.stock),
+      })
+    );
+
+    navigate("/app/inventory");
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-xl font-bold">
-            Edit Medicine
-          </h2>
+    <div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow">
 
-          <button onClick={onClose}>
-            <X size={22} />
-          </button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">
+          Edit Medicine
+        </h1>
+
+        <p className="mt-2 text-slate-500">
+          Update medicine information.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+          <div>
+            <label className="mb-2 block font-medium">
+              Medicine Name
+            </label>
+
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border px-4 py-3"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium">
+              Type
+            </label>
+
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border px-4 py-3"
+            >
+              <option value="">Select Type</option>
+              <option>Tablet</option>
+              <option>Capsule</option>
+              <option>Syrup</option>
+              <option>Injection</option>
+              <option>Powder</option>
+              <option>Drops</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium">
+              Batch Number
+            </label>
+
+            <input
+              type="text"
+              name="batch"
+              value={formData.batch}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border px-4 py-3"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium">
+              Stock Quantity
+            </label>
+
+            <input
+              type="number"
+              name="stock"
+              value={formData.stock}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border px-4 py-3"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium">
+              Expiry Date
+            </label>
+
+            <input
+              type="date"
+              name="expiryDate"
+              value={formData.expiryDate}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border px-4 py-3"
+            />
+          </div>
+
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
+        <div className="mt-8 flex justify-end gap-4">
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Medicine Name
-              </label>
+          <button
+            type="button"
+            onClick={() => navigate("/app/inventory")}
+            className="rounded-lg border px-6 py-3"
+          >
+            Cancel
+          </button>
 
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-3 py-2"
-              />
-            </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
+          >
+            {loading ? "Updating..." : "Update Medicine"}
+          </button>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Type
-              </label>
+        </div>
+      </form>
 
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-3 py-2"
-              >
-                <option>Tablet</option>
-                <option>Capsule</option>
-                <option>Syrup</option>
-                <option>Injection</option>
-                <option>Powder</option>
-                <option>Drops</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Batch Number
-              </label>
-
-              <input
-                type="text"
-                name="batch"
-                value={formData.batch}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Stock Quantity
-              </label>
-
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Expiry Date
-              </label>
-
-              <input
-                type="date"
-                name="expiryDate"
-                value={formData.expiryDate}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Status
-              </label>
-
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full rounded-lg border px-3 py-2"
-              >
-                <option>Available</option>
-                <option>Low Stock</option>
-                <option>Out of Stock</option>
-              </select>
-            </div>
-
-          </div>
-
-          <div className="flex justify-end gap-3 border-t px-6 py-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border px-5 py-2"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
-            >
-              {loading ? "Updating..." : "Update Medicine"}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

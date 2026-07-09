@@ -32,11 +32,11 @@ import VerifyReports from "../pages/VerifyReports";
 
 
 // Medicine
-import MedicineInventory from "../pages/InventoryPage";
+import InventoryPage from "../pages/InventoryPage";
 import AddMedicine from "../components/inventory/AddMedicine";
 import EditMedicine from "../components/inventory/EditMedicine";
 import RestockMedicine from "../components/inventory/RestockMedicine";
-
+import MedicineDetail from "../components/inventory/MedicineDetail";
 
 // Visit
 import VisitPage from "../pages/VisitPage";
@@ -55,8 +55,6 @@ import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 
 // Auth Guard
 import ProtectedRoute from "./ProtectedRoute";
-import InventoryPage from "../pages/InventoryPage";
-import AddMedicineModal from "../components/inventory/AddMedicine";
 
 
 
@@ -266,35 +264,34 @@ element={<EditVisit />}
 
 
 
-/* ==================
+{/* ==================
       MEDICINE
-================== */
+================== */}
 
 <Route
-  path="medicine-inventory"
-  element={<InventoryPage />}
+    path="inventory"
+    element={<InventoryPage />}
 />
 
 <Route
-  path="medicine-inventory/add"
-  element={<AddMedicine />}
+    path="inventory/add"
+    element={<AddMedicine />}
 />
 
-{/* <Route
-  path="medicine-inventory/:id"
+<Route
+    path="inventory/edit/:id"
+    element={<EditMedicine />}
+/>
+
+<Route
+    path="inventory/restock/:id"
+    element={<RestockMedicine />}
+/>
+
+<Route
+  path="inventory/:id"
   element={<MedicineDetail />}
-/> */}
-
-<Route
-  path="medicine-inventory/edit/:id"
-  element={<EditMedicine />}
 />
-
-<Route
-  path="medicine-inventory/restock/:id"
-  element={<RestockMedicine />}
-/>
-
 
 
 

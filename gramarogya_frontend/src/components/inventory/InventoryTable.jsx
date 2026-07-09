@@ -1,55 +1,37 @@
 import React from "react";
-import { Filter } from "lucide-react";
 import InventoryTableRow from "./InventoryTableRow";
 
 export default function InventoryTable({
   medicines = [],
   loading = false,
-  onFilter,
-  onEdit,
-  onRestock,
+  onDelete,
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <h2 className="text-lg font-bold text-slate-900">
-          Current Stock Levels
-        </h2>
 
-        <button
-          onClick={onFilter}
-          className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-        >
-          <Filter size={15} />
-          Filter
-        </button>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            Current Stock Levels
+          </h2>
+          <p className="text-sm text-slate-500">
+            Total Medicines: {medicines.length}
+          </p>
+        </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead>
-            <tr className="border-y border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-              <th className="px-6 py-3 font-semibold">
-                Medicine Name
-              </th>
+        <table className="min-w-full text-left">
 
-              <th className="px-6 py-3 font-semibold">
-                Available Stock
-              </th>
-
-              <th className="px-6 py-3 font-semibold">
-                Expiry Date
-              </th>
-
-              <th className="px-6 py-3 font-semibold">
-                Status
-              </th>
-
-              <th className="px-6 py-3 text-right font-semibold">
-                Actions
-              </th>
+          <thead className="bg-slate-50">
+            <tr className="text-sm font-semibold text-slate-600">
+              <th className="px-6 py-4">Medicine</th>
+              <th className="px-6 py-4">Stock</th>
+              <th className="px-6 py-4">Expiry Date</th>
+              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
 
@@ -69,7 +51,7 @@ export default function InventoryTable({
                   colSpan={5}
                   className="py-12 text-center text-slate-500"
                 >
-                  No medicines found.
+                  No medicines available.
                 </td>
               </tr>
             ) : (
@@ -77,14 +59,15 @@ export default function InventoryTable({
                 <InventoryTableRow
                   key={medicine.id}
                   medicine={medicine}
-                  onEdit={onEdit}
-                  onRestock={onRestock}
+                  onDelete={onDelete}
                 />
               ))
             )}
           </tbody>
+
         </table>
       </div>
+
     </div>
   );
 }

@@ -37,7 +37,7 @@ const QuickActions = () => {
       icon: Archive,
       bg: "bg-red-100",
       color: "text-red-600",
-      path: "/app/medicine-inventory",
+      path: "/app/inventory",
     },
   ];
 

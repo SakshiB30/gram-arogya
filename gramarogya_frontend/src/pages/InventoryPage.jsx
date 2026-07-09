@@ -6,7 +6,7 @@ import InventoryStats from "../components/inventory/InventoryStats";
 import InventoryFilter from "../components/inventory/InventoryFilter";
 import InventoryTable from "../components/inventory/InventoryTable";
 
-import { getInventory } from "../redux/slices/inventorySlice";
+import { getInventory, deleteMedicine } from "../redux/slices/inventorySlice";
 
 export default function InventoryPage() {
   const dispatch = useDispatch();
@@ -25,18 +25,28 @@ export default function InventoryPage() {
   }, [dispatch]);
 
   const filteredMedicines = useMemo(() => {
-    return medicines.filter((medicine) => {
-      const matchesSearch = medicine.name
+  return medicines.filter((medicine) => {
+    const matchesSearch =
+      (medicine.name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "All" ||
-        medicine.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "All" ||
+      medicine.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [medicines, searchTerm, statusFilter]);
+    return matchesSearch && matchesStatus;
+  });
+}, [medicines, searchTerm, statusFilter]);
+
+const handleDelete = async (id) => {
+  if (!window.confirm("Delete this medicine?")) return;
+
+  await dispatch(deleteMedicine(id));
+  dispatch(getInventory());
+};
+
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,6 +71,7 @@ export default function InventoryPage() {
       <InventoryTable
         medicines={filteredMedicines}
         loading={loading}
+        onDelete={handleDelete}
       />
 
     </div>

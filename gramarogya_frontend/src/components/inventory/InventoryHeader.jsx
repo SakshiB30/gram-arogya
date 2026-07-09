@@ -1,7 +1,10 @@
 import React from "react";
 import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function InventoryHeader({ onAddMedicine }) {
+export default function InventoryHeader() {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -15,7 +18,7 @@ export default function InventoryHeader({ onAddMedicine }) {
       </div>
 
       <button
-        onClick={onAddMedicine}
+        onClick={() => navigate("/app/inventory/add")}
         className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
       >
         <Plus size={18} />
