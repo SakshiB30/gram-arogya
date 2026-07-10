@@ -11,6 +11,10 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../redux/slices/authSlice";
+import GlobalSearch from "../common/GlobalSearch";
+
+import { fetchProfile } from "../../redux/slices/profileSlice";
+
 
 export default function Navbar({
   
@@ -28,7 +32,7 @@ export default function Navbar({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { user } = useSelector((state) => state.auth);
+const { profile } = useSelector((state) => state.profile);
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,6 +54,10 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+  dispatch(fetchProfile());
+}, [dispatch]);
+
   const handleLogout = () => {
   setMenuOpen(false);
 
@@ -60,19 +68,7 @@ export default function Navbar({
 
   return (
     <header className="sticky top-0 z-30 flex w-full items-center justify-between gap-4 border-b border-slate-200 bg-white/80 px-6 py-3.5 backdrop-blur-md md:px-8">
-      {/* Search */}
-      <div className="group flex w-full max-w-md items-center gap-2 rounded-full border border-transparent bg-slate-100 px-4 py-2 transition-colors focus-within:border-violet-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-violet-500/20">
-        <Search size={17} className="text-slate-400 group-focus-within:text-violet-500" />
-        <input
-          type="text"
-          placeholder="Search patients, reports..."
-          onChange={(e) => onSearch(e.target.value)}
-          className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-        />
-        <kbd className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:block">
-          ⌘K
-        </kbd>
-      </div>
+      <GlobalSearch />
 
       {/* Right icons */}
       <div className="flex items-center gap-2">
@@ -105,7 +101,7 @@ export default function Navbar({
                       key={n.id}
                       className="flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-0 hover:bg-slate-50"
                     >
-                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" />
                       <div>
                         <p className="text-sm text-slate-700">{n.title}</p>
                         <p className="mt-0.5 text-xs text-slate-400">{n.time}</p>
@@ -126,12 +122,12 @@ export default function Navbar({
             onClick={() => setMenuOpen((prev) => !prev)}
             className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-slate-100"
           >
-           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-white font-semibold">
-  {user?.name?.charAt(0)?.toUpperCase() || "U"}
+           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-700 text-lg font-bold text-white">
+  {profile?.name?.charAt(0)?.toUpperCase() || "A"}
 </div>
             <div className="hidden text-left leading-tight sm:block">
-              <p className="text-sm font-medium text-slate-800">{user?.name}</p>
-              <p className="text-xs text-slate-400">{user?.role}</p>
+              <p className="text-sm font-medium text-slate-800">{profile?.name}</p>
+              <p className="text-xs text-slate-400">{profile?.role}</p>
             </div>
             <ChevronDown size={16} className="hidden text-slate-400 sm:block" />
           </button>
@@ -142,27 +138,38 @@ export default function Navbar({
     {/* User Info */}
     <div className="border-b border-slate-100 px-4 py-3">
       <p className="text-sm font-semibold text-slate-800">
-        {user?.name}
+        {profile?.name}
       </p>
 
       <p className="text-xs text-slate-500">
-        {user?.email}
+        {profile?.email}
       </p>
 
       <p className="mt-1 text-xs text-violet-600 font-medium">
-        {user?.role}
+        {profile?.role}
       </p>
     </div>
 
     {/* Profile */}
-    <button className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
-      <User size={16} />
-      My Profile
-    </button>
+    <button
+  onClick={() => {
+    setMenuOpen(false);
+    navigate("/app/profile");
+  }}
+  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50"
+>
+  <User size={16} />
+  My Profile
+</button>
 
     {/* Settings */}
-    <button className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50">
-      <Settings size={16} />
+<button
+  onClick={() => {
+    setMenuOpen(false);
+    navigate("/app/settings");
+  }}
+  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-green-50"
+>      <Settings size={16} />
       Settings
     </button>
 

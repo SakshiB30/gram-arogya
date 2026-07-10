@@ -37,4 +37,8 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             LocalDate end
     );
 
+    List<Visit> findByUserIdAndVisitTypeContainingIgnoreCase(
+            String userId,
+            String visitType
+    );
 }

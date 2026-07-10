@@ -24,4 +24,10 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
             String userId,
             String category
     );
+
+
+    List<Beneficiary> findByUserIdAndNameContainingIgnoreCase(
+            String userId,
+            String name
+    );
 }

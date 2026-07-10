@@ -53,6 +53,8 @@ import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 // Auth Guard
 import ProtectedRoute from "./ProtectedRoute";
 
+import Profile from "../pages/Profile";
+
 
 
 const AppRoutes = () => {
@@ -149,7 +151,7 @@ replace
 />
 
 
-
+<Route path="profile" element={<Profile />} />
 
 
 {/* Dashboard */}

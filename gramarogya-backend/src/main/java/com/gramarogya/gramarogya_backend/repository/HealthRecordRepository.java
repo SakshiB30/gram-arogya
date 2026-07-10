@@ -17,4 +17,8 @@ public interface HealthRecordRepository
     List<HealthRecord> findByVisitId(String visitId);
 
     List<HealthRecord> findTop5ByOrderByCreatedAtDesc();
+
+    List<HealthRecord> findByDiagnosisContainingIgnoreCase(
+            String diagnosis
+    );
 }

@@ -1,6 +1,7 @@
 package com.gramarogya.gramarogya_backend.controller;
 
 import com.gramarogya.gramarogya_backend.dto.UpdateProfileRequestDto;
+import com.gramarogya.gramarogya_backend.dto.UserProfileDto;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -37,5 +38,10 @@ public class UserController {
         return ResponseEntity.ok(
                 userService.updateProfile(email, request)
         );
+    }
+
+    @GetMapping("/profile")
+    public UserProfileDto profile(Authentication authentication){
+        return userService.getProfile(authentication);
     }
 }

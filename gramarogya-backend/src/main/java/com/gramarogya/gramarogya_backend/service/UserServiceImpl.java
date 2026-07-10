@@ -1,11 +1,13 @@
 package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.UpdateProfileRequestDto;
+import com.gramarogya.gramarogya_backend.dto.UserProfileDto;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,5 +41,26 @@ public class UserServiceImpl implements UserService {
         repository.save(user);
 
         return userMapper.toResponseDto(user);
+    }
+
+    @Override
+    public UserProfileDto getProfile(Authentication authentication) {
+
+        User user = getAuthenticatedUser(authentication);
+
+        return UserProfileDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .phone(user.getPhone())
+                .village(user.getVillage())
+                .build();
+    }
+
+    private User getAuthenticatedUser(Authentication authentication) {
+
+        return repository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
