@@ -1,44 +1,38 @@
-import React from "react";
 import { Download } from "lucide-react";
 
-export default function ExportButton({ reports = [] }) {
+export default function ExportButton({
+  data = [],
+}) {
 
-  const handleExport = () => {
-    if (!reports.length) {
-      alert("No reports available to export");
+  const exportCSV = () => {
+
+    if (data.length === 0) {
+      alert("No data available to export.");
       return;
     }
 
     const headers = [
-      "Report ID",
-      "Beneficiary",
-      "Visit Type",
-      "Diagnosis",
-      "Prescription",
-      "Created Date",
+      "Name",
+      "Age",
+      "Gender",
+      "Village",
+      "Category",
+      "Mobile Number",
     ];
 
-    const rows = reports.map((report) => [
-      report.id,
-      report.beneficiaryName || "-",
-      report.visitType || "-",
-      report.diagnosis || "-",
-      report.prescription || "-",
-      report.createdAt || "-",
+    const rows = data.map((item) => [
+      item.name,
+      item.age,
+      item.gender,
+      item.village,
+      item.category,
+      item.mobileNumber,
     ]);
 
-
     const csvContent = [
-      headers,
-      ...rows,
-    ]
-      .map((row) =>
-        row
-          .map((value) => `"${value}"`)
-          .join(",")
-      )
-      .join("\n");
-
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
 
     const blob = new Blob(
       [csvContent],
@@ -47,43 +41,30 @@ export default function ExportButton({ reports = [] }) {
       }
     );
 
+    const url =
+      window.URL.createObjectURL(blob);
 
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
+    const link =
+      document.createElement("a");
 
     link.href = url;
-    link.download = "health-reports.csv";
 
-    document.body.appendChild(link);
+    link.download =
+      "beneficiary-report.csv";
 
     link.click();
 
-    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
-    URL.revokeObjectURL(url);
   };
-
 
   return (
     <button
-      onClick={handleExport}
-      className="
-        flex items-center gap-2
-        rounded-xl
-        bg-green-600
-        px-5
-        py-3
-        text-sm
-        font-semibold
-        text-white
-        shadow-sm
-        hover:bg-green-700
-      "
+      onClick={exportCSV}
+      className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
     >
       <Download size={18} />
-
-      Export Report
+      Export CSV
     </button>
   );
 }

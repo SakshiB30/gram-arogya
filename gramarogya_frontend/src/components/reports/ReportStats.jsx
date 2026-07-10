@@ -1,107 +1,102 @@
 import React from "react";
 import {
-  FileText,
   Users,
-  Activity,
   CalendarCheck,
+  HeartPulse,
+  Pill,
+  AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 
-export default function ReportStats({ reports = [] }) {
-  const totalReports = reports.length;
-
-  const totalBeneficiaries = new Set(
-    reports.map((report) => report.beneficiaryId)
-  ).size;
-
-  const totalVisits = reports.reduce(
-    (sum, report) => sum + (report.totalVisits || 0),
-    0
-  );
-
-  const recentReports = reports.filter((report) => {
-    if (!report.createdAt) return false;
-
-    const createdDate = new Date(report.createdAt);
-    const today = new Date();
-
-    const diff =
-      (today - createdDate) /
-      (1000 * 60 * 60 * 24);
-
-    return diff <= 30;
-  }).length;
-
-
+export default function ReportStats({ summary }) {
   const cards = [
     {
-      title: "Total Reports",
-      value: totalReports,
-      icon: FileText,
-      bg: "bg-blue-100",
-      color: "text-blue-600",
-    },
-    {
-      title: "Beneficiaries Covered",
-      value: totalBeneficiaries,
+      title: "Beneficiaries",
+      value: summary?.totalBeneficiaries ?? 0,
+      subtitle: "Registered",
       icon: Users,
-      bg: "bg-green-100",
-      color: "text-green-600",
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
     },
     {
-      title: "Total Visits",
-      value: totalVisits,
-      icon: Activity,
-      bg: "bg-purple-100",
-      color: "text-purple-600",
-    },
-    {
-      title: "Recent Reports",
-      value: recentReports,
+      title: "Visits",
+      value: summary?.totalVisits ?? 0,
+      subtitle: "Completed",
       icon: CalendarCheck,
-      bg: "bg-orange-100",
-      color: "text-orange-600",
+      iconBg: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+    {
+      title: "Health Records",
+      value: summary?.totalHealthRecords ?? 0,
+      subtitle: "Available",
+      icon: HeartPulse,
+      iconBg: "bg-purple-100",
+      iconColor: "text-purple-600",
+    },
+    {
+      title: "Medicines",
+      value: summary?.totalMedicines ?? 0,
+      subtitle: "Inventory",
+      icon: Pill,
+      iconBg: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+    },
+    {
+      title: "Low Stock",
+      value: summary?.lowStockMedicines ?? 0,
+      subtitle: "Need Restock",
+      icon: AlertTriangle,
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+    },
+    {
+      title: "Out of Stock",
+      value: summary?.outOfStockMedicines ?? 0,
+      subtitle: "Unavailable",
+      icon: AlertCircle,
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
     },
   ];
 
-
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map((card) => {
         const Icon = card.icon;
 
         return (
           <div
             key={card.title}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
           >
-
             <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-500">
+                  {card.title}
+                </p>
 
-              <p className="text-sm font-semibold text-slate-500">
-                {card.title}
-              </p>
+                <h2 className="mt-3 text-3xl font-bold text-slate-900">
+                  {card.value}
+                </h2>
 
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full ${card.bg}`}
-              >
-                <Icon
-                  size={20}
-                  className={card.color}
-                />
+                <p className="mt-1 text-sm text-slate-500">
+                  {card.subtitle}
+                </p>
               </div>
 
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-full ${card.iconBg}`}
+              >
+                <Icon
+                  size={22}
+                  className={card.iconColor}
+                />
+              </div>
             </div>
-
-
-            <h2 className="mt-4 text-3xl font-bold text-slate-900">
-              {card.value}
-            </h2>
-
           </div>
         );
       })}
-
     </div>
   );
 }

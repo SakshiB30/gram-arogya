@@ -11,35 +11,35 @@ const QuickActions = () => {
   const navigate = useNavigate();
 
   const actions = [
-    {
-      title: "New Report",
-      icon: ClipboardList,
-      bg: "bg-blue-100",
-      color: "text-blue-600",
-      path: "/app/daily-report",
-    },
-    {
-      title: "Verify Reports",
-      icon: FileCheck2,
-      bg: "bg-yellow-100",
-      color: "text-yellow-600",
-      path: "/app/verify-reports",
-    },
-    {
-      title: "Add Beneficiary",
-      icon: UserPlus,
-      bg: "bg-green-100",
-      color: "text-green-600",
-      path: "/app/beneficiaries/add",
-    },
-    {
-      title: "Medicine Inventory",
-      icon: Archive,
-      bg: "bg-red-100",
-      color: "text-red-600",
-      path: "/app/inventory",
-    },
-  ];
+  {
+    title: "View Reports",
+    icon: ClipboardList,
+    bg: "bg-blue-100",
+    color: "text-blue-600",
+    path: "/app/reports",
+  },
+  {
+    title: "Add Beneficiary",
+    icon: UserPlus,
+    bg: "bg-green-100",
+    color: "text-green-600",
+    path: "/app/beneficiaries/add",
+  },
+  {
+    title: "Add Visit",
+    icon: FileCheck2,
+    bg: "bg-yellow-100",
+    color: "text-yellow-600",
+    path: "/app/visit/add",
+  },
+  {
+    title: "Medicine Inventory",
+    icon: Archive,
+    bg: "bg-red-100",
+    color: "text-red-600",
+    path: "/app/inventory",
+  },
+];
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

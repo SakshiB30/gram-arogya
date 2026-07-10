@@ -1,93 +1,26 @@
 import axiosClient from "../api/axiosClient";
 
+// ======================
+// REPORT SUMMARY
+// ======================
 
-// ==========================
-// GET ALL REPORTS
-// ==========================
-const getReports = async () => {
-
-  const response = await axiosClient.get("/reports");
-
+const fetchSummary = async () => {
+  const response = await axiosClient.get("/reports/summary");
   return response.data;
-
 };
 
+// ======================
+// BENEFICIARY REPORT
+// ======================
 
-// ==========================
-// GET REPORT BY ID
-// ==========================
-const getReportById = async (id) => {
-
-  const response = await axiosClient.get(
-    `/reports/${id}`
-  );
-
+const fetchBeneficiaryReport = async () => {
+  const response = await axiosClient.get("/reports/beneficiaries");
   return response.data;
-
 };
-
-
-// ==========================
-// CREATE REPORT
-// ==========================
-const createReport = async (reportData) => {
-
-  const response = await axiosClient.post(
-    "/reports",
-    reportData
-  );
-
-  return response.data;
-
-};
-
-
-// ==========================
-// UPDATE REPORT
-// ==========================
-const updateReport = async (
-  id,
-  reportData
-) => {
-
-  const response = await axiosClient.put(
-    `/reports/${id}`,
-    reportData
-  );
-
-  return response.data;
-
-};
-
-
-// ==========================
-// DELETE REPORT
-// ==========================
-const deleteReport = async (id) => {
-
-  const response = await axiosClient.delete(
-    `/reports/${id}`
-  );
-
-  return response.data;
-
-};
-
-
 
 const reportService = {
-
-  getReports,
-
-  getReportById,
-
-  createReport,
-
-  updateReport,
-
-  deleteReport,
-
+  fetchSummary,
+  fetchBeneficiaryReport,
 };
-
 
 export default reportService;
