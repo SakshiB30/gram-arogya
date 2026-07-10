@@ -65,12 +65,6 @@ const Register = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#EEF1F4]">
-      {/* Tricolour identifier strip */}
-      <div className="flex h-1.5 w-full">
-        <div className="flex-1 bg-[#FF9933]" />
-        <div className="flex-1 bg-white" />
-        <div className="flex-1 bg-[#128807]" />
-      </div>
 
       {/* Official header bar */}
       <header className="w-full border-b border-slate-200 bg-[#0B3558]">
@@ -280,12 +274,6 @@ const Register = () => {
           </p>
         </div>
       </main>
-
-      <div className="flex h-1.5 w-full">
-        <div className="flex-1 bg-[#FF9933]" />
-        <div className="flex-1 bg-white" />
-        <div className="flex-1 bg-[#128807]" />
-      </div>
     </div>
   );
 };
