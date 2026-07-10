@@ -1,90 +1,111 @@
 import React from "react";
+import {
+  UserPlus,
+  CalendarCheck,
+  Activity,
+  Pill,
+} from "lucide-react";
 
-const RecentActivity = ({
-  activities = [],
-  loading = false,
-}) => {
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">
-          Recent Activity
-        </h2>
+export default function RecentActivities({
+  recentBeneficiaries = [],
+  recentVisits = [],
+  recentHealthRecords = [],
+  recentMedicines = [],
+}) {
+  const activities = [];
 
-        <div className="flex justify-center py-10">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        </div>
-      </div>
-    );
-  }
+  recentBeneficiaries.forEach((item) =>
+    activities.push({
+      title: `New beneficiary added`,
+      subtitle: item.name,
+      date: item.dateAdded,
+      icon: UserPlus,
+      color: "bg-blue-100 text-blue-600",
+    })
+  );
 
-  const getDotColor = (type) => {
-  switch (type) {
-    case "VISIT":
-      return "bg-blue-500";
+  recentVisits.forEach((item) =>
+    activities.push({
+      title: `Visit completed`,
+      subtitle: item.visitType,
+      date: item.visitDate,
+      icon: CalendarCheck,
+      color: "bg-green-100 text-green-600",
+    })
+  );
 
-    case "HEALTH_RECORD":
-      return "bg-green-500";
+  recentHealthRecords.forEach((item) =>
+    activities.push({
+      title: `Health record added`,
+      subtitle: item.diagnosis || "Health Record",
+      date: item.createdAt,
+      icon: Activity,
+      color: "bg-purple-100 text-purple-600",
+    })
+  );
 
-    default:
-      return "bg-slate-400";
-  }
-};
+  recentMedicines.forEach((item) =>
+    activities.push({
+      title: `Medicine Updated`,
+      subtitle: item.name,
+      date: item.updatedAt,
+      icon: Pill,
+      color: "bg-orange-100 text-orange-600",
+    })
+  );
+
+  activities.sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
+  const latest = activities.slice(0, 8);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
       <h2 className="text-lg font-bold text-slate-900">
-        Recent Activity
+        Recent Activities
       </h2>
 
-      {activities.length === 0 ? (
+      <div className="mt-5 space-y-4">
 
-        <div className="py-10 text-center text-slate-500">
-          No recent activities.
-        </div>
+        {latest.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No recent activity available.
+          </p>
+        ) : (
+          latest.map((activity, index) => {
+            const Icon = activity.icon;
 
-      ) : (
-
-        <div className="mt-5 space-y-5">
-
-          {activities.map((activity) => (
-
-            <div
-              key={activity.id}
-              className="flex gap-4"
-            >
-
+            return (
               <div
-  className={`mt-2 h-3 w-3 rounded-full ${getDotColor(activity.type)}`}
-/>
+                key={index}
+                className="flex items-center gap-4 rounded-xl border border-slate-100 p-3 hover:bg-slate-50"
+              >
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-full ${activity.color}`}
+                >
+                  <Icon size={20} />
+                </div>
 
-              <div className="flex-1">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-slate-800">
+                    {activity.title}
+                  </h4>
 
-                <h3 className="font-semibold text-slate-900">
-                  {activity.title}
-                </h3>
+                  <p className="text-sm text-slate-500">
+                    {activity.subtitle}
+                  </p>
+                </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {activity.description}
-                </p>
-
-                <p className="mt-2 text-xs text-slate-400">
-                  {activity.time}
-                </p>
-
+                <span className="text-xs text-slate-400">
+                  {activity.date}
+                </span>
               </div>
+            );
+          })
+        )}
 
-            </div>
-
-          ))}
-
-        </div>
-
-      )}
-
+      </div>
     </div>
   );
-};
-
-export default RecentActivity;
+}
