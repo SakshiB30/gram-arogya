@@ -3,6 +3,8 @@ package com.gramarogya.gramarogya_backend.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class UpdateVisitRequestDto {
@@ -12,4 +14,6 @@ public class UpdateVisitRequestDto {
     private String status;
 
     private String notes;
+
+    private LocalDate nextVisitDate;
 }

@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 
 const DashboardHeader = ({
-  doctorName = "Dr. Rajesh Kumar",
+  doctorName,
   onNewReport,
 }) => {
   return (
@@ -10,33 +10,13 @@ const DashboardHeader = ({
       {/* Left */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900">
-          Welcome back, {doctorName}
+          Welcome back, {doctorName || "ASHA Worker"}!
         </h1>
 
         <p className="mt-2 text-slate-600">
           Here's an overview of your Primary Health Center for today.
         </p>
       </div>
-
-      {/* Right */}
-      <button
-        onClick={onNewReport}
-        className="
-          flex items-center gap-2
-          rounded-lg
-          bg-blue-600
-          px-5 py-3
-          text-white
-          font-medium
-          shadow-sm
-          transition
-          hover:bg-blue-700
-        "
-      >
-        <Plus size={18} />
-        New Report
-      </button>
-
     </div>
   );
 };

@@ -14,9 +14,11 @@ import {
   fetchAlerts,
 } from "../redux/slices/dashboardSlice";
 
+
 export default function Dashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
 
   const {
     stats,
@@ -52,9 +54,9 @@ export default function Dashboard() {
     <div className="space-y-6">
 
       <DashboardHeader
-        doctorName="ASHA Worker"
-        onNewReport={() => navigate("/app/beneficiaries/add")}
-      />
+    doctorName={stats.userName || "ASHA Worker"}
+    onNewReport={() => navigate("/app/beneficiaries/add")}
+/>
 
       <StatsCards stats={stats} />
 

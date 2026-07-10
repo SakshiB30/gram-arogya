@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DashboardResponseDto {
 
+    private String userName;
+
     private long totalBeneficiaries;
 
     private long totalVisits;

@@ -85,13 +85,13 @@ export default function RecentActivity({
                   </h4>
 
                   <p className="text-sm text-slate-500">
-                    {activity.subtitle}
+                    {activity.description}
                   </p>
 
                 </div>
 
                 <span className="text-xs text-slate-400">
-                  {activity.date}
+                  {activity.time}
                 </span>
 
               </div>

@@ -48,6 +48,7 @@ public class DashboardServiceImpl implements DashboardService {
         String userId = currentUser.getId();
 
         return DashboardResponseDto.builder()
+                .userName(currentUser.getName())   // <-- Add this
                 .totalBeneficiaries(
                         beneficiaryRepository.countByUserId(userId)
                 )
@@ -209,7 +210,7 @@ public class DashboardServiceImpl implements DashboardService {
         List<Beneficiary> tbPatients =
                 beneficiaryRepository.findByUserIdAndCategoryIgnoreCase(
                         user.getId(),
-                        "TB_PATIENT"
+                        "TB PATIENT"
                 );
 
         for (Beneficiary beneficiary : tbPatients) {
@@ -223,7 +224,7 @@ public class DashboardServiceImpl implements DashboardService {
                                             " requires regular monitoring."
                             )
                             .priority("MEDIUM")
-                            .type("TB_PATIENT")
+                            .type("TB PATIENT")
                             .build()
             );
         }

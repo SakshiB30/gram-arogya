@@ -24,4 +24,6 @@ public class VisitResponseDto {
     private String status;
 
     private String notes;
+
+    private LocalDate nextVisitDate;
 }

@@ -16,6 +16,7 @@ public class VisitMapper {
                 .visitType(dto.getVisitType())
                 .status(dto.getStatus())
                 .notes(dto.getNotes())
+                .nextVisitDate(dto.getNextVisitDate())
                 .build();
     }
 
@@ -28,6 +29,7 @@ public class VisitMapper {
                 .visitType(visit.getVisitType())
                 .status(visit.getStatus())
                 .notes(visit.getNotes())
+                .nextVisitDate(visit.getNextVisitDate())
                 .build();
     }
 
@@ -42,5 +44,8 @@ public class VisitMapper {
 
         if (dto.getNotes() != null)
             visit.setNotes(dto.getNotes());
+
+        if (dto.getNextVisitDate() != null)
+            visit.setNextVisitDate(dto.getNextVisitDate());
     }
 }

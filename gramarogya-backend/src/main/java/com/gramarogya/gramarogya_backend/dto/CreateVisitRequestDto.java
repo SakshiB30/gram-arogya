@@ -3,6 +3,8 @@ package com.gramarogya.gramarogya_backend.dto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class CreateVisitRequestDto {
     private String status;
 
     private String notes;
+
+    private LocalDate nextVisitDate;
 }
