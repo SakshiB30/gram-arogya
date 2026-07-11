@@ -8,6 +8,7 @@ import inventoryReducer from "./slices/inventorySlice";
 import reportReducer from "./slices/reportSlice";
 import profileReducer from "./slices/profileSlice";
 import searchReducer from "./slices/searchSlice";
+import notificationReducer from "./slices/notificationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     reports: reportReducer,
     profile: profileReducer,
     search: searchReducer, 
+    notification: notificationReducer,
   },
 });
 

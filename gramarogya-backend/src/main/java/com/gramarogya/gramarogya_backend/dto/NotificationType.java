@@ -1,0 +1,22 @@
+package com.gramarogya.gramarogya_backend.dto;
+
+public enum NotificationType {
+    BENEFICIARY_CREATED,
+    BENEFICIARY_APPROVED,
+    BENEFICIARY_REJECTED,
+
+    VISIT_COMPLETED,
+    FOLLOWUP_ASSIGNED,
+    HIGH_RISK_CASE,
+    REFERRAL_CREATED,
+
+    LOW_STOCK,
+    MEDICINE_EXPIRED,
+    INVENTORY_UPDATED,
+
+    USER_REGISTERED,
+    USER_APPROVED,
+
+    REMINDER,
+    SYSTEM
+}
