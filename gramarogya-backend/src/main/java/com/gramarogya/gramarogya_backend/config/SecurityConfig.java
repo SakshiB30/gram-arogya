@@ -33,6 +33,13 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        .requestMatchers("/anm/**").hasRole("ANM")
+
+                        .requestMatchers("/asha/**").hasRole("ASHA")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter,

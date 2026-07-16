@@ -8,10 +8,8 @@ import {
   Mail,
   Lock,
   User,
-  Stethoscope,
   Loader2,
   AlertCircle,
-  ChevronDown,
   ShieldPlus,
   Landmark,
 } from "lucide-react";
@@ -29,7 +27,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    role: "ASHA",
+    anmEmployeeId: "",
   });
 
   useEffect(() => {
@@ -50,10 +48,13 @@ const Register = () => {
 
     const result = await dispatch(registerUser(formData));
 
-    if (registerUser.fulfilled.match(result)) {
-      alert("Registration Successful!");
-      navigate("/login");
-    }
+   if (registerUser.fulfilled.match(result)) {
+  alert(
+    "Registration submitted successfully!\n\nYour account is waiting for ANM approval. You can log in only after your account has been approved."
+  );
+
+  navigate("/login");
+}
   };
 
   const fieldWrapClasses = (field) =>
@@ -211,33 +212,33 @@ const Register = () => {
                   </div>
                 </div>
 
-                {/* Role */}
-                <div>
-                  <label
-                    htmlFor="role"
-                    className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-600"
-                  >
-                    Role
-                  </label>
-                  <div className={fieldWrapClasses("role") + " relative"}>
-                    <Stethoscope className="h-4 w-4 flex-shrink-0 text-slate-400" />
-                    <select
-                      id="role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField("role")}
-                      onBlur={() => setFocusedField(null)}
-                      className="w-full appearance-none bg-transparent py-2.5 text-sm text-slate-900 outline-none [&>option]:bg-white"
-                    >
-                      <option value="ASHA">ASHA</option>
-                      <option value="ANM">ANM</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
-                    <ChevronDown className="h-4 w-4 flex-shrink-0 text-slate-400" />
-                  </div>
-                </div>
+                {/* ANM Employee ID */}
+<div>
+  <label
+    htmlFor="anmEmployeeId"
+    className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-600"
+  >
+    ANM Employee ID
+  </label>
 
+  <div className={fieldWrapClasses("anmEmployeeId")}>
+    <User className="h-4 w-4 flex-shrink-0 text-slate-400" />
+
+    <input
+      id="anmEmployeeId"
+      type="text"
+      name="anmEmployeeId"
+      value={formData.anmEmployeeId}
+      onChange={handleChange}
+      onFocus={() => setFocusedField("anmEmployeeId")}
+      onBlur={() => setFocusedField(null)}
+      placeholder="Enter ANM Employee ID (e.g. ANM001)"
+      className="w-full bg-transparent py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none"
+      required
+    />
+  </div>
+</div>
+              
                 {/* Submit */}
                 <button
                   type="submit"

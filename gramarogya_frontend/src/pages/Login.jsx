@@ -17,7 +17,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading, error, isAuthenticated } = useSelector(
+  const { loading, error, isAuthenticated, user } = useSelector(
     (state) => state.auth
   );
 
@@ -29,10 +29,25 @@ const Login = () => {
   const [focusedField, setFocusedField] = useState(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/app/dashboard", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  if (!isAuthenticated || !user) return;
+
+  switch (user.role) {
+    case "ADMIN":
+      navigate("/admin/dashboard", { replace: true });
+      break;
+
+    case "ANM":
+      navigate("/anm/dashboard", { replace: true });
+      break;
+
+    case "ASHA":
+      navigate("/asha/dashboard", { replace: true });
+      break;
+
+    default:
+      navigate("/", { replace: true });
+  }
+}, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
     return () => {
@@ -58,6 +73,23 @@ const Login = () => {
         ? "border-[#0B3558] ring-2 ring-[#0B3558]/15"
         : "border-slate-300"
     }`;
+
+    const getErrorMessage = () => {
+  switch (error) {
+    case "Your account is pending verification.":
+      return "Your registration is pending ANM approval.";
+
+    case "Your registration has been rejected.":
+      return "Your registration has been rejected. Please contact your ANM.";
+
+    case "Your account has been blocked. Please contact your administrator.":
+      return "Your account has been blocked by your ANM.";
+
+    default:
+      return error;
+  }
+};
+
 
   return (
     <div className="flex min-h-screen flex-col bg-[#EEF1F4]">
@@ -115,7 +147,7 @@ const Login = () => {
               {error && (
                 <div className="mb-5 flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getErrorMessage()}</span>
                 </div>
               )}
 

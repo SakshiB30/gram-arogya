@@ -49,6 +49,7 @@ import AddHealthRecord from "../components/healthRecords/AddHealthRecord";
 import EditHealthRecord from "../components/healthRecords/EditHealthRecord";
 import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 
+import Unauthorized from "../pages/Unauthorized";
 
 // Auth Guard
 import ProtectedRoute from "./ProtectedRoute";
@@ -126,10 +127,10 @@ path="/app"
 
 element={
 
-<ProtectedRoute>
-
-<MainLayout />
-
+<ProtectedRoute
+    allowedRoles={["ADMIN", "ANM", "ASHA"]}
+>
+    <MainLayout />
 </ProtectedRoute>
 
 }
@@ -368,23 +369,15 @@ element={<HealthRecordDetail />}
 
 
 
-
-
-
+<Route
+  path="/unauthorized"
+  element={<Unauthorized />}
+/>
 
 <Route
-
-path="*"
-
-element={
-<Navigate
-to="/login"
-replace
+  path="*"
+  element={<Navigate to="/login" replace />}
 />
-}
-
-/>
-
 
 
 </Routes>

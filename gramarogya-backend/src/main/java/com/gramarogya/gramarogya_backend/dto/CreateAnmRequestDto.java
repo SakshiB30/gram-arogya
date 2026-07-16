@@ -1,6 +1,5 @@
 package com.gramarogya.gramarogya_backend.dto;
 
-import com.gramarogya.gramarogya_backend.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,15 +7,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequestDto {
+public class CreateAnmRequestDto {
 
     private String name;
 
     private String email;
 
     private String password;
-
-    private Role role;   // We'll remove this later
-
-    private String anmEmployeeId;
 }

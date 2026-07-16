@@ -1,7 +1,8 @@
 package com.gramarogya.gramarogya_backend.entity;
 
+import com.gramarogya.gramarogya_backend.dto.AccountStatus;
 import com.gramarogya.gramarogya_backend.dto.Role;
-import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
+import com.gramarogya.gramarogya_backend.dto.VerificationStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,6 +26,16 @@ public class User {
 
     private Role role;
 
+    private VerificationStatus verificationStatus;
+
+    private AccountStatus accountStatus;
+
+    // NEW
+    private String employeeId;
+
+    // NEW
+    private String supervisorId;
+
     private String phone;
 
     private String village;
@@ -34,8 +45,8 @@ public class User {
     private String district;
 
     private String state;
-    private String profileImage;
 
+    private String profileImage;
 }
 
 
