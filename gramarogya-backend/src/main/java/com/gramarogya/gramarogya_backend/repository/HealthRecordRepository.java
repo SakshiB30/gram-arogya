@@ -21,4 +21,8 @@ public interface HealthRecordRepository
     List<HealthRecord> findByDiagnosisContainingIgnoreCase(
             String diagnosis
     );
+
+    List<HealthRecord> findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
+            List<String> beneficiaryIds
+    );
 }

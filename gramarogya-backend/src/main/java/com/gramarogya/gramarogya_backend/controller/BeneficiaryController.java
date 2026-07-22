@@ -5,6 +5,7 @@ import com.gramarogya.gramarogya_backend.service.BeneficiaryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ public class BeneficiaryController {
 
     private final BeneficiaryService beneficiaryService;
 
+    @PreAuthorize("hasRole('ASHA')")
     @PostMapping
     public ResponseEntity<BeneficiaryResponseDto> create(
             Authentication authentication,
@@ -46,17 +48,19 @@ public class BeneficiaryController {
         );
     }
 
+    @PreAuthorize("hasRole('ASHA')")
     @PutMapping("/{id}")
     public ResponseEntity<BeneficiaryResponseDto> update(
             Authentication authentication,
             @PathVariable String id,
-            @RequestBody UpdateBeneficiaryRequestDto dto
+            @Valid @RequestBody UpdateBeneficiaryRequestDto dto
     ) {
         return ResponseEntity.ok(
                 beneficiaryService.update(authentication, id, dto)
         );
     }
 
+    @PreAuthorize("hasRole('ASHA')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             Authentication authentication,

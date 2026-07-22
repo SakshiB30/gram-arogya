@@ -30,4 +30,29 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
             String userId,
             String name
     );
+
+    long count();
+
+    long countByCategory(String category);
+
+    // ---------------- ANM Dashboard ----------------
+
+    long countByUserIdIn(List<String> userIds);
+
+    long countByUserIdInAndCategory(
+            List<String> userIds,
+            String category
+    );
+
+    List<Beneficiary> findByUserIdInAndStatusIgnoreCase(
+            List<String> userIds,
+            String status
+    );
+
+    List<Beneficiary> findByUserIdInAndCategoryIgnoreCase(
+            List<String> userIds,
+            String category
+    );
+
+    List<Beneficiary> findByUserIdIn(List<String> userIds);
 }

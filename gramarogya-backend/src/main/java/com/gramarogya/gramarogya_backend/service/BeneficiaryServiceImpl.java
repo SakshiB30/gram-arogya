@@ -2,6 +2,7 @@ package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.BeneficiaryResponseDto;
 import com.gramarogya.gramarogya_backend.dto.CreateBeneficiaryRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.dto.UpdateBeneficiaryRequestDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
@@ -34,8 +35,10 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                         new ResourceNotFoundException("User not found"));
     }
 
-    private Beneficiary getBeneficiaryForCurrentUser(Authentication authentication,
-                                                     String id) {
+    private Beneficiary getBeneficiaryForCurrentUser(
+            Authentication authentication,
+            String id
+    ) {
 
         User currentUser = getCurrentUser(authentication);
 
@@ -43,11 +46,38 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Beneficiary not found"));
 
-        if (!beneficiary.getUserId().equals(currentUser.getId())) {
-            throw new UnauthorizedException("Unauthorized");
+        // ADMIN can access all beneficiaries
+        if (currentUser.getRole() == Role.ADMIN) {
+            return beneficiary;
         }
 
-        return beneficiary;
+        // ASHA can access only their own beneficiaries
+        if (currentUser.getRole() == Role.ASHA) {
+
+            if (!beneficiary.getUserId().equals(currentUser.getId())) {
+                throw new UnauthorizedException("Unauthorized");
+            }
+
+            return beneficiary;
+        }
+
+        // ANM can access beneficiaries of ASHAs under them
+        if (currentUser.getRole() == Role.ANM) {
+
+            List<String> ashaIds = userRepository
+                    .findBySupervisorId(currentUser.getId())
+                    .stream()
+                    .map(User::getId)
+                    .toList();
+
+            if (!ashaIds.contains(beneficiary.getUserId())) {
+                throw new UnauthorizedException("Unauthorized");
+            }
+
+            return beneficiary;
+        }
+
+        throw new UnauthorizedException("Unauthorized");
     }
 
     @Override
@@ -71,8 +101,29 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         User currentUser = getCurrentUser(authentication);
 
-        return beneficiaryRepository.findByUserId(currentUser.getId())
-                .stream()
+        List<Beneficiary> beneficiaries;
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            beneficiaries = beneficiaryRepository.findAll();
+
+        } else if (currentUser.getRole() == Role.ANM) {
+
+            List<String> ashaIds = userRepository
+                    .findBySupervisorId(currentUser.getId())
+                    .stream()
+                    .map(User::getId)
+                    .toList();
+
+            beneficiaries = beneficiaryRepository.findByUserIdIn(ashaIds);
+
+        } else {
+
+            beneficiaries = beneficiaryRepository.findByUserId(currentUser.getId());
+
+        }
+
+        return beneficiaries.stream()
                 .map(beneficiaryMapper::toResponseDto)
                 .toList();
     }

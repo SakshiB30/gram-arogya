@@ -21,13 +21,14 @@ const BeneficiaryPage = () => {
 
 
   const {
-    beneficiaries,
-    loading,
-    error,
-  } = useSelector(
-    (state) => state.beneficiaries
-  );
+  beneficiaries,
+  loading,
+  error,
+} = useSelector((state) => state.beneficiaries);
 
+const { user } = useSelector((state) => state.auth);
+
+const role = user?.role;
 
   useEffect(() => {
     dispatch(fetchBeneficiaries());
@@ -159,28 +160,25 @@ const BeneficiaryPage = () => {
 
 
 
-        <button
-
-          onClick={()=>
-            navigate("/app/beneficiaries/add")
-          }
-
-          className="
-          flex items-center gap-2
-          bg-blue-600
-          hover:bg-blue-700
-          text-white
-          px-5 py-2
-          rounded-lg
-          shadow
-          "
-
-        >
-
-          <Plus size={18}/>
-          Add Beneficiary
-
-        </button>
+        {role === "ASHA" && (
+  <button
+    onClick={() =>
+      navigate("/app/beneficiaries/add")
+    }
+    className="
+      flex items-center gap-2
+      bg-blue-600
+      hover:bg-blue-700
+      text-white
+      px-5 py-2
+      rounded-lg
+      shadow
+    "
+  >
+    <Plus size={18}/>
+    Add Beneficiary
+  </button>
+)}
 
 
       </div>
@@ -352,32 +350,30 @@ const BeneficiaryPage = () => {
             </h2>
 
 
-            <p className="text-gray-500 mt-2">
+            {role === "ASHA" ? (
+  <>
+    <p className="text-gray-500 mt-2">
+      Add your first beneficiary
+    </p>
 
-              Add your first beneficiary
-
-            </p>
-
-
-            <button
-
-            onClick={()=>
-              navigate("/app/beneficiaries/add")
-            }
-
-            className="
-            mt-5
-            bg-blue-600
-            text-white
-            px-5 py-2
-            rounded-lg
-            "
-
-            >
-
-              Add Beneficiary
-
-            </button>
+    <button
+      onClick={() => navigate("/app/beneficiaries/add")}
+      className="
+        mt-5
+        bg-blue-600
+        text-white
+        px-5 py-2
+        rounded-lg
+      "
+    >
+      Add Beneficiary
+    </button>
+  </>
+) : (
+  <p className="text-gray-500 mt-2">
+    No beneficiaries found.
+  </p>
+)}
 
 
           </div>
@@ -440,8 +436,8 @@ const BeneficiaryPage = () => {
 
 
           <th className="px-6 py-4 text-center">
-            Actions
-          </th>
+    {role === "ASHA" ? "Actions" : "View"}
+</th>
 
 
           </tr>
@@ -577,51 +573,40 @@ const BeneficiaryPage = () => {
 
 
 
-              <button
-
-              onClick={()=>
-                navigate(
-                `/app/beneficiaries/edit/${beneficiary.id}`
-                )
-              }
-
-              className="
-              bg-yellow-100
-              text-yellow-700
-              px-3 py-2
-              rounded-lg
-              "
-
-              >
-
-                Edit
-
-              </button>
+              {role === "ASHA" && (
+  <button
+    onClick={() =>
+      navigate(`/app/beneficiaries/edit/${beneficiary.id}`)
+    }
+    className="
+      bg-yellow-100
+      text-yellow-700
+      px-3 py-2
+      rounded-lg
+    "
+  >
+    Edit
+  </button>
+)}
 
 
 
 
-
-              <button
-
-              onClick={()=>
-                handleDelete(
-                  beneficiary.id
-                )
-              }
-
-              className="
-              bg-red-100
-              text-red-700
-              px-3 py-2
-              rounded-lg
-              "
-
-              >
-
-                Delete
-
-              </button>
+              {role === "ASHA" && (
+  <button
+    onClick={() =>
+      handleDelete(beneficiary.id)
+    }
+    className="
+      bg-red-100
+      text-red-700
+      px-3 py-2
+      rounded-lg
+    "
+  >
+    Delete
+  </button>
+)}
 
 
 

@@ -24,6 +24,13 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const { profile } = useSelector((state) => state.profile);
+  const { user } = useSelector((state) => state.auth);
+
+//   const greeting = {
+//   ADMIN: "Administrator",
+//   ANM: "Auxiliary Nurse Midwife",
+//   ASHA: "ASHA Worker",
+// };
 
   const { notifications = [] } = useSelector(
     (state) => state.notification
@@ -78,7 +85,19 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 flex w-full items-center justify-between gap-4 border-b border-slate-200 bg-white/80 px-6 py-3.5 backdrop-blur-md md:px-8">
-      <GlobalSearch />
+      <div className="flex items-center gap-6">
+  {/* <div>
+    <h2 className="text-lg font-semibold text-slate-800">
+      Welcome, {user?.name}
+    </h2>
+
+    <p className="text-sm text-slate-500">
+      {greeting[user?.role] || "Healthcare Staff"}
+    </p>
+  </div> */}
+
+  <GlobalSearch />
+</div>
 
       <div className="flex items-center gap-2">
         {/* Notification */}
@@ -173,16 +192,16 @@ export default function Navbar() {
             className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-slate-100"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-700 text-lg font-bold text-white">
-              {profile?.name?.charAt(0)?.toUpperCase() || "A"}
+              {user?.name?.charAt(0)?.toUpperCase() || "A"}
             </div>
 
             <div className="hidden text-left leading-tight sm:block">
               <p className="text-sm font-medium text-slate-800">
-                {profile?.name || "User"}
+                {user?.name || "User"}
               </p>
 
               <p className="text-xs text-slate-400">
-                {profile?.role || ""}
+                {user?.role || ""}
               </p>
             </div>
 
@@ -198,15 +217,15 @@ export default function Navbar() {
               {/* User Info */}
               <div className="border-b border-slate-100 px-4 py-3">
                 <p className="text-sm font-semibold text-slate-800">
-                  {profile?.name}
+                  {user?.name}
                 </p>
 
                 <p className="text-xs text-slate-500">
-                  {profile?.email}
+                  {user?.email}
                 </p>
 
                 <p className="mt-1 text-xs font-medium text-violet-600">
-                  {profile?.role}
+                  {user?.role}
                 </p>
               </div>
 

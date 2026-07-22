@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import dashboardService from "../../services/dashboardService";
 
 // ==========================
-// Dashboard Stats
+// Dashboard
 // ==========================
 export const fetchDashboard = createAsyncThunk(
   "dashboard/fetchDashboard",
@@ -19,61 +19,34 @@ export const fetchDashboard = createAsyncThunk(
   }
 );
 
-
-// ==========================
-// Recent Activities
-// ==========================
-export const fetchRecentActivities = createAsyncThunk(
-  "dashboard/fetchRecentActivities",
-  async (_, thunkAPI) => {
-    try {
-      return await dashboardService.getRecentActivities();
-    } catch (error) {
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to load activities"
-      );
-    }
-  }
-);
-
-// ==========================
-// Dashboard Alerts
-// ==========================
-export const fetchAlerts = createAsyncThunk(
-  "dashboard/fetchAlerts",
-  async (_, thunkAPI) => {
-    try {
-      return await dashboardService.getAlerts();
-    } catch (error) {
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to load alerts"
-      );
-    }
-  }
-);
-
 const initialState = {
   stats: {
+    userName: "",
+
     totalBeneficiaries: 0,
     totalVisits: 0,
     todayVisits: 0,
     upcomingVisits: 0,
+
     pregnantWomen: 0,
     children: 0,
     tbPatients: 0,
     elderly: 0,
+
+    totalUsers: 0,
+    totalAnms: 0,
+    totalAshas: 0,
+    pendingVerifications: 0,
+    assignedAshas: 0,
   },
 
   recentActivities: [],
-
   alerts: [],
+  upcomingVisits: [],
+  lowStockMedicines: [],
+  pendingVerifications: [],
 
   loading: false,
-
   error: null,
 };
 
@@ -88,6 +61,7 @@ const dashboardSlice = createSlice({
     builder
 
       // ================= Dashboard =================
+
       .addCase(fetchDashboard.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -95,40 +69,17 @@ const dashboardSlice = createSlice({
 
       .addCase(fetchDashboard.fulfilled, (state, action) => {
         state.loading = false;
-        state.stats = action.payload;
+
+        state.stats = action.payload.stats;
+        state.recentActivities = action.payload.recentActivities;
+        state.alerts = action.payload.alerts;
+        state.upcomingVisits = action.payload.upcomingVisits;
+        state.lowStockMedicines = action.payload.lowStockMedicines;
+        state.pendingVerifications =
+          action.payload.pendingVerifications;
       })
 
       .addCase(fetchDashboard.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // ================= Activities =================
-      .addCase(fetchRecentActivities.pending, (state) => {
-        state.loading = true;
-      })
-
-      .addCase(fetchRecentActivities.fulfilled, (state, action) => {
-        state.loading = false;
-        state.recentActivities = action.payload;
-      })
-
-      .addCase(fetchRecentActivities.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // ================= Alerts =================
-      .addCase(fetchAlerts.pending, (state) => {
-        state.loading = true;
-      })
-
-      .addCase(fetchAlerts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.alerts = action.payload;
-      })
-
-      .addCase(fetchAlerts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

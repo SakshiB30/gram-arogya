@@ -2,11 +2,11 @@ package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
-import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
-import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
-import com.gramarogya.gramarogya_backend.repository.MedicineRepository;
-import com.gramarogya.gramarogya_backend.repository.VisitRepository;
+import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +21,18 @@ public class ReportServiceImpl implements ReportService{
     private final VisitRepository visitRepository;
     private final MedicineRepository medicineRepository;
     private final HealthRecordRepository healthRecordRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     @Override
     public ReportSummaryDto getSummary() {
@@ -50,8 +62,27 @@ public class ReportServiceImpl implements ReportService{
     @Override
     public List<BeneficiaryReportDto> getBeneficiaryReport() {
 
-        return beneficiaryRepository.findAll()
-                .stream()
+        User currentUser = getCurrentUser();
+
+        List<Beneficiary> beneficiaries;
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            beneficiaries = beneficiaryRepository.findAll();
+
+        } else if (currentUser.getRole() == Role.ANM) {
+
+            // For now ANM can see all beneficiaries.
+            beneficiaries = beneficiaryRepository.findAll();
+
+        } else {
+
+            // ASHA sees only beneficiaries created by them
+            beneficiaries = beneficiaryRepository.findByUserId(currentUser.getId());
+
+        }
+
+        return beneficiaries.stream()
                 .map(b -> BeneficiaryReportDto.builder()
                         .id(b.getId())
                         .name(b.getName())

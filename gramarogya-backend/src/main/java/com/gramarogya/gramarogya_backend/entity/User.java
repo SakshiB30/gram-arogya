@@ -30,10 +30,8 @@ public class User {
 
     private AccountStatus accountStatus;
 
-    // NEW
     private String employeeId;
 
-    // NEW
     private String supervisorId;
 
     private String phone;

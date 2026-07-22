@@ -12,8 +12,16 @@ import lombok.NoArgsConstructor;
 public class PendingVerificationDto {
 
     private String id;
-    private String beneficiaryName;
-    private String visitType;
-    private String visitDate;
+
+    private String name;
+
+    private String role;
+
+    private String employeeId;
+
+    private String village;
+
+    private String phone;
+
     private String status;
 }

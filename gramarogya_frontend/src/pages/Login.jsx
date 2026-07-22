@@ -28,25 +28,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
 
-  useEffect(() => {
+ useEffect(() => {
   if (!isAuthenticated || !user) return;
 
-  switch (user.role) {
-    case "ADMIN":
-      navigate("/admin/dashboard", { replace: true });
-      break;
-
-    case "ANM":
-      navigate("/anm/dashboard", { replace: true });
-      break;
-
-    case "ASHA":
-      navigate("/asha/dashboard", { replace: true });
-      break;
-
-    default:
-      navigate("/", { replace: true });
-  }
+  navigate("/app/dashboard", { replace: true });
 }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {

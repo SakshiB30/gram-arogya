@@ -9,13 +9,16 @@ import { useSelector } from "react-redux";
 
 import MainLayout from "../layouts/MainLayout";
 
-
 // Auth
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Unauthorized from "../pages/Unauthorized";
 
 // Dashboard
 import Dashboard from "../pages/Dashboard";
+
+// Profile
+import Profile from "../pages/Profile";
 
 // Beneficiary
 import BeneficiaryPage from "../pages/BeneficiaryPage";
@@ -25,8 +28,6 @@ import EditBeneficiary from "../components/beneficiary/EditBeneficiary";
 
 // Reports
 import ReportsPage from "../pages/ReportsPage";
-
-
 
 // Medicine
 import InventoryPage from "../pages/InventoryPage";
@@ -41,7 +42,6 @@ import AddVisit from "../components/visit/AddVisit";
 import EditVisit from "../components/visit/EditVisit";
 import VisitDetail from "../components/visit/VisitDetail";
 
-
 // Health Records
 import HealthRecordsPage from "../pages/HealthRecordsPage";
 import HealthRecordList from "../components/healthRecords/HealthRecordList";
@@ -49,347 +49,267 @@ import AddHealthRecord from "../components/healthRecords/AddHealthRecord";
 import EditHealthRecord from "../components/healthRecords/EditHealthRecord";
 import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 
-import Unauthorized from "../pages/Unauthorized";
-
-// Auth Guard
+// Route Guards
 import ProtectedRoute from "./ProtectedRoute";
-
-import Profile from "../pages/Profile";
-
-
+import RoleRoute from "./RoleRoute";
 
 const AppRoutes = () => {
-
-
-const {isAuthenticated} = useSelector(
-(state)=>state.auth
-);
-
-
-
-return (
-
-<BrowserRouter>
-
-<Routes>
-
-
-{/* Root */}
-
-<Route
-
-path="/"
-
-element={
-
-isAuthenticated ?
-
-<Navigate 
-to="/app/dashboard"
-replace
-/>
-
-:
-
-<Navigate
-to="/login"
-replace
-/>
-
-}
-
-/>
-
-
-
-{/* Auth */}
-
-<Route 
-path="/login"
-element={<Login />}
-/>
-
-
-<Route
-path="/register"
-element={<Register />}
-/>
-
-
-
-
-
-{/* Application */}
-
-<Route
-
-path="/app"
-
-element={
-
-<ProtectedRoute
-    allowedRoles={["ADMIN", "ANM", "ASHA"]}
->
-    <MainLayout />
-</ProtectedRoute>
-
-}
-
->
-
-
-<Route
-
-index
-
-element={
-<Navigate
-to="dashboard"
-replace
-/>
-}
-
-/>
-
-
-<Route path="profile" element={<Profile />} />
-
-
-{/* Dashboard */}
-
-<Route
-
-path="dashboard"
-
-element={<Dashboard />}
-
-/>
-
-
-
-
-
-
-{/* ==================
-    BENEFICIARY
-================== */}
-
-
-<Route
-
-path="beneficiaries"
-
-element={<BeneficiaryPage />}
-
-/>
-
-
-<Route
-
-path="beneficiaries/add"
-
-element={<AddBeneficiary />}
-
-/>
-
-
-<Route
-
-path="beneficiaries/:id"
-
-element={<BeneficiaryDetail />}
-
-/>
-
-
-<Route
-
-path="beneficiaries/edit/:id"
-
-element={<EditBeneficiary />}
-
-/>
-
-
-
-
-
-
-
-
-{/* ==================
-       VISIT
-================== */}
-
-
-<Route
-
-path="visit"
-
-element={<VisitPage />}
-
-/>
-
-
-<Route
-
-path="visit/add"
-
-element={<AddVisit />}
-
-/>
-
-
-<Route
-
-path="visit/:id"
-
-element={<VisitDetail />}
-
-/>
-
-
-<Route
-
-path="visit/edit/:id"
-
-element={<EditVisit />}
-
-/>
-
-
-
-
-
-
-
-
-{/* ==================
-      MEDICINE
-================== */}
-
-<Route
-    path="inventory"
-    element={<InventoryPage />}
-/>
-
-<Route
-    path="inventory/add"
-    element={<AddMedicine />}
-/>
-
-<Route
-    path="inventory/edit/:id"
-    element={<EditMedicine />}
-/>
-
-<Route
-    path="inventory/restock/:id"
-    element={<RestockMedicine />}
-/>
-
-<Route
-  path="inventory/:id"
-  element={<MedicineDetail />}
-/>
-
-
-
-
-
-{/* ==================
-        REPORTS
-================== */}
-
-<Route
-  path="reports"
-  element={<ReportsPage />}
-/>
-
-
-
-
-
-
-{/* ==================
-    HEALTH RECORDS
-================== */}
-
-
-<Route
-
-path="health-records"
-
-element={<HealthRecordsPage />}
-
->
-
-
-<Route
-
-index
-
-element={<HealthRecordList />}
-
-/>
-
-
-<Route
-
-path="add"
-
-element={<AddHealthRecord />}
-
-/>
-
-
-<Route
-
-path="edit/:id"
-
-element={<EditHealthRecord />}
-
-/>
-
-
-<Route
-
-path=":id"
-
-element={<HealthRecordDetail />}
-
-/>
-
-
-</Route>
-
-
-
-</Route>
-
-
-
-<Route
-  path="/unauthorized"
-  element={<Unauthorized />}
-/>
-
-<Route
-  path="*"
-  element={<Navigate to="/login" replace />}
-/>
-
-
-</Routes>
-
-
-</BrowserRouter>
-
-
-);
-
-
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* Root */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/app/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Unauthorized */}
+        <Route
+          path="/unauthorized"
+          element={<Unauthorized />}
+        />
+
+        {/* Protected App */}
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+
+          {/* Default */}
+          <Route
+            index
+            element={<Navigate to="dashboard" replace />}
+          />
+
+          {/* Dashboard */}
+          <Route
+            path="dashboard"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <Dashboard />
+              </RoleRoute>
+            }
+          />
+
+          {/* Profile */}
+          <Route
+            path="profile"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <Profile />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= BENEFICIARIES ================= */}
+
+          <Route
+            path="beneficiaries"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <BeneficiaryPage />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="beneficiaries/add"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <AddBeneficiary />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="beneficiaries/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <BeneficiaryDetail />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="beneficiaries/edit/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <EditBeneficiary />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= VISITS ================= */}
+
+          <Route
+            path="visit"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <VisitPage />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="visit/add"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <AddVisit />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="visit/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <VisitDetail />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="visit/edit/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <EditVisit />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= INVENTORY ================= */}
+
+          <Route
+            path="inventory"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <InventoryPage />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="inventory/add"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+                <AddMedicine />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="inventory/edit/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+                <EditMedicine />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="inventory/restock/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+                <RestockMedicine />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="inventory/:id"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <MedicineDetail />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= REPORTS ================= */}
+
+          <Route
+            path="reports"
+            element={
+              <RoleRoute allowedRoles={["ASHA","ADMIN", "ANM"]}>
+                <ReportsPage />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= HEALTH RECORDS ================= */}
+
+          <Route
+            path="health-records"
+            element={
+              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <HealthRecordsPage />
+              </RoleRoute>
+            }
+          >
+            <Route
+              index
+              element={
+                <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                  <HealthRecordList />
+                </RoleRoute>
+              }
+            />
+
+            <Route
+              path="add"
+              element={
+                <RoleRoute allowedRoles={["ANM", "ASHA"]}>
+                  <AddHealthRecord />
+                </RoleRoute>
+              }
+            />
+
+            <Route
+              path="edit/:id"
+              element={
+                <RoleRoute allowedRoles={["ANM", "ASHA"]}>
+                  <EditHealthRecord />
+                </RoleRoute>
+              }
+            />
+
+            <Route
+              path=":id"
+              element={
+                <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                  <HealthRecordDetail />
+                </RoleRoute>
+              }
+            />
+          </Route>
+
+        </Route>
+
+        {/* Catch All */}
+        <Route
+          path="*"
+          element={<Navigate to="/login" replace />}
+        />
+
+      </Routes>
+    </BrowserRouter>
+  );
 };
-
 
 export default AppRoutes;

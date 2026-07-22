@@ -157,7 +157,7 @@ export default function BeneficiaryDetail() {
 
 
 
-        <div className="flex gap-3">
+        {/* <div className="flex gap-3">
 
 
           <button
@@ -210,7 +210,7 @@ export default function BeneficiaryDetail() {
           </button>
 
 
-        </div>
+        </div> */}
 
 
       </div>

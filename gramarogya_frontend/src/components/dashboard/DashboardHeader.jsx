@@ -1,22 +1,21 @@
-import { Plus } from "lucide-react";
-
 const DashboardHeader = ({
-  doctorName,
-  onNewReport,
+  userName,
+  roleTitle,
+  subtitle,
 }) => {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-blue-50 p-6 md:flex-row md:items-center md:justify-between">
+    <div className="rounded-2xl bg-blue-50 p-6 shadow-sm">
+      <h1 className="text-3xl font-bold text-slate-900">
+        Welcome, {userName}
+      </h1>
 
-      {/* Left */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          Welcome back, {doctorName || "ASHA Worker"}!
-        </h1>
+      <p className="mt-2 text-lg font-medium text-blue-700">
+        {roleTitle}
+      </p>
 
-        <p className="mt-2 text-slate-600">
-          Here's an overview of your Primary Health Center for today.
-        </p>
-      </div>
+      <p className="mt-3 text-slate-600">
+        {subtitle}
+      </p>
     </div>
   );
 };

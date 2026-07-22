@@ -1,32 +1,68 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   LayoutGrid,
   ClipboardList,
   BarChart2,
-  FileCheck2,
   Users,
   Archive,
   Stethoscope,
   LifeBuoy,
 } from "lucide-react";
 
-const navItems = [
+const adminNavItems = [
+  { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
+  { label: "Inventory", icon: Archive, path: "/app/inventory" },
+  { label: "Reports", icon: BarChart2, path: "/app/reports" },
+];
+
+const anmNavItems = [
+  { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
+  { label: "Beneficiaries", icon: Users, path: "/app/beneficiaries" },
+  { label: "Visits", icon: Stethoscope, path: "/app/visit" },
+  { label: "Health Records", icon: ClipboardList, path: "/app/health-records" },
+  { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
+  { label: "Reports", icon: BarChart2, path: "/app/reports" },
+];
+
+const ashaNavItems = [
   { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiaries" },
   { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Visits", icon: Stethoscope, path: "/app/visit" },
-  { label: "Health Records", icon: Stethoscope, path: "/app/health-records" },
+  { label: "Health Records", icon: ClipboardList, path: "/app/health-records" },
   { label: "Reports", icon: BarChart2, path: "/app/reports" },
 ];
 
-const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Centre" }) => {
+const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { user } = useSelector((state) => state.auth);
 
   const onNavigate = (path) => {
     navigate(path);
   };
+
+  let navItems = [];
+
+  switch (user?.role) {
+    case "ADMIN":
+      navItems = adminNavItems;
+      break;
+
+    case "ANM":
+      navItems = anmNavItems;
+      break;
+
+    case "ASHA":
+      navItems = ashaNavItems;
+      break;
+
+    default:
+      navItems = [];
+  }
 
   return (
     <div className="flex h-screen w-72 flex-col justify-between border-r border-slate-200 bg-white">
@@ -37,21 +73,27 @@ const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Cent
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-violet-500 to-blue-500 shadow-md shadow-violet-500/20">
               <Stethoscope className="h-5 w-5 text-white" strokeWidth={2} />
             </div>
+
             <div>
               <h1 className="text-lg font-bold leading-tight text-slate-900">
                 GramArogya
               </h1>
+
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 PHC Management System
               </p>
             </div>
           </div>
 
+          {/* Facility */}
           <div className="mt-4 rounded-lg bg-linear-to-r from-violet-50 to-blue-50 px-3 py-2">
             <p className="text-[11px] font-medium uppercase tracking-wide text-violet-400">
               Facility
             </p>
-            <p className="text-sm font-semibold text-slate-700">{facilityName}</p>
+
+            <p className="text-sm font-semibold text-slate-700">
+              Primary Health Centre
+            </p>
           </div>
         </div>
 
@@ -76,6 +118,7 @@ const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Cent
                   strokeWidth={2}
                   className={isActive ? "text-white" : "text-slate-400"}
                 />
+
                 <span>{label}</span>
               </button>
             );
@@ -83,16 +126,27 @@ const Sidebar = ({ userRole = "ASHA Worker", facilityName = "Primary Health Cent
         </nav>
       </div>
 
-      {/* Footer: role + support */}
+      {/* Footer */}
       <div className="border-t border-slate-100 px-4 py-4">
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-          <span className="text-xs font-medium text-slate-600">{userRole}</span>
+        <div className="mb-3 rounded-lg border border-slate-200 px-3 py-2">
+          <p className="text-sm font-semibold text-slate-800">
+            {user?.name}
+          </p>
+
+          <div className="mt-1 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+
+            <span className="text-xs font-medium text-slate-600">
+              {user?.role}
+            </span>
+          </div>
         </div>
+
         <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-violet-600">
           <LifeBuoy size={15} />
-          Help &amp; support
+          Help &amp; Support
         </button>
+
         <p className="mt-3 px-3 text-[10.5px] leading-relaxed text-slate-400">
           GramArogya Health Information System · Data secured under IT Act, 2000
         </p>

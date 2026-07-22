@@ -1,79 +1,25 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-import DashboardHeader from "../components/dashboard/DashboardHeader";
-import StatsCards from "../components/dashboard/StatsCards";
-import QuickActions from "../components/dashboard/QuickActions";
-import RecentActivity from "../components/dashboard/RecentActivity";
-import CriticalAlerts from "../components/dashboard/CriticalAlerts";
+import AdminDashboard from "../components/dashboard/admin/AdminDashboard";
+import AnmDashboard from "../components/dashboard/anm/AnmDashboard";
+import AshaDashboard from "../components/dashboard/asha/AshaDashboard";
 
-import {
-  fetchDashboard,
-  fetchRecentActivities,
-  fetchAlerts,
-} from "../redux/slices/dashboardSlice";
-
+import { Navigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
+  switch (user?.role) {
+    case "ADMIN":
+      return <AdminDashboard />;
 
-  const {
-    stats,
-    recentActivities,
-    alerts,
-    loading,
-    error,
-  } = useSelector((state) => state.dashboard);
+    case "ANM":
+      return <AnmDashboard />;
 
-  useEffect(() => {
-    dispatch(fetchDashboard());
-    dispatch(fetchRecentActivities());
-    dispatch(fetchAlerts());
-  }, [dispatch]);
+    case "ASHA":
+      return <AshaDashboard />;
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    );
+    default:
+  return <Navigate to="/unauthorized" replace />;
   }
-
-  if (error) {
-    return (
-      <div className="rounded-xl bg-red-100 p-5 text-red-600">
-        {error}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-
-      <DashboardHeader
-    doctorName={stats.userName || "ASHA Worker"}
-    onNewReport={() => navigate("/app/beneficiaries/add")}
-/>
-
-      <StatsCards stats={stats} />
-
-      <QuickActions />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-        <RecentActivity
-          activities={recentActivities}
-        />
-
-        <CriticalAlerts
-          alerts={alerts}
-        />
-
-      </div>
-
-    </div>
-  );
 }

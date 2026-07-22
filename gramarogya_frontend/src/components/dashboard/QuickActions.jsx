@@ -1,45 +1,11 @@
-import React from "react";
-import {
-  Users,
-  CalendarPlus,
-  Activity,
-  Pill,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { dashboardConfig } from "./config/dashboardConfig";
 
 const QuickActions = () => {
-  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
-  const actions = [
-    {
-      title: "Add Beneficiary",
-      icon: Users,
-      bg: "bg-blue-100",
-      color: "text-blue-600",
-      path: "/app/beneficiaries/add",
-    },
-    {
-      title: "Add Visit",
-      icon: CalendarPlus,
-      bg: "bg-green-100",
-      color: "text-green-600",
-      path: "/app/visit/add",
-    },
-    {
-      title: "Health Records",
-      icon: Activity,
-      bg: "bg-purple-100",
-      color: "text-purple-600",
-      path: "/app/health-records",
-    },
-    {
-      title: "Medicine Inventory",
-      icon: Pill,
-      bg: "bg-orange-100",
-      color: "text-orange-600",
-      path: "/app/inventory",
-    },
-  ];
+  const actions = dashboardConfig[user?.role]?.actions || [];
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -52,10 +18,10 @@ const QuickActions = () => {
           const Icon = action.icon;
 
           return (
-            <button
+            <Link
               key={action.title}
-              onClick={() => navigate(action.path)}
-              className="flex flex-col items-center rounded-xl border border-slate-200 p-6 transition hover:bg-slate-50 hover:shadow"
+              to={action.path}
+              className="flex flex-col items-center rounded-xl border border-slate-200 p-6 transition duration-200 hover:-translate-y-1 hover:bg-slate-50 hover:shadow-md"
             >
               <div
                 className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${action.bg}`}
@@ -69,7 +35,7 @@ const QuickActions = () => {
               <span className="text-center text-sm font-medium text-slate-700">
                 {action.title}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>

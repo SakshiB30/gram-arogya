@@ -41,4 +41,43 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             String userId,
             String visitType
     );
+
+    long count();
+
+    long countByVisitDate(LocalDate visitDate);
+
+    long countByNextVisitDateAfter(LocalDate date);
+
+    long countByStatus(String status);
+
+    // ---------------- ANM Dashboard ----------------
+
+    long countByUserIdIn(List<String> userIds);
+
+    long countByUserIdInAndVisitDate(
+            List<String> userIds,
+            LocalDate visitDate
+    );
+
+    long countByUserIdInAndNextVisitDateAfter(
+            List<String> userIds,
+            LocalDate date
+    );
+
+    List<Visit> findTop5ByUserIdInOrderByVisitDateDesc(
+            List<String> userIds
+    );
+
+    List<Visit> findByUserIdInAndStatus(
+            List<String> userIds,
+            String status
+    );
+
+    List<Visit> findByUserIdInAndNextVisitDateBetween(
+            List<String> userIds,
+            LocalDate start,
+            LocalDate end
+    );
+
+
 }

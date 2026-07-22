@@ -1,18 +1,14 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.DashboardResponseDto;
-import com.gramarogya.gramarogya_backend.dto.dashboard.ActivityDto;
-import com.gramarogya.gramarogya_backend.dto.dashboard.AlertDto;
-import com.gramarogya.gramarogya_backend.dto.dashboard.PendingVerificationDto;
+import com.gramarogya.gramarogya_backend.dto.VerificationStatus;
+import com.gramarogya.gramarogya_backend.dto.dashboard.*;
+import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
-import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
-import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
-import com.gramarogya.gramarogya_backend.repository.UserRepository;
-import com.gramarogya.gramarogya_backend.repository.VisitRepository;
+import com.gramarogya.gramarogya_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -29,7 +25,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final VisitRepository visitRepository;
     private final UserRepository userRepository;
     private final HealthRecordRepository healthRecordRepository;
-
+    private final MedicineRepository medicineRepository;
 
     private User getCurrentUser(Authentication authentication) {
 
@@ -45,211 +41,331 @@ public class DashboardServiceImpl implements DashboardService {
 
         User currentUser = getCurrentUser(authentication);
 
+        return switch (currentUser.getRole()) {
+
+            case ADMIN -> getAdminDashboard(currentUser);
+
+            case ANM -> getAnmDashboard(currentUser);
+
+            case ASHA -> getAshaDashboard(currentUser);
+
+        };
+    }
+
+    private DashboardResponseDto getAshaDashboard(User currentUser) {
+
         String userId = currentUser.getId();
 
-        return DashboardResponseDto.builder()
-                .userName(currentUser.getName())   // <-- Add this
+        DashboardStatsDto stats = DashboardStatsDto.builder()
+
+                .userName(currentUser.getName())
+
                 .totalBeneficiaries(
                         beneficiaryRepository.countByUserId(userId)
                 )
+
                 .totalVisits(
                         visitRepository.countByUserId(userId)
                 )
+
                 .todayVisits(
                         visitRepository.countByUserIdAndVisitDate(
                                 userId,
                                 LocalDate.now()
                         )
                 )
+
                 .upcomingVisits(
                         visitRepository.countByUserIdAndNextVisitDateAfter(
                                 userId,
                                 LocalDate.now()
                         )
                 )
+
                 .pregnantWomen(
                         beneficiaryRepository.countByUserIdAndCategory(
                                 userId,
                                 "Pregnant Woman"
                         )
                 )
+
                 .children(
                         beneficiaryRepository.countByUserIdAndCategory(
                                 userId,
                                 "Child"
                         )
                 )
+
                 .tbPatients(
                         beneficiaryRepository.countByUserIdAndCategory(
                                 userId,
                                 "TB Patient"
                         )
                 )
+
                 .elderly(
                         beneficiaryRepository.countByUserIdAndCategory(
                                 userId,
                                 "Elderly"
                         )
                 )
+
+                .build();
+
+        return DashboardResponseDto.builder()
+
+                .stats(stats)
+
+                .recentActivities(
+                        buildRecentActivities(currentUser)
+                )
+
+                .alerts(
+                        buildAlerts(currentUser)
+                )
+
+                .upcomingVisits(
+                        buildUpcomingVisits(currentUser)
+                )
+
+                .lowStockMedicines(
+                        buildMedicineAlerts(currentUser)
+                )
+
+                .pendingVerifications(
+                        List.of()
+                )
+
                 .build();
     }
 
-    @Override
-    public List<PendingVerificationDto> getPendingVerifications(
-            Authentication authentication) {
+    private DashboardResponseDto getAdminDashboard(User currentUser) {
 
-        User user = userRepository
-                .findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        DashboardStatsDto stats = DashboardStatsDto.builder()
 
-        List<Visit> pendingVisits =
-                visitRepository.findByUserIdAndStatus(
-                        user.getId(),
-                        "Pending"
-                );
+                .userName(currentUser.getName())
 
-        return pendingVisits.stream()
-                .map(visit -> {
+                .totalBeneficiaries(
+                        beneficiaryRepository.count()
+                )
 
-                    Beneficiary beneficiary =
-                            beneficiaryRepository.findById(
-                                    visit.getBeneficiaryId()
-                            ).orElse(null);
+                .totalVisits(
+                        visitRepository.count()
+                )
 
-                    return PendingVerificationDto.builder()
-                            .id(visit.getId())
-                            .beneficiaryName(
-                                    beneficiary != null
-                                            ? beneficiary.getName()
-                                            : "Unknown"
-                            )
-                            .visitType(visit.getVisitType())
-                            .visitDate(
-                                    visit.getVisitDate().toString()
-                            )
-                            .status(visit.getStatus())
-                            .build();
+                .todayVisits(
+                        visitRepository.countByVisitDate(LocalDate.now())
+                )
 
-                })
+                .upcomingVisits(
+                        visitRepository.countByNextVisitDateAfter(LocalDate.now())
+                )
+
+                .totalUsers(
+                        userRepository.count()
+                )
+
+                .totalAnms(
+                        userRepository.countByRole(Role.ANM)
+                )
+
+                .totalAshas(
+                        userRepository.countByRole(Role.ASHA)
+                )
+
+                .pendingVerifications(
+                        visitRepository.countByStatus("Pending")
+                )
+
+                .build();
+
+        return DashboardResponseDto.builder()
+
+                .stats(stats)
+
+                .recentActivities(
+                        buildRecentActivities(currentUser)
+                )
+
+                .alerts(
+                        buildAlerts(currentUser)
+                )
+
+                .upcomingVisits(
+                        buildUpcomingVisits(currentUser)
+                )
+
+                .lowStockMedicines(
+                        buildMedicineAlerts(currentUser)
+                )
+
+                .pendingVerifications(
+                        buildPendingVerifications(currentUser)
+                )
+
+                .build();
+    }
+
+    private DashboardResponseDto getAnmDashboard(User currentUser) {
+
+        // Get all ASHA workers under this ANM
+        List<User> ashas = userRepository.findBySupervisorId(currentUser.getId());
+
+        List<String> ashaIds = ashas.stream()
+                .map(User::getId)
+                .toList();
+
+        DashboardStatsDto stats = DashboardStatsDto.builder()
+
+                .userName(currentUser.getName())
+
+                .assignedAshas(ashas.size())
+
+                .totalBeneficiaries(
+                        beneficiaryRepository.countByUserIdIn(ashaIds)
+                )
+
+                .totalVisits(
+                        visitRepository.countByUserIdIn(ashaIds)
+                )
+
+                .todayVisits(
+                        visitRepository.countByUserIdInAndVisitDate(
+                                ashaIds,
+                                LocalDate.now()
+                        )
+                )
+
+                .upcomingVisits(
+                        visitRepository.countByUserIdInAndNextVisitDateAfter(
+                                ashaIds,
+                                LocalDate.now()
+                        )
+                )
+
+                .pregnantWomen(
+                        beneficiaryRepository.countByUserIdInAndCategory(
+                                ashaIds,
+                                "Pregnant Woman"
+                        )
+                )
+
+                .children(
+                        beneficiaryRepository.countByUserIdInAndCategory(
+                                ashaIds,
+                                "Child"
+                        )
+                )
+
+                .tbPatients(
+                        beneficiaryRepository.countByUserIdInAndCategory(
+                                ashaIds,
+                                "TB Patient"
+                        )
+                )
+
+                .elderly(
+                        beneficiaryRepository.countByUserIdInAndCategory(
+                                ashaIds,
+                                "Elderly"
+                        )
+                )
+
+                .build();
+
+        return DashboardResponseDto.builder()
+
+                .stats(stats)
+
+                .recentActivities(
+                        buildRecentActivities(currentUser)
+                )
+
+                .alerts(
+                        buildAlerts(currentUser)
+                )
+
+                .upcomingVisits(
+                        buildUpcomingVisits(currentUser)
+                )
+
+                .lowStockMedicines(
+                        buildMedicineAlerts(currentUser)
+                )
+
+                .pendingVerifications(
+                        buildPendingVerifications(currentUser)
+                )
+
+                .build();
+    }
+
+    private List<PendingVerificationDto> buildPendingVerifications(User currentUser) {
+
+        // ASHA cannot verify users
+        if (currentUser.getRole() == Role.ASHA) {
+            return List.of();
+        }
+
+        List<User> pendingUsers;
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            // Admin verifies ANMs
+            pendingUsers = userRepository.findByRoleAndVerificationStatus(
+                    Role.ANM,
+                    VerificationStatus.PENDING
+            );
+
+        } else {
+
+            // ANM verifies ASHAs assigned to them
+            pendingUsers = userRepository.findBySupervisorIdAndVerificationStatus(
+                    currentUser.getId(),
+                    VerificationStatus.PENDING
+            );
+        }
+
+        return pendingUsers.stream()
+                .map(user -> PendingVerificationDto.builder()
+
+                        .id(user.getId())
+
+                        .name(user.getName())
+
+                        .role(user.getRole().name())
+
+                        .employeeId(user.getEmployeeId())
+
+                        .village(user.getVillage())
+
+                        .phone(user.getPhone())
+
+                        .status(user.getVerificationStatus().name())
+
+                        .build())
+
                 .toList();
     }
 
-    @Override
-    public List<AlertDto> getAlerts(Authentication authentication) {
+    private List<ActivityDto> buildRecentActivities(User currentUser) {
 
-        User user = userRepository
-                .findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        List<AlertDto> alerts = new ArrayList<>();
-
-        /*
-         * High Risk Beneficiaries
-         */
-        List<Beneficiary> highRisk =
-                beneficiaryRepository.findByUserIdAndStatusIgnoreCase(
-                        user.getId(),
-                        "High Risk"
-                );
-
-        for (Beneficiary beneficiary : highRisk) {
-
-            alerts.add(
-                    AlertDto.builder()
-                            .id(beneficiary.getId())
-                            .title("High Risk Beneficiary")
-                            .description(
-                                    beneficiary.getName() +
-                                            " requires immediate follow-up."
-                            )
-                            .priority("HIGH")
-                            .type("HIGH_RISK")
-                            .build()
-            );
-        }
-
-        /*
-         * Upcoming Visits (Next 3 Days)
-         */
-
-        List<Visit> upcomingVisits =
-                visitRepository.findByUserIdAndNextVisitDateBetween(
-                        user.getId(),
-                        LocalDate.now(),
-                        LocalDate.now().plusDays(3)
-                );
-
-        for (Visit visit : upcomingVisits) {
-
-            Beneficiary beneficiary =
-                    beneficiaryRepository.findById(
-                            visit.getBeneficiaryId()
-                    ).orElse(null);
-
-            alerts.add(
-                    AlertDto.builder()
-                            .id(visit.getId())
-                            .title("Upcoming Visit")
-                            .description(
-                                    (beneficiary != null
-                                            ? beneficiary.getName()
-                                            : "Unknown")
-                                            + " has a scheduled visit on "
-                                            + visit.getNextVisitDate()
-                            )
-                            .priority("MEDIUM")
-                            .type("UPCOMING_VISIT")
-                            .build()
-            );
-        }
-
-        /*
-         * TB Patients
-         */
-
-        List<Beneficiary> tbPatients =
-                beneficiaryRepository.findByUserIdAndCategoryIgnoreCase(
-                        user.getId(),
-                        "TB PATIENT"
-                );
-
-        for (Beneficiary beneficiary : tbPatients) {
-
-            alerts.add(
-                    AlertDto.builder()
-                            .id(beneficiary.getId())
-                            .title("TB Patient Monitoring")
-                            .description(
-                                    beneficiary.getName() +
-                                            " requires regular monitoring."
-                            )
-                            .priority("MEDIUM")
-                            .type("TB PATIENT")
-                            .build()
-            );
-        }
-
-        return alerts;
-    }
-
-    @Override
-    public List<ActivityDto> getRecentActivities(Authentication authentication) {
-
-        User user = userRepository
-                .findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<String> userIds = getAccessibleUserIds(currentUser);
 
         List<ActivityDto> activities = new ArrayList<>();
 
+        // ==========================
         // Latest Visits
+        // ==========================
+
         List<Visit> visits =
-                visitRepository.findTop5ByUserIdOrderByVisitDateDesc(user.getId());
+                visitRepository.findTop5ByUserIdInOrderByVisitDateDesc(userIds);
 
         for (Visit visit : visits) {
 
-            Beneficiary beneficiary =
-                    beneficiaryRepository.findById(visit.getBeneficiaryId())
-                            .orElse(null);
+            Beneficiary beneficiary = beneficiaryRepository
+                    .findById(visit.getBeneficiaryId())
+                    .orElse(null);
 
             activities.add(
                     ActivityDto.builder()
@@ -259,8 +375,8 @@ public class DashboardServiceImpl implements DashboardService {
                                     (beneficiary != null
                                             ? beneficiary.getName()
                                             : "Unknown")
-                                            + " - " +
-                                            visit.getVisitType()
+                                            + " • "
+                                            + visit.getVisitType()
                             )
                             .time(visit.getVisitDate().toString())
                             .type("VISIT")
@@ -268,37 +384,170 @@ public class DashboardServiceImpl implements DashboardService {
             );
         }
 
+        // ==========================
         // Latest Health Records
-        List<HealthRecord> records =
-                healthRecordRepository.findTop5ByOrderByCreatedAtDesc();
+        // ==========================
 
-        for (HealthRecord record : records) {
+        List<Beneficiary> beneficiaries =
+                beneficiaryRepository.findByUserIdIn(userIds);
 
-            Beneficiary beneficiary =
-                    beneficiaryRepository.findById(record.getBeneficiaryId())
-                            .orElse(null);
+        if (!beneficiaries.isEmpty()) {
 
-            activities.add(
-                    ActivityDto.builder()
-                            .id(record.getId())
-                            .title("Health Record Updated")
-                            .description(
-                                    (beneficiary != null
-                                            ? beneficiary.getName()
-                                            : "Unknown")
-                                            + " - Diagnosis: "
-                                            + record.getDiagnosis()
-                            )
-                            .time(record.getCreatedAt().toLocalDate().toString())
-                            .type("HEALTH_RECORD")
-                            .build()
-            );
+            List<String> beneficiaryIds = beneficiaries.stream()
+                    .map(Beneficiary::getId)
+                    .toList();
+
+            List<HealthRecord> records =
+                    healthRecordRepository
+                            .findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
+                                    beneficiaryIds
+                            );
+
+            for (HealthRecord record : records) {
+
+                Beneficiary beneficiary = beneficiaryRepository
+                        .findById(record.getBeneficiaryId())
+                        .orElse(null);
+
+                activities.add(
+                        ActivityDto.builder()
+                                .id(record.getId())
+                                .title("Health Record Updated")
+                                .description(
+                                        (beneficiary != null
+                                                ? beneficiary.getName()
+                                                : "Unknown")
+                                                + " • Diagnosis: "
+                                                + record.getDiagnosis()
+                                )
+                                .time(record.getCreatedAt()
+                                        .toLocalDate()
+                                        .toString())
+                                .type("HEALTH_RECORD")
+                                .build()
+                );
+            }
         }
 
-        activities.sort((a, b) -> b.getTime().compareTo(a.getTime()));
+        // ==========================
+        // Sort latest first
+        // ==========================
+
+        activities.sort(
+                (a, b) -> b.getTime().compareTo(a.getTime())
+        );
 
         return activities.stream()
                 .limit(5)
                 .toList();
     }
+
+    private List<String> getAccessibleUserIds(User currentUser) {
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            return userRepository.findByRole(Role.ASHA)
+                    .stream()
+                    .map(User::getId)
+                    .toList();
+        }
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            return userRepository.findBySupervisorId(currentUser.getId())
+                    .stream()
+                    .map(User::getId)
+                    .toList();
+        }
+
+        // ASHA can access only its own data
+        return List.of(currentUser.getId());
+    }
+
+    private List<UpcomingVisitDto> buildUpcomingVisits(User currentUser) {
+
+        List<String> userIds = getAccessibleUserIds(currentUser);
+
+        List<Visit> visits =
+                visitRepository.findByUserIdInAndNextVisitDateBetween(
+                        userIds,
+                        LocalDate.now(),
+                        LocalDate.now().plusDays(7)
+                );
+
+        return visits.stream()
+                .map(visit -> {
+
+                    Beneficiary beneficiary =
+                            beneficiaryRepository
+                                    .findById(visit.getBeneficiaryId())
+                                    .orElse(null);
+
+                    return UpcomingVisitDto.builder()
+                            .id(visit.getId())
+                            .beneficiaryName(
+                                    beneficiary != null
+                                            ? beneficiary.getName()
+                                            : "Unknown"
+                            )
+                            .visitType(visit.getVisitType())
+                            .nextVisitDate(
+                                    visit.getNextVisitDate() != null
+                                            ? visit.getNextVisitDate().toString()
+                                            : ""
+                            )
+                            .build();
+                })
+                .sorted((a, b) ->
+                        a.getNextVisitDate().compareTo(b.getNextVisitDate())
+                )
+                .limit(5)
+                .toList();
+    }
+
+    private List<AlertDto> buildAlerts(User currentUser) {
+
+        List<AlertDto> alerts = new ArrayList<>();
+
+        if (currentUser.getRole() != Role.ASHA) {
+
+            long pendingCount = buildPendingVerifications(currentUser).size();
+
+            if (pendingCount > 0) {
+                alerts.add(
+                        AlertDto.builder()
+                                .id("1")
+                                .title("Pending Verifications")
+                                .description(pendingCount + " users waiting for verification")
+                                .priority("HIGH")
+                                .type("VERIFICATION")
+                                .build()
+                );
+            }
+        }
+
+        return alerts;
+    }
+
+    private List<MedicineAlertDto> buildMedicineAlerts(User currentUser) {
+
+        return medicineRepository.findAll()
+                .stream()
+                .filter(medicine ->
+                        medicine.getStock() != null &&
+                                medicine.getStock() <= 10
+                )
+                .map(medicine ->
+                        MedicineAlertDto.builder()
+                                .id(medicine.getId())
+                                .name(medicine.getName())
+                                .batch(medicine.getBatch())
+                                .stock(medicine.getStock())
+                                .status(medicine.getStatus())
+                                .build()
+                )
+                .limit(5)
+                .toList();
+    }
+
 }
