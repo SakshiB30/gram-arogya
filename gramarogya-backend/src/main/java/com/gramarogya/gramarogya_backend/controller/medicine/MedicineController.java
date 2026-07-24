@@ -1,9 +1,9 @@
-package com.gramarogya.gramarogya_backend.controller;
+package com.gramarogya.gramarogya_backend.controller.medicine;
 
-import com.gramarogya.gramarogya_backend.dto.CreateMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.MedicineResponseDto;
-import com.gramarogya.gramarogya_backend.dto.RestockMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.CreateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
+import com.gramarogya.gramarogya_backend.dto.stock.RestockMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.service.MedicineService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

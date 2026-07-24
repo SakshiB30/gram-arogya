@@ -1,10 +1,10 @@
 package com.gramarogya.gramarogya_backend.service;
 
 
-import com.gramarogya.gramarogya_backend.dto.CreateMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.MedicineResponseDto;
-import com.gramarogya.gramarogya_backend.dto.RestockMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.CreateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
+import com.gramarogya.gramarogya_backend.dto.stock.RestockMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.entity.Medicine;
 import com.gramarogya.gramarogya_backend.mapper.MedicineMapper;
 import com.gramarogya.gramarogya_backend.repository.MedicineRepository;
@@ -27,7 +27,6 @@ public class MedicineServiceImpl implements MedicineService{
                 .map(medicineMapper::toResponseDto)
                 .toList();
     }
-
     @Override
     public MedicineResponseDto getMedicineById(String id) {
         Medicine medicine = medicineRepository.findById(id)
