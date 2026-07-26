@@ -36,11 +36,22 @@ const updateMedicine = async (id, medicineData) => {
 };
 
 // =======================
-// RESTOCK MEDICINE
+// RECEIVE MEDICINE
 // =======================
-const restockMedicine = async (id, quantity) => {
+const receiveMedicine = async (id, quantity) => {
   const response = await axiosClient.patch(
-    `/inventory/${id}/restock`,
+    `/inventory/${id}/receive`,
+    { quantity }
+  );
+  return response.data;
+};
+
+// =======================
+// ISSUE MEDICINE
+// =======================
+const issueMedicine = async (id, quantity) => {
+  const response = await axiosClient.patch(
+    `/inventory/${id}/issue`,
     { quantity }
   );
   return response.data;
@@ -59,7 +70,8 @@ const inventoryService = {
   getMedicineById,
   addMedicine,
   updateMedicine,
-  restockMedicine,
+  receiveMedicine,
+  issueMedicine,
   deleteMedicine,
 };
 

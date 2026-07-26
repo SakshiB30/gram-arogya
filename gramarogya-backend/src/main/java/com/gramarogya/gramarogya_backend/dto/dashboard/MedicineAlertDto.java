@@ -1,5 +1,6 @@
 package com.gramarogya.gramarogya_backend.dto.dashboard;
 
+import com.gramarogya.gramarogya_backend.dto.medicine.MedicineStatus;
 import lombok.*;
 
 @Data
@@ -16,5 +17,5 @@ public class MedicineAlertDto {
 
     private Integer stock;
 
-    private String status;
+    private MedicineStatus status;
 }

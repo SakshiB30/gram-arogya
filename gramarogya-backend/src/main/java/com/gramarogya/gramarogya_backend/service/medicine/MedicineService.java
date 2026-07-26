@@ -1,35 +1,44 @@
-package com.gramarogya.gramarogya_backend.service;
+package com.gramarogya.gramarogya_backend.service.medicine;
 
-import com.gramarogya.gramarogya_backend.dto.medicine.CreateMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
-import com.gramarogya.gramarogya_backend.dto.stock.RestockMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.*;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 public interface MedicineService {
 
-    // Get all medicines
-    List<MedicineResponseDto> getAllMedicines();
+    List<MedicineResponseDto> getAllMedicines(Authentication authentication);
 
-    // Get medicine by ID
-    MedicineResponseDto getMedicineById(String id);
+    MedicineResponseDto getMedicineById(
+            String id,
+            Authentication authentication
+    );
 
-    // Add new medicine
-    MedicineResponseDto addMedicine(CreateMedicineRequestDto request);
+    MedicineResponseDto addMedicine(
+            CreateMedicineRequestDto request,
+            Authentication authentication
+    );
 
-    // Update medicine
     MedicineResponseDto updateMedicine(
             String id,
-            UpdateMedicineRequestDto request
+            UpdateMedicineRequestDto request,
+            Authentication authentication
     );
 
-    // Restock medicine
-    MedicineResponseDto restockMedicine(
+    MedicineResponseDto receiveMedicine(
             String id,
-            RestockMedicineRequestDto request
+            ReceiveMedicineRequestDto receiveMedicineRequestDto,
+            Authentication authentication
     );
 
-    // Delete medicine
-    void deleteMedicine(String id);
+    void deleteMedicine(
+            String id,
+            Authentication authentication
+    );
+
+    MedicineResponseDto issueMedicine(
+            String id,
+            IssueMedicineRequestDto request,
+            Authentication authentication
+    );
 }

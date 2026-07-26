@@ -1,9 +1,9 @@
-package com.gramarogya.gramarogya_backend.mapper;
+package com.gramarogya.gramarogya_backend.mapper.medicine;
 
 import com.gramarogya.gramarogya_backend.dto.medicine.CreateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
-import com.gramarogya.gramarogya_backend.entity.Medicine;
+import com.gramarogya.gramarogya_backend.entity.medicine.Medicine;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Component
 public class MedicineMapper {
 
+    // Create DTO -> Entity
     public Medicine toEntity(CreateMedicineRequestDto dto) {
 
         return Medicine.builder()
@@ -18,13 +19,14 @@ public class MedicineMapper {
                 .type(dto.getType())
                 .batch(dto.getBatch())
                 .stock(dto.getStock())
+                .minimumStock(dto.getMinimumStock())
                 .expiryDate(dto.getExpiryDate())
-                .status(dto.getStatus())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
 
+    // Entity -> Response DTO
     public MedicineResponseDto toResponseDto(Medicine medicine) {
 
         return MedicineResponseDto.builder()
@@ -38,17 +40,20 @@ public class MedicineMapper {
                 .build();
     }
 
-    public void updateEntity(
-            UpdateMedicineRequestDto dto,
-            Medicine medicine
-    ) {
+    // Update existing entity
+    public void updateEntity(UpdateMedicineRequestDto dto,
+                             Medicine medicine) {
 
         medicine.setName(dto.getName());
         medicine.setType(dto.getType());
         medicine.setBatch(dto.getBatch());
         medicine.setStock(dto.getStock());
+        medicine.setMinimumStock(dto.getMinimumStock());
         medicine.setExpiryDate(dto.getExpiryDate());
-        medicine.setStatus(dto.getStatus());
+
+        // Do NOT update status here.
+        // Status is calculated in the service.
+
         medicine.setUpdatedAt(LocalDateTime.now());
     }
 }

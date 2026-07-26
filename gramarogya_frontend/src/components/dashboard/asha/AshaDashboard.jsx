@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import { dashboardConfig } from "../config/dashboardConfig";
 
@@ -11,15 +10,11 @@ import RecentActivity from "../RecentActivity";
 import CriticalAlerts from "../CriticalAlerts";
 
 import UpcomingVisits from "./UpcomingVisits";
-import LowStockMedicines from "./LowStockMedicines";
 
-import {
-  fetchDashboard,
-} from "../../../redux/slices/dashboardSlice";
+import { fetchDashboard } from "../../../redux/slices/dashboardSlice";
 
 export default function AshaDashboard() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const { user } = useSelector((state) => state.auth);
 
@@ -30,7 +25,6 @@ export default function AshaDashboard() {
     recentActivities,
     alerts,
     upcomingVisits,
-    lowStockMedicines,
     loading,
     error,
   } = useSelector((state) => state.dashboard);
@@ -58,38 +52,22 @@ export default function AshaDashboard() {
   return (
     <div className="space-y-6">
       <DashboardHeader
-  userName={user?.name || stats?.userName}
-  roleTitle={config.header.roleTitle}
-  subtitle={config.header.subtitle}
-/>
+        userName={user?.name || stats?.userName}
+        roleTitle={config.header.roleTitle}
+        subtitle={config.header.subtitle}
+      />
 
       <StatsCards stats={stats} />
 
       <QuickActions />
 
+      <UpcomingVisits visits={upcomingVisits} />
+
       <div className="grid gap-6 xl:grid-cols-2">
+        <RecentActivity activities={recentActivities} />
 
-    <UpcomingVisits
-        visits={upcomingVisits}
-    />
-
-    <LowStockMedicines
-        medicines={lowStockMedicines}
-    />
-
-</div>
-
-<div className="grid gap-6 xl:grid-cols-2">
-
-    <RecentActivity
-        activities={recentActivities}
-    />
-
-    <CriticalAlerts
-        alerts={alerts}
-    />
-
-</div>
+        <CriticalAlerts alerts={alerts} />
+      </div>
     </div>
   );
 }

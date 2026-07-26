@@ -9,6 +9,7 @@ import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.repository.*;
+import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;

@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   getMedicineById,
-  restockMedicine,
+  receiveMedicine,
 } from "../../redux/slices/inventorySlice";
 
 export default function RestockMedicine() {

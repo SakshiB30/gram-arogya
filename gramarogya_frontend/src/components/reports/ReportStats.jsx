@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import {
   Users,
   CalendarCheck,
@@ -9,56 +10,62 @@ import {
 } from "lucide-react";
 
 export default function ReportStats({ summary }) {
-  const cards = [
-    {
-      title: "Beneficiaries",
-      value: summary?.totalBeneficiaries ?? 0,
-      subtitle: "Registered",
-      icon: Users,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "Visits",
-      value: summary?.totalVisits ?? 0,
-      subtitle: "Completed",
-      icon: CalendarCheck,
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
-    },
-    {
-      title: "Health Records",
-      value: summary?.totalHealthRecords ?? 0,
-      subtitle: "Available",
-      icon: HeartPulse,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-    },
-    {
-      title: "Medicines",
-      value: summary?.totalMedicines ?? 0,
-      subtitle: "Inventory",
-      icon: Pill,
-      iconBg: "bg-indigo-100",
-      iconColor: "text-indigo-600",
-    },
-    {
-      title: "Low Stock",
-      value: summary?.lowStockMedicines ?? 0,
-      subtitle: "Need Restock",
-      icon: AlertTriangle,
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
-    },
-    {
-      title: "Out of Stock",
-      value: summary?.outOfStockMedicines ?? 0,
-      subtitle: "Unavailable",
-      icon: AlertCircle,
-      iconBg: "bg-red-100",
-      iconColor: "text-red-600",
-    },
-  ];
+  const { user } = useSelector((state) => state.auth);
+ const cards = [
+  {
+    title: "Beneficiaries",
+    value: summary?.totalBeneficiaries ?? 0,
+    subtitle: "Registered",
+    icon: Users,
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+  },
+  {
+    title: "Visits",
+    value: summary?.totalVisits ?? 0,
+    subtitle: "Completed",
+    icon: CalendarCheck,
+    iconBg: "bg-green-100",
+    iconColor: "text-green-600",
+  },
+  {
+    title: "Health Records",
+    value: summary?.totalHealthRecords ?? 0,
+    subtitle: "Available",
+    icon: HeartPulse,
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+  },
+
+  ...(user?.role !== "ASHA"
+    ? [
+        {
+          title: "Medicines",
+          value: summary?.totalMedicines ?? 0,
+          subtitle: "Inventory",
+          icon: Pill,
+          iconBg: "bg-indigo-100",
+          iconColor: "text-indigo-600",
+        },
+        {
+          title: "Low Stock",
+          value: summary?.lowStockMedicines ?? 0,
+          subtitle: "Need Restock",
+          icon: AlertTriangle,
+          iconBg: "bg-amber-100",
+          iconColor: "text-amber-600",
+        },
+        {
+          title: "Out of Stock",
+          value: summary?.outOfStockMedicines ?? 0,
+          subtitle: "Unavailable",
+          icon: AlertCircle,
+          iconBg: "bg-red-100",
+          iconColor: "text-red-600",
+        },
+      ]
+    : []),
+];
 
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">

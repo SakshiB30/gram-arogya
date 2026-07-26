@@ -1,9 +1,11 @@
 package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.*;
+import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.repository.*;
+import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -68,11 +68,11 @@ export const updateMedicine = createAsyncThunk(
 // =======================
 // RESTOCK MEDICINE
 // =======================
-export const restockMedicine = createAsyncThunk(
-  "inventory/restock",
+export const receiveMedicine = createAsyncThunk(
+  "inventory/receive",
   async ({ id, quantity }, thunkAPI) => {
     try {
-      return await inventoryService.restockMedicine(id, quantity);
+      return await inventoryService.receiveMedicine(id, quantity);
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || error.message
@@ -180,10 +180,10 @@ const inventorySlice = createSlice({
       })
 
       // ================= RESTOCK =================
-      .addCase(restockMedicine.pending, (state) => {
+      .addCase(receiveMedicine.pending, (state) => {
         state.loading = true;
       })
-      .addCase(restockMedicine.fulfilled, (state, action) => {
+      .addCase(receiveMedicine.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
 
@@ -191,7 +191,7 @@ const inventorySlice = createSlice({
           medicine.id === action.payload.id ? action.payload : medicine
         );
       })
-      .addCase(restockMedicine.rejected, (state, action) => {
+      .addCase(receiveMedicine.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

@@ -29,7 +29,6 @@ const anmNavItems = [
 const ashaNavItems = [
   { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiaries" },
-  { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Visits", icon: Stethoscope, path: "/app/visit" },
   { label: "Health Records", icon: ClipboardList, path: "/app/health-records" },
   { label: "Reports", icon: BarChart2, path: "/app/reports" },

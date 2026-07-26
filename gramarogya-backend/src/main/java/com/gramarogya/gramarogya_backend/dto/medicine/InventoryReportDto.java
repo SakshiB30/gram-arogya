@@ -1,4 +1,4 @@
-package com.gramarogya.gramarogya_backend.dto.report;
+package com.gramarogya.gramarogya_backend.dto.medicine;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +21,7 @@ public class InventoryReportDto {
 
     private Integer stock;
 
-    private String status;
+    private MedicineStatus status;
 
     private String expiryDate;
 }

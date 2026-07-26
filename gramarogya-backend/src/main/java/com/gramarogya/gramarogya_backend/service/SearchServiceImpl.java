@@ -5,7 +5,7 @@ import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
-import com.gramarogya.gramarogya_backend.repository.MedicineRepository;
+import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.gramarogya.gramarogya_backend.dto;
+package com.gramarogya.gramarogya_backend.dto.medicine;
 
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +21,6 @@ public class MedicineResponseDto {
 
     private LocalDate expiryDate;
 
-    private String status;
+    private MedicineStatus status;
 
 }

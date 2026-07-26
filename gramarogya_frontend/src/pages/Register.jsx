@@ -119,7 +119,7 @@ const Register = () => {
 
               {error && (
                 <div className="mb-5 flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
