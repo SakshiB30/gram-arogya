@@ -1,29 +1,46 @@
-import React from "react";
-import { Plus } from "lucide-react";
+import { Plus, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function InventoryHeader() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mb-8 flex items-center justify-between">
+
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          Inventory Status
+        <h1 className="text-3xl font-bold">
+          Inventory
         </h1>
 
-        <p className="mt-1 text-slate-500">
-          Manage PHC medicine stock and expiry dates.
+        <p className="mt-2 text-slate-500">
+          Manage medicine inventory.
         </p>
       </div>
 
-      <button
-        onClick={() => navigate("/app/inventory/add")}
-        className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-      >
-        <Plus size={18} />
-        Add Medicine
-      </button>
+      <div className="flex gap-3">
+
+        <button
+          onClick={() =>
+            navigate("/app/inventory/logs")
+          }
+          className="flex items-center gap-2 rounded-lg border px-5 py-3 hover:bg-slate-100"
+        >
+          <History size={18} />
+          Stock History
+        </button>
+
+        <button
+          onClick={() =>
+            navigate("/app/inventory/add")
+          }
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
+        >
+          <Plus size={18} />
+          Add Medicine
+        </button>
+
+      </div>
+
     </div>
   );
 }

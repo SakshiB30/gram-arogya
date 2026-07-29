@@ -14,6 +14,8 @@ const getInventory = async () => {
 const getMedicineById = async (id) => {
   const response = await axiosClient.get(`/inventory/${id}`);
   return response.data;
+
+
 };
 
 // =======================
@@ -65,6 +67,18 @@ const deleteMedicine = async (id) => {
   return response.data;
 };
 
+const getStockLogs = async () => {
+  const response = await axiosClient.get("/inventory/logs");
+  return response.data;
+};
+
+const getMedicineLogs = async (id) => {
+  const response = await axiosClient.get(`/inventory/${id}/logs`);
+  return response.data;
+};
+
+
+
 const inventoryService = {
   getInventory,
   getMedicineById,
@@ -73,6 +87,8 @@ const inventoryService = {
   receiveMedicine,
   issueMedicine,
   deleteMedicine,
+  getStockLogs,
+  getMedicineLogs
 };
 
 export default inventoryService;

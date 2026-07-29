@@ -124,7 +124,7 @@ export const dashboardConfig = {
       },
       {
         title: "Visits",
-        path: "/app/visits",
+        path: "/app/visit",
         icon: CalendarCheck,
         bg: "bg-green-100",
         color: "text-green-600",

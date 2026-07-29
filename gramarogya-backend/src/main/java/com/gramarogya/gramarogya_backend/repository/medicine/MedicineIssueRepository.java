@@ -16,5 +16,7 @@ public interface MedicineIssueRepository extends MongoRepository<MedicineIssue, 
     );
 
     List<MedicineIssue> findAllByOrderByIssuedAtDesc();
+
+    
 }
 

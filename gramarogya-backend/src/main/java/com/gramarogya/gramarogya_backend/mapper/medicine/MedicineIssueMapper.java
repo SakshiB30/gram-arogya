@@ -6,7 +6,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MedicineIssueMapper {
-    public MedicineIssueResponseDto toResponseDto(MedicineIssue issue) {
+
+    public MedicineIssueResponseDto toResponseDto(
+            MedicineIssue issue) {
 
         return MedicineIssueResponseDto.builder()
                 .id(issue.getId())

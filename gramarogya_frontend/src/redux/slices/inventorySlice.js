@@ -98,12 +98,41 @@ export const deleteMedicine = createAsyncThunk(
   }
 );
 
+export const getStockLogs = createAsyncThunk(
+  "inventory/logs",
+  async (_, thunkAPI) => {
+    try {
+      return await inventoryService.getStockLogs();
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+
+export const getMedicineLogs = createAsyncThunk(
+  "inventory/medicineLogs",
+  async (id, thunkAPI) => {
+    try {
+      return await inventoryService.getMedicineLogs(id);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || error.message
+      );
+    }
+  }
+);
+
+
 const initialState = {
   medicines: [],
   medicine: null,
   loading: false,
   success: false,
   error: null,
+  logs: [],
 };
 
 const inventorySlice = createSlice({
@@ -211,7 +240,10 @@ const inventorySlice = createSlice({
       .addCase(deleteMedicine.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+      .addCase(getStockLogs.fulfilled, (state, action) => {
+      state.logs = action.payload;
+      }) 
   },
 });
 

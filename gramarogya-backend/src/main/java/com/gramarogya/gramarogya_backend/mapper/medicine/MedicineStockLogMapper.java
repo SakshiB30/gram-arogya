@@ -2,7 +2,9 @@ package com.gramarogya.gramarogya_backend.mapper.medicine;
 
 import com.gramarogya.gramarogya_backend.dto.medicine.MedicineStockLogResponseDto;
 import com.gramarogya.gramarogya_backend.entity.medicine.MedicineStockLog;
+import org.springframework.stereotype.Component;
 
+@Component
 public class MedicineStockLogMapper {
 
     public MedicineStockLogResponseDto toResponseDto(

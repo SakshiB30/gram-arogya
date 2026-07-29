@@ -6,9 +6,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getMedicineById,
   receiveMedicine,
+
 } from "../../redux/slices/inventorySlice";
 
-export default function RestockMedicine() {
+export default function ReceiveMedicine() {
   const { id } = useParams();
 
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function RestockMedicine() {
     e.preventDefault();
 
     await dispatch(
-      restockMedicine({
+      receiveMedicine({
         id,
         quantity: Number(quantity),
       })

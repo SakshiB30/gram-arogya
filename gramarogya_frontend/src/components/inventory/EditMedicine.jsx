@@ -13,10 +13,12 @@ const initialState = {
   batch: "",
   stock: "",
   expiryDate: "",
+  minimumStock: "",
 };
 
 export default function EditMedicine() {
   const { id } = useParams();
+  console.log("ID:", id);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -28,8 +30,10 @@ export default function EditMedicine() {
   const [formData, setFormData] = useState(initialState);
 
   useEffect(() => {
-    dispatch(getMedicineById(id));
-  }, [dispatch, id]);
+  dispatch(getMedicineById(id)).then((res) => {
+    console.log("Thunk result:", res);
+  });
+}, [dispatch, id]);
 
   useEffect(() => {
     if (medicine) {
@@ -53,18 +57,23 @@ export default function EditMedicine() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    await dispatch(
-      updateMedicine({
-        id,
-        ...formData,
-        stock: Number(formData.stock),
-      })
-    );
-
-    navigate("/app/inventory");
+  const medicineData = {
+    ...formData,
+    stock: Number(formData.stock),
+    minimumStock: Number(formData.minimumStock),
   };
+
+  await dispatch(
+    updateMedicine({
+      id,
+      medicineData,
+    })
+  );
+
+  navigate("/app/inventory");
+};
 
   return (
     <div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow">

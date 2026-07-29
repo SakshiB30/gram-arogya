@@ -33,7 +33,7 @@ import ReportsPage from "../pages/ReportsPage";
 import InventoryPage from "../pages/InventoryPage";
 import AddMedicine from "../components/inventory/AddMedicine";
 import EditMedicine from "../components/inventory/EditMedicine";
-import RestockMedicine from "../components/inventory/RestockMedicine";
+import ReceiveMedicine from "../components/inventory/ReceiveMedicine";
 import MedicineDetail from "../components/inventory/MedicineDetail";
 
 // Visit
@@ -53,6 +53,10 @@ import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 
+import LandingPage from "../pages/LandingPage";
+
+import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
+
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -61,20 +65,30 @@ const AppRoutes = () => {
       <Routes>
 
         {/* Root */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/app/dashboard" replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+       <Route
+  path="/"
+  element={
+    isAuthenticated ? (
+      <Navigate to="/app/dashboard" replace />
+    ) : (
+      <LandingPage />
+    )
+  }
+/>
 
         {/* Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login"element={ isAuthenticated ? ( <Navigate to="/app/dashboard" replace />) : (<Login />) }/>
+
+<Route
+  path="/register"
+  element={
+    isAuthenticated ? (
+      <Navigate to="/app/dashboard" replace />
+    ) : (
+      <Register />
+    )
+  }
+ />
 
         {/* Unauthorized */}
         <Route
@@ -227,7 +241,7 @@ const AppRoutes = () => {
             path="inventory/restock/:id"
             element={
               <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
-                <RestockMedicine />
+                <ReceiveMedicine />
               </RoleRoute>
             }
           />
@@ -240,6 +254,15 @@ const AppRoutes = () => {
               </RoleRoute>
             }
           />
+
+                <Route
+            path="inventory/logs"
+            element={
+            <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+              <MedicineStockHistory />
+            </RoleRoute>
+          }
+        />
 
           {/* ================= REPORTS ================= */}
 
@@ -302,11 +325,18 @@ const AppRoutes = () => {
         </Route>
 
         {/* Catch All */}
-        <Route
-          path="*"
-          element={<Navigate to="/login" replace />}
-        />
+       <Route
+  path="*"
+  element={
+    isAuthenticated ? (
+      <Navigate to="/app/dashboard" replace />
+    ) : (
+      <Navigate to="/" replace />
+    )
+  }
+/>
 
+    
       </Routes>
     </BrowserRouter>
   );
