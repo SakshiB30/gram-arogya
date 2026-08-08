@@ -1,9 +1,6 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.AccountStatus;
-import com.gramarogya.gramarogya_backend.dto.AnmDashboardDto;
-import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
-import com.gramarogya.gramarogya_backend.dto.VerificationStatus;
+import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -216,6 +213,26 @@ public class AnmServiceImpl implements AnmService {
         userRepository.save(asha);
 
         return userMapper.toResponseDto(asha);
+    }
+
+    @Override
+    public List<UserResponseDto> getAllAshas(
+            Authentication authentication) {
+
+        // Logged in ANM
+        User anm = userRepository
+                .findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("ANM not found"));
+
+        return userRepository
+                .findByRoleAndSupervisorId(
+                        Role.ASHA,
+                        anm.getId()
+                )
+                .stream()
+                .map(userMapper::toResponseDto)
+                .toList();
     }
 }
 

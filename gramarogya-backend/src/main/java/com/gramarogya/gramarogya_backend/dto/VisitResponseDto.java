@@ -17,13 +17,21 @@ public class VisitResponseDto {
 
     private String beneficiaryId;
 
-    private LocalDate visitDate;
+    private String beneficiaryName;
+
+    private String category;
+
+    private String village;
+
+    private String phone;
 
     private String visitType;
+
+    private LocalDate visitDate;
+
+    private LocalDate nextVisitDate;
 
     private String status;
 
     private String notes;
-
-    private LocalDate nextVisitDate;
 }

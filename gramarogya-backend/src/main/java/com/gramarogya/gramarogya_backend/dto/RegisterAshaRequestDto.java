@@ -1,6 +1,5 @@
 package com.gramarogya.gramarogya_backend.dto;
 
-import com.gramarogya.gramarogya_backend.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequestDto {
+public class RegisterAshaRequestDto {
 
     private String name;
 
@@ -26,5 +25,6 @@ public class RegisterRequestDto {
 
     private String state;
 
-    private Role role;
+    // Employee ID of the supervising ANM
+    private String anmEmployeeId;
 }

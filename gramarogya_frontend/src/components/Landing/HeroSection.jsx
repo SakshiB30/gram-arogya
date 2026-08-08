@@ -1,183 +1,92 @@
 import { Link } from "react-router-dom";
 import Container from "./Container";
-import {
-  ArrowRight,
-  PlayCircle,
-  ShieldCheck,
-  Activity,
-  Users,
-  HeartPulse,
-} from "lucide-react";
+import { ArrowRight, ShieldCheck, Users, HeartPulse, Sparkles } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-b from-blue-50 via-white to-white py-20">
-      <Container className="grid items-center gap-16 lg:grid-cols-2">
-        {/* Left Section */}
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
-            <ShieldCheck className="h-4 w-4" />
-            Government Rural Healthcare Initiative
-          </span>
+    <section id="home" className="relative overflow-hidden min-h-screen flex items-center">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1584515933487-779824d29309?w=1600&q=80')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 25%',
+          backgroundRepeat: 'no-repeat'
+        }}
+      ></div>
+      
+      {/* Dark Overlay - Improved for better readability */}
+      <div className="absolute inset-0 z-0 bg-linear-to-r from-black/80 via-black/60 to-black/40"></div>
+      
+      {/* Bottom gradient for smooth transition */}
+      <div className="absolute bottom-0 left-0 right-0 z-0 h-2 bg-linear-to-t from-white via-white/50 to-transparent"></div>
 
-          <h1 className="mt-6 text-4xl font-extrabold leading-tight text-slate-900 lg:text-6xl">
-            Smart Healthcare
+      <Container className="relative z-10 py-16 md:py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 backdrop-blur-sm px-5 py-2 text-sm font-semibold text-emerald-100 border border-emerald-400/30 transition-all duration-300 hover:bg-emerald-500/30 hover:scale-105">
+            <Sparkles className="h-4 w-4" />
+            EXCLUSIVE HEALTHCARE PLATFORM
+          </div>
+          
+          {/* Heading */}
+          <h1 className="mt-8 text-4xl font-extrabold text-white lg:text-6xl xl:text-7xl leading-tight">
+            Master the art of
             <br />
-            <span className="text-blue-700">
-              for Every Village
+            <span className="bg-linear-to-r from-emerald-300 via-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+              Rural Healthcare
             </span>
           </h1>
-
-          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-            GramArogya is a secure digital healthcare platform that enables
-            Primary Health Centers to manage beneficiaries, health records,
-            medicine inventory, field visits, and ASHA reporting from one
-            centralized system.
+          
+          {/* Description */}
+          <p className="mt-6 text-base sm:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
+            Elevate your perspective. Learn proven strategies from industry experts
+            to inspire teams and drive meaningful change in rural healthcare.
           </p>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-7 py-3 font-semibold text-white shadow hover:bg-blue-800 transition"
+          
+          {/* Buttons */}
+          <div className="mt-10 flex flex-wrap gap-4 justify-center">
+            <Link 
+              to="/register" 
+              className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-105 hover:-translate-y-0.5"
             >
-              Get Started
-              <ArrowRight className="h-4 w-4" />
+              Get Started 
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-7 py-3 font-semibold text-slate-700 hover:bg-slate-50 transition"
+            <Link 
+              to="/login" 
+              className="group inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm px-8 py-3.5 font-semibold text-white transition-all duration-300 hover:bg-white/20 hover:border-white/50 hover:scale-105"
             >
-              <PlayCircle className="h-5 w-5" />
               Staff Login
             </Link>
           </div>
 
-          {/* Highlights */}
-
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
-
-            <div className="rounded-xl bg-white p-4 shadow-sm border">
-              <ShieldCheck className="mb-2 h-8 w-8 text-emerald-600" />
-              <h4 className="font-semibold text-slate-900">
-                Secure Access
-              </h4>
-              <p className="mt-1 text-sm text-slate-500">
-                Role-based authentication for Admin, ANM & ASHA.
-              </p>
+          {/* Feature Cards - Centered and improved */}
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto">
+            <div className="group rounded-xl bg-white/10 backdrop-blur-md p-5 border border-white/20 transition-all duration-300 hover:bg-white/20 hover:-translate-y-2 hover:shadow-xl hover:shadow-white/5">
+              <ShieldCheck className="h-8 w-8 text-emerald-400 mx-auto transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <h4 className="mt-3 font-semibold text-white text-sm">Secure Access</h4>
+              <p className="text-white/50 text-xs mt-1">Role-based authentication</p>
             </div>
-
-            <div className="rounded-xl bg-white p-4 shadow-sm border">
-              <HeartPulse className="mb-2 h-8 w-8 text-red-500" />
-              <h4 className="font-semibold text-slate-900">
-                Patient Care
-              </h4>
-              <p className="mt-1 text-sm text-slate-500">
-                Digital beneficiary and health record management.
-              </p>
+            <div className="group rounded-xl bg-white/10 backdrop-blur-md p-5 border border-white/20 transition-all duration-300 hover:bg-white/20 hover:-translate-y-2 hover:shadow-xl hover:shadow-white/5">
+              <HeartPulse className="h-8 w-8 text-red-400 mx-auto transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <h4 className="mt-3 font-semibold text-white text-sm">Patient Care</h4>
+              <p className="text-white/50 text-xs mt-1">Digital health records</p>
             </div>
-
-            <div className="rounded-xl bg-white p-4 shadow-sm border">
-              <Activity className="mb-2 h-8 w-8 text-blue-600" />
-              <h4 className="font-semibold text-slate-900">
-                Real-Time Reports
-              </h4>
-              <p className="mt-1 text-sm text-slate-500">
-                Track visits, medicine stock and daily activities.
-              </p>
+            <div className="group rounded-xl bg-white/10 backdrop-blur-md p-5 border border-white/20 transition-all duration-300 hover:bg-white/20 hover:-translate-y-2 hover:shadow-xl hover:shadow-white/5">
+              <Users className="h-8 w-8 text-blue-400 mx-auto transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
+              <h4 className="mt-3 font-semibold text-white text-sm">Digital Records</h4>
+              <p className="text-white/50 text-xs mt-1">Paperless management</p>
             </div>
-
-          </div>
-        </div>
-
-        {/* Right Section */}
-
-        <div className="relative">
-
-          <div className="overflow-hidden rounded-3xl border bg-gradient-to-br from-blue-100 via-white to-emerald-100 p-10 shadow-2xl">
-
-            <div className="flex flex-col items-center">
-
-              <div className="rounded-full bg-blue-100 p-6">
-                <Users className="h-20 w-20 text-blue-600" />
-              </div>
-
-              <h2 className="mt-6 text-3xl font-bold text-slate-900">
-                GramArogya
-              </h2>
-
-              <p className="mt-3 text-center text-slate-600">
-                A Digital Healthcare Management Platform
-                <br />
-                connecting PHC, ANM and ASHA Workers.
-              </p>
-
-              <div className="mt-8 grid w-full grid-cols-2 gap-4">
-
-                <div className="rounded-xl bg-white p-4 shadow">
-                  <p className="text-3xl font-bold text-blue-700">100%</p>
-                  <p className="text-sm text-slate-500">
-                    Digital Records
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-white p-4 shadow">
-                  <p className="text-3xl font-bold text-emerald-600">
-                    24×7
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Secure Access
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-white p-4 shadow">
-                  <p className="text-3xl font-bold text-indigo-600">
-                    ASHA
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Daily Reporting
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-white p-4 shadow">
-                  <p className="text-3xl font-bold text-red-500">
-                    PHC
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    Smart Monitoring
-                  </p>
-                </div>
-
-              </div>
-
-            </div>
-
           </div>
 
-          {/* Floating Card */}
-
-          <div className="absolute -bottom-8 left-8 rounded-2xl bg-white px-6 py-4 shadow-xl ring-1 ring-slate-200">
-
-            <div className="flex items-center gap-4">
-
-              <div className="rounded-full bg-emerald-100 p-3">
-                <Activity className="h-5 w-5 text-emerald-600" />
-              </div>
-
-              <div>
-                <p className="text-xs text-slate-500">
-                  Daily Operations
-                </p>
-
-                <p className="font-semibold text-slate-900">
-                  Beneficiaries • Visits • Inventory • Reports
-                </p>
-              </div>
-
+          {/* Scroll indicator */}
+          {/* <div className="mt-16 flex justify-center animate-bounce">
+            <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-1">
+              <div className="w-1.5 h-3 rounded-full bg-white/50"></div>
             </div>
-
-          </div>
-
+          </div> */}
         </div>
       </Container>
     </section>

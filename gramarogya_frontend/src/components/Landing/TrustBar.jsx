@@ -1,83 +1,37 @@
 import Container from "./Container";
-import {
-  Landmark,
-  ShieldCheck,
-  Globe2,
-  Activity,
-  BadgeCheck,
-} from "lucide-react";
+import { Landmark, ShieldCheck, Globe2, Activity, BadgeCheck } from "lucide-react";
 
 export default function TrustBar() {
   const items = [
-    {
-      icon: Landmark,
-      title: "Government Healthcare",
-      subtitle: "PHC Digital Services",
-    },
-    {
-      icon: ShieldCheck,
-      title: "Secure & Reliable",
-      subtitle: "Role-Based Access",
-    },
-    {
-      icon: Globe2,
-      title: "Digital India",
-      subtitle: "Modern Healthcare Platform",
-    },
-    {
-      icon: Activity,
-      title: "Real-Time Monitoring",
-      subtitle: "Beneficiaries & Visits",
-    },
-    {
-      icon: BadgeCheck,
-      title: "Trusted by PHCs",
-      subtitle: "Healthcare Professionals",
-    },
+    { icon: Landmark, title: "Government Healthcare" },
+    { icon: ShieldCheck, title: "Secure & Reliable" },
+    { icon: Globe2, title: "Digital India" },
+    { icon: Activity, title: "Real-Time Monitoring" },
+    { icon: BadgeCheck, title: "Trusted by PHCs" },
   ];
 
   return (
-    <section className="border-y border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 py-8">
-      <Container>
-
-        {/* Heading */}
-        <div className="mb-8 text-center">
-          <span className="rounded-full bg-blue-100 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
-            Trusted Platform
-          </span>
-
-          <h2 className="mt-4 text-2xl font-bold text-slate-900">
-            Built for India's Primary Healthcare System
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-600">
-            Empowering PHCs, ANMs, ASHA workers and Administrators through
-            secure digital healthcare management.
-          </p>
-        </div>
-
-        {/* Cards */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          {items.map(({ icon: Icon, title, subtitle }) => (
-            <div
-              key={title}
-              className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                <Icon className="h-6 w-6 text-blue-700" />
-              </div>
-
-              <h3 className="mt-4 text-sm font-semibold text-slate-900">
-                {title}
-              </h3>
-
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                {subtitle}
-              </p>
+    <section className="relative overflow-hidden border-y border-slate-200 py-6">
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1600&q=80')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      ></div>
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-slate-50/90 via-white/90 to-slate-50/90 backdrop-blur-sm"></div>
+      
+      <Container className="relative z-10">
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {items.map(({ icon: Icon, title }) => (
+            <div key={title} className="flex items-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm p-3 shadow-sm border border-slate-200/50">
+              <div className="rounded-full bg-blue-100 p-2"><Icon className="h-5 w-5 text-blue-700" /></div>
+              <span className="text-sm font-medium text-slate-700">{title}</span>
             </div>
           ))}
         </div>
-
       </Container>
     </section>
   );

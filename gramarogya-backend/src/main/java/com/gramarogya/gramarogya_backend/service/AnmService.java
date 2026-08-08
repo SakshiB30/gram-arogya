@@ -25,4 +25,6 @@ public interface AnmService {
     UserResponseDto unblockAsha(
             String ashaId,
             Authentication authentication);
+
+    List<UserResponseDto> getAllAshas(Authentication authentication);
 }

@@ -33,11 +33,26 @@ export const loginUser = createAsyncThunk(
 );
 
 
-export const registerUser = createAsyncThunk(
-  "auth/registerUser",
+export const registerAnm = createAsyncThunk(
+  "auth/registerAnm",
   async (userData, thunkAPI) => {
     try {
-      return await authService.register(userData);
+      return await authService.registerAnm(userData);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+          error.message ||
+          "Registration failed"
+      );
+    }
+  }
+);
+
+export const registerAsha = createAsyncThunk(
+  "auth/registerAsha",
+  async (userData, thunkAPI) => {
+    try {
+      return await authService.registerAsha(userData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message ||
@@ -107,23 +122,33 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // REGISTER
+      .addCase(registerAnm.pending, (state) => {
+    state.loading = true;
+    state.error = null;
+})
 
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
+.addCase(registerAnm.fulfilled, (state) => {
+    state.loading = false;
+})
 
-        state.error = null;
-      })
+.addCase(registerAnm.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload;
+})
 
-      .addCase(registerUser.fulfilled, (state) => {
-        state.loading = false;
-      })
+.addCase(registerAsha.pending, (state) => {
+    state.loading = true;
+    state.error = null;
+})
 
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
+.addCase(registerAsha.fulfilled, (state) => {
+    state.loading = false;
+})
 
-        state.error = action.payload;
-      });
+.addCase(registerAsha.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload;
+})
   },
 });
 

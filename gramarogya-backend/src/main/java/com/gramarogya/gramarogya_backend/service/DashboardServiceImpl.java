@@ -84,30 +84,30 @@ public class DashboardServiceImpl implements DashboardService {
                 )
 
                 .pregnantWomen(
-                        beneficiaryRepository.countByUserIdAndCategory(
+                        beneficiaryRepository.countByUserIdAndCategoryContainingIgnoreCase(
                                 userId,
-                                "Pregnant Woman"
+                                "pregnant"
                         )
                 )
 
                 .children(
-                        beneficiaryRepository.countByUserIdAndCategory(
+                        beneficiaryRepository.countByUserIdAndCategoryContainingIgnoreCase(
                                 userId,
-                                "Child"
+                                "child"
                         )
                 )
 
                 .tbPatients(
-                        beneficiaryRepository.countByUserIdAndCategory(
+                        beneficiaryRepository.countByUserIdAndCategoryContainingIgnoreCase(
                                 userId,
-                                "TB Patient"
+                                "tb"
                         )
                 )
 
                 .elderly(
-                        beneficiaryRepository.countByUserIdAndCategory(
+                        beneficiaryRepository.countByUserIdAndCategoryContainingIgnoreCase(
                                 userId,
-                                "Elderly"
+                                "elder"
                         )
                 )
 
@@ -245,30 +245,30 @@ public class DashboardServiceImpl implements DashboardService {
                 )
 
                 .pregnantWomen(
-                        beneficiaryRepository.countByUserIdInAndCategory(
+                        beneficiaryRepository.countByUserIdInAndCategoryContainingIgnoreCase(
                                 ashaIds,
-                                "Pregnant Woman"
+                                "pregnant"
                         )
                 )
 
                 .children(
-                        beneficiaryRepository.countByUserIdInAndCategory(
+                        beneficiaryRepository.countByUserIdInAndCategoryContainingIgnoreCase(
                                 ashaIds,
-                                "Child"
+                                "child"
                         )
                 )
 
                 .tbPatients(
-                        beneficiaryRepository.countByUserIdInAndCategory(
+                        beneficiaryRepository.countByUserIdInAndCategoryContainingIgnoreCase(
                                 ashaIds,
-                                "TB Patient"
+                                "tb"
                         )
                 )
 
                 .elderly(
-                        beneficiaryRepository.countByUserIdInAndCategory(
+                        beneficiaryRepository.countByUserIdInAndCategoryContainingIgnoreCase(
                                 ashaIds,
-                                "Elderly"
+                                "elder"
                         )
                 )
 
@@ -360,18 +360,47 @@ public class DashboardServiceImpl implements DashboardService {
         // ==========================
 
         List<Visit> visits =
-                visitRepository.findTop5ByUserIdInOrderByVisitDateDesc(userIds);
+                visitRepository.findByUserIdIn(userIds);
 
         for (Visit visit : visits) {
 
-            Beneficiary beneficiary = beneficiaryRepository
-                    .findById(visit.getBeneficiaryId())
-                    .orElse(null);
+            System.out.println(
+                    "VISIT ID = " + visit.getId()
+                            + " | STATUS = [" + visit.getStatus() + "]"
+                            + " | TYPE = " + visit.getVisitType()
+                            + " | DATE = " + visit.getVisitDate()
+            );
+
+            Beneficiary beneficiary =
+                    beneficiaryRepository
+                            .findById(visit.getBeneficiaryId())
+                            .orElse(null);
+
+            String title;
+
+            if ("Completed".equalsIgnoreCase(visit.getStatus())) {
+
+                title = "Visit Completed";
+
+            } else if ("Pending".equalsIgnoreCase(visit.getStatus())) {
+
+                title = "Visit Scheduled";
+
+            } else if ("Cancelled".equalsIgnoreCase(visit.getStatus())) {
+
+                title = "Visit Cancelled";
+
+            } else {
+
+                title = "Visit Updated";
+            }
 
             activities.add(
                     ActivityDto.builder()
                             .id(visit.getId())
-                            .title("Visit Completed")
+
+                            .title(title)
+
                             .description(
                                     (beneficiary != null
                                             ? beneficiary.getName()
@@ -379,8 +408,15 @@ public class DashboardServiceImpl implements DashboardService {
                                             + " • "
                                             + visit.getVisitType()
                             )
-                            .time(visit.getVisitDate().toString())
+
+                            .time(
+                                    visit.getVisitDate() != null
+                                            ? visit.getVisitDate().toString()
+                                            : ""
+                            )
+
                             .type("VISIT")
+
                             .build()
             );
         }
@@ -394,9 +430,10 @@ public class DashboardServiceImpl implements DashboardService {
 
         if (!beneficiaries.isEmpty()) {
 
-            List<String> beneficiaryIds = beneficiaries.stream()
-                    .map(Beneficiary::getId)
-                    .toList();
+            List<String> beneficiaryIds =
+                    beneficiaries.stream()
+                            .map(Beneficiary::getId)
+                            .toList();
 
             List<HealthRecord> records =
                     healthRecordRepository
@@ -406,14 +443,18 @@ public class DashboardServiceImpl implements DashboardService {
 
             for (HealthRecord record : records) {
 
-                Beneficiary beneficiary = beneficiaryRepository
-                        .findById(record.getBeneficiaryId())
-                        .orElse(null);
+                Beneficiary beneficiary =
+                        beneficiaryRepository
+                                .findById(record.getBeneficiaryId())
+                                .orElse(null);
 
                 activities.add(
                         ActivityDto.builder()
+
                                 .id(record.getId())
+
                                 .title("Health Record Updated")
+
                                 .description(
                                         (beneficiary != null
                                                 ? beneficiary.getName()
@@ -421,10 +462,17 @@ public class DashboardServiceImpl implements DashboardService {
                                                 + " • Diagnosis: "
                                                 + record.getDiagnosis()
                                 )
-                                .time(record.getCreatedAt()
-                                        .toLocalDate()
-                                        .toString())
+
+                                .time(
+                                        record.getCreatedAt() != null
+                                                ? record.getCreatedAt()
+                                                .toLocalDate()
+                                                .toString()
+                                                : ""
+                                )
+
                                 .type("HEALTH_RECORD")
+
                                 .build()
                 );
             }
@@ -435,8 +483,25 @@ public class DashboardServiceImpl implements DashboardService {
         // ==========================
 
         activities.sort(
-                (a, b) -> b.getTime().compareTo(a.getTime())
+                (a, b) -> {
+
+                    String timeA =
+                            a.getTime() != null
+                                    ? a.getTime()
+                                    : "";
+
+                    String timeB =
+                            b.getTime() != null
+                                    ? b.getTime()
+                                    : "";
+
+                    return timeB.compareTo(timeA);
+                }
         );
+
+        // ==========================
+        // Return latest 5 activities
+        // ==========================
 
         return activities.stream()
                 .limit(5)
@@ -469,11 +534,14 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<String> userIds = getAccessibleUserIds(currentUser);
 
+        LocalDate today = LocalDate.now();
+        LocalDate threeDaysLater = today.plusDays(3);
+
         List<Visit> visits =
                 visitRepository.findByUserIdInAndNextVisitDateBetween(
                         userIds,
-                        LocalDate.now(),
-                        LocalDate.now().plusDays(7)
+                        today,
+                        threeDaysLater
                 );
 
         return visits.stream()
@@ -500,7 +568,8 @@ public class DashboardServiceImpl implements DashboardService {
                             .build();
                 })
                 .sorted((a, b) ->
-                        a.getNextVisitDate().compareTo(b.getNextVisitDate())
+                        a.getNextVisitDate()
+                                .compareTo(b.getNextVisitDate())
                 )
                 .limit(5)
                 .toList();

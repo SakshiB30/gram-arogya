@@ -1,14 +1,13 @@
 package com.gramarogya.gramarogya_backend.service;
 
 
-import com.gramarogya.gramarogya_backend.dto.LoginRequestDto;
-import com.gramarogya.gramarogya_backend.dto.LoginResponseDto;
-import com.gramarogya.gramarogya_backend.dto.RegisterRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
+import com.gramarogya.gramarogya_backend.dto.*;
 import jakarta.validation.Valid;
 
 public interface AuthService {
-    UserResponseDto register(RegisterRequestDto request);
+    UserResponseDto registerAnm(RegisterAnmRequestDto request);
+
+    UserResponseDto registerAsha(RegisterAshaRequestDto request);
 
     LoginResponseDto login(@Valid LoginRequestDto request);
 }

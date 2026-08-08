@@ -4,6 +4,7 @@ import com.gramarogya.gramarogya_backend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,23 +30,37 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                .cors(cors -> {})      // <-- ADD THIS
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
 
+                .authorizeHttpRequests(auth -> auth
+
+                        // Public APIs
+                        .requestMatchers(
+                                "/auth/**",
+                                "/asha/register"
+                        ).permitAll()
+
+                        // ADMIN APIs
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
+                        // ANM APIs
                         .requestMatchers("/anm/**").hasRole("ANM")
 
+                        // ASHA APIs
                         .requestMatchers("/asha/**").hasRole("ASHA")
 
+                        // Everything else
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }

@@ -8,8 +8,11 @@ import {
 export default function RecentActivity({
   activities = [],
 }) {
+
   const getIcon = (type) => {
+
     switch (type) {
+
       case "BENEFICIARY":
         return {
           icon: UserPlus,
@@ -40,63 +43,103 @@ export default function RecentActivity({
     }
   };
 
+
   return (
+
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+      {/* Header */}
 
       <h2 className="mb-6 text-lg font-bold text-slate-900">
         Recent Activity
       </h2>
 
+
+      {/* Empty State */}
+
       {activities.length === 0 ? (
 
         <div className="py-10 text-center text-slate-500">
+
           No recent activity found.
+
         </div>
 
       ) : (
 
         <div className="space-y-4">
 
-          {activities.map((activity, index) => {
+          {activities.map((activity) => {
 
             const item = getIcon(activity.type);
+
             const Icon = item.icon;
 
             return (
 
               <div
-                key={index}
-                className="flex items-center gap-4 rounded-xl border border-slate-100 p-4 transition hover:bg-slate-50"
+                key={activity.id}
+                className="
+                  flex
+                  items-center
+                  gap-4
+                  rounded-xl
+                  border
+                  border-slate-100
+                  p-4
+                  transition
+                  hover:bg-slate-50
+                "
               >
 
+                {/* Icon */}
+
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full ${item.bg}`}
+                  className={`
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    ${item.bg}
+                  `}
                 >
+
                   <Icon
                     size={20}
                     className={item.color}
                   />
+
                 </div>
 
-                <div className="flex-1">
+
+                {/* Activity Information */}
+
+                <div className="flex-1 min-w-0">
 
                   <h4 className="font-semibold text-slate-800">
                     {activity.title}
                   </h4>
 
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 truncate">
                     {activity.description}
                   </p>
 
                 </div>
 
-                <span className="text-xs text-slate-400">
+
+                {/* Date */}
+
+                <span className="shrink-0 text-xs text-slate-400">
                   {activity.time}
                 </span>
 
               </div>
 
             );
+
           })}
 
         </div>
@@ -104,5 +147,6 @@ export default function RecentActivity({
       )}
 
     </div>
+
   );
 }

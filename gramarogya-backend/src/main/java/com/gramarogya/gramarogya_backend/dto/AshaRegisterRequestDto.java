@@ -7,11 +7,24 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateAnmRequestDto {
+public class AshaRegisterRequestDto {
 
     private String name;
 
     private String email;
 
     private String password;
+
+    private String phone;
+
+    private String village;
+
+    private String taluka;
+
+    private String district;
+
+    private String state;
+
+    // Required to assign the ANM
+    private String anmEmployeeId;
 }

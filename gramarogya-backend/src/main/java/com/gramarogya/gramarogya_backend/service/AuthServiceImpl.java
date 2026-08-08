@@ -19,55 +19,96 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
 
     @Override
-    public UserResponseDto register(RegisterRequestDto registerRequestDto) {
+    public UserResponseDto registerAnm(RegisterAnmRequestDto request) {
 
-        // Check if email already exists
-        if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
+        // Email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already registered");
+        }
+
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .village(request.getVillage())
+                .taluka(request.getTaluka())
+                .district(request.getDistrict())
+                .state(request.getState())
+
+                .role(Role.ANM)
+
+                // Newly registered ANMs are not approved yet
+                .verificationStatus(VerificationStatus.PENDING)
+                .accountStatus(AccountStatus.BLOCKED)
+
+                // Employee ID will be generated after admin approval
+                .employeeId(null)
+
+                .supervisorId(null)
+
+                .build();
+
+        user = userRepository.save(user);
+
+        return userMapper.toResponseDto(user);
+    }
+
+    @Override
+    public UserResponseDto registerAsha(RegisterAshaRequestDto request) {
+
+        // Email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
 
         // Find ANM using Employee ID
-        User anm = userRepository.findByEmployeeId(registerRequestDto.getAnmEmployeeId())
+        User anm = userRepository
+                .findByEmployeeId(request.getAnmEmployeeId())
                 .orElseThrow(() ->
                         new RuntimeException("Invalid ANM Employee ID"));
 
-        // Ensure Employee ID belongs to an ANM
+        // Ensure the supervisor is actually an ANM
         if (anm.getRole() != Role.ANM) {
             throw new RuntimeException("Invalid ANM Employee ID");
         }
 
-        // Ensure ANM account is approved and active
-        if (anm.getVerificationStatus() != VerificationStatus.APPROVED ||
-                anm.getAccountStatus() != AccountStatus.ACTIVE) {
-
-            throw new RuntimeException(
-                    "This ANM account is not active. Please contact the administrator.");
+        // ANM must be approved
+        if (anm.getVerificationStatus() != VerificationStatus.APPROVED) {
+            throw new RuntimeException("Assigned ANM is not approved.");
         }
 
-        // Create ASHA user
-        User user = userMapper.toEntity(registerRequestDto);
+        // ANM must be active
+        if (anm.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new RuntimeException("Assigned ANM is blocked.");
+        }
 
-        // Encode Password
-        user.setPassword(
-                passwordEncoder.encode(registerRequestDto.getPassword())
-        );
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .village(request.getVillage())
+                .taluka(request.getTaluka())
+                .district(request.getDistrict())
+                .state(request.getState())
 
-        // System-managed fields
-        user.setRole(Role.ASHA);
+                .role(Role.ASHA)
 
-        // Waiting for ANM approval
-        user.setVerificationStatus(VerificationStatus.PENDING);
+                // Supervisor ANM
+                .supervisorId(anm.getId())
 
-        // Cannot login until approved
-        user.setAccountStatus(AccountStatus.BLOCKED);
+                // Generated after ANM approval
+                .employeeId(null)
 
-        // Store supervisor's Employee ID
-        user.setSupervisorId(anm.getId());
+                // Pending until ANM approves
+                .verificationStatus(VerificationStatus.PENDING)
 
-        // Employee ID will be assigned later if needed
-        user.setEmployeeId(null);
+                // Cannot login yet
+                .accountStatus(AccountStatus.BLOCKED)
 
-        // Save user
+                .build();
+
         user = userRepository.save(user);
 
         return userMapper.toResponseDto(user);

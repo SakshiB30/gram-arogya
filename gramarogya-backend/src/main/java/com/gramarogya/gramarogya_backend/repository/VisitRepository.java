@@ -10,26 +10,39 @@ import java.util.List;
 @Repository
 public interface VisitRepository extends MongoRepository<Visit, String> {
 
-    // All visits created by an ASHA worker
+    // ==========================================
+    // ASHA - VISITS
+    // ==========================================
+
     List<Visit> findByUserId(String userId);
 
-    // All visits of a beneficiary
     List<Visit> findByBeneficiaryId(String beneficiaryId);
 
-    // All visits of a beneficiary by a specific ASHA worker
-    List<Visit> findByBeneficiaryIdAndUserId(String beneficiaryId, String userId);
+    List<Visit> findByBeneficiaryIdAndUserId(
+            String beneficiaryId,
+            String userId
+    );
 
     long countByUserId(String userId);
 
-    long countByUserIdAndVisitDate(String userId,
-                                   LocalDate visitDate);
+    long countByUserIdAndVisitDate(
+            String userId,
+            LocalDate visitDate
+    );
 
-    long countByUserIdAndNextVisitDateAfter(String userId,
-                                            LocalDate date);
+    long countByUserIdAndNextVisitDateAfter(
+            String userId,
+            LocalDate date
+    );
 
-    List<Visit> findTop5ByUserIdOrderByVisitDateDesc(String userId);
+    List<Visit> findTop5ByUserIdOrderByVisitDateDesc(
+            String userId
+    );
 
-    List<Visit> findByUserIdAndStatus(String userId, String status);
+    List<Visit> findByUserIdAndStatus(
+            String userId,
+            String status
+    );
 
     List<Visit> findByUserIdAndNextVisitDateBetween(
             String userId,
@@ -42,6 +55,11 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             String visitType
     );
 
+
+    // ==========================================
+    // ADMIN
+    // ==========================================
+
     long count();
 
     long countByVisitDate(LocalDate visitDate);
@@ -50,9 +68,14 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
 
     long countByStatus(String status);
 
-    // ---------------- ANM Dashboard ----------------
 
-    long countByUserIdIn(List<String> userIds);
+    // ==========================================
+    // ANM DASHBOARD
+    // ==========================================
+
+    long countByUserIdIn(
+            List<String> userIds
+    );
 
     long countByUserIdInAndVisitDate(
             List<String> userIds,
@@ -80,4 +103,12 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
     );
 
 
+    // ==========================================
+    // ALL ACCESSIBLE VISITS
+    // Used by Recent Activity
+    // ==========================================
+
+    List<Visit> findByUserIdIn(
+            List<String> userIds
+    );
 }

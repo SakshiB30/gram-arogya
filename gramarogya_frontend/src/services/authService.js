@@ -9,18 +9,28 @@ const login = async (credentials) => {
   return response.data;
 };
 
-/**
- * Register User
- */
-const register = async (userData) => {
-  const response = await axiosClient.post("/auth/register", userData);
+const registerAnm = async (userData) => {
+    const response = await axiosClient.post(
+        "/auth/register-anm",
+        userData
+    );
 
-  return response.data;
+    return response.data;
+};
+
+const registerAsha = async (userData) => {
+    const response = await axiosClient.post(
+        "/auth/register-asha",
+        userData
+    );
+
+    return response.data;
 };
 
 const authService = {
   login,
-  register,
+  registerAnm,
+  registerAsha,
 };
 
 

@@ -89,19 +89,24 @@ const role = user?.role;
 
   const total = beneficiaries.length;
 
+  const normalize = (value) =>
+  value?.trim().toLowerCase();
 
-  const pregnantWomen =
-    beneficiaries.filter(
-      (b)=>b.category==="PREGNANT_WOMAN"
-    ).length;
+const pregnantWomen = beneficiaries.filter((b) =>
+  normalize(b.category) === "pregnant woman"
+).length;
 
+const children = beneficiaries.filter((b) =>
+  normalize(b.category) === "child"
+).length;
 
+const tbPatients = beneficiaries.filter((b) =>
+  normalize(b.category) === "tb patient"
+).length;
 
-  const children =
-    beneficiaries.filter(
-      (b)=>b.category==="CHILD"
-    ).length;
-
+const elderly = beneficiaries.filter((b) =>
+  normalize(b.category) === "elderly"
+).length;
 
 
   const stats = [
@@ -113,14 +118,12 @@ const role = user?.role;
       color:"bg-blue-100 text-blue-600"
     },
 
-
     {
       title:"Pregnant Women",
       value:pregnantWomen,
       icon:User,
       color:"bg-orange-100 text-orange-600"
     },
-
 
     {
       title:"Children Under 5",

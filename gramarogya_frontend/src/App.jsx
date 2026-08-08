@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { Provider } from 'react-redux';
+import { store } from '../src/redux/store';
 import AppRoutes from "./routes/AppRoutes";
-import './App.css'
+import './App.css';
 
 function App() {
   return (
-    <>
-     <AppRoutes />
-    </>
-  )
+    <Provider store={store}>
+      <AppRoutes />
+    </Provider>
+  );
 }
 
-export default App
+export default App;

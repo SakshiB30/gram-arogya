@@ -1,7 +1,6 @@
 package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.AccountStatus;
-import com.gramarogya.gramarogya_backend.dto.CreateAnmRequestDto;
 import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.dto.VerificationStatus;
@@ -12,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,8 +19,6 @@ import java.util.Optional;
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder;
 
     private final UserMapper userMapper;
 
@@ -42,31 +40,114 @@ public class AdminServiceImpl implements AdminService {
         return String.format("ANM%03d", number);
     }
 
-    @Override
-    public UserResponseDto createAnm(CreateAnmRequestDto request) {
 
-        // Check if email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+    @Override
+    public List<UserResponseDto> getPendingAnms() {
+
+        return userRepository
+                .findByRoleAndVerificationStatus(
+                        Role.ANM,
+                        VerificationStatus.PENDING
+                )
+                .stream()
+                .map(userMapper::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    public UserResponseDto approveAnm(String id) {
+
+        User anm = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ANM not found"));
+
+        if (anm.getRole() != Role.ANM) {
+            throw new RuntimeException("User is not an ANM");
         }
 
-        // Create ANM
-        User anm = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.ANM)
-                .employeeId(generateAnmEmployeeId())
+        anm.setVerificationStatus(VerificationStatus.APPROVED);
 
-                // Admin-created ANMs are immediately usable
-                .verificationStatus(VerificationStatus.APPROVED)
-                .accountStatus(AccountStatus.ACTIVE)
+        anm.setAccountStatus(AccountStatus.ACTIVE);
 
-                .build();
+        if (anm.getEmployeeId() == null) {
+            anm.setEmployeeId(generateAnmEmployeeId());
+        }
 
-        // Save
         anm = userRepository.save(anm);
 
         return userMapper.toResponseDto(anm);
+    }
+
+    @Override
+    public UserResponseDto rejectAnm(String id) {
+
+        User anm = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ANM not found"));
+
+        if (anm.getRole() != Role.ANM) {
+            throw new RuntimeException("User is not an ANM");
+        }
+
+        anm.setVerificationStatus(VerificationStatus.REJECTED);
+
+        anm.setAccountStatus(AccountStatus.BLOCKED);
+
+        anm = userRepository.save(anm);
+
+        return userMapper.toResponseDto(anm);
+    }
+
+    @Override
+    public UserResponseDto blockAnm(String id) {
+
+        User anm = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ANM not found"));
+
+        if (anm.getRole() != Role.ANM) {
+            throw new RuntimeException("User is not an ANM");
+        }
+
+        anm.setAccountStatus(AccountStatus.BLOCKED);
+
+        anm = userRepository.save(anm);
+
+        return userMapper.toResponseDto(anm);
+    }
+
+    @Override
+    public UserResponseDto unblockAnm(String id) {
+
+        User anm = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ANM not found"));
+
+        if (anm.getRole() != Role.ANM) {
+            throw new RuntimeException("User is not an ANM");
+        }
+
+        if (anm.getVerificationStatus() != VerificationStatus.APPROVED) {
+            throw new RuntimeException(
+                    "ANM must be approved before activation."
+            );
+        }
+
+        anm.setAccountStatus(AccountStatus.ACTIVE);
+
+        anm = userRepository.save(anm);
+
+        return userMapper.toResponseDto(anm);
+    }
+
+    @Override
+    public List<UserResponseDto> getAllAnms() {
+
+        return userRepository
+                .findByRole(Role.ANM)
+                .stream()
+                .map(userMapper::toResponseDto)
+                .toList();
+
     }
 }

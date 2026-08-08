@@ -47,4 +47,6 @@ public interface UserRepository extends MongoRepository<User, String> {
     long count();
 
     List<User> findByVerificationStatus(VerificationStatus verificationStatus);
+
+    List<User> findByRoleAndSupervisorId(Role role,String supervisorId);
 }

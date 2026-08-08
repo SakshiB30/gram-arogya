@@ -13,6 +13,13 @@ export default function AddBeneficiary() {
     (state) => state.beneficiaries
   );
 
+  const BENEFICIARY_CATEGORIES = [
+  "Pregnant Woman",
+  "Child",
+  "TB Patient",
+  "Elderly",
+];
+
   const [form, setForm] = useState({
     name: "",
     age: "",
@@ -159,13 +166,41 @@ export default function AddBeneficiary() {
               Category
             </label>
 
-            <input
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              placeholder="Pregnant Woman / Child / Elderly"
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <select
+    name="category"
+    value={form.category}
+    onChange={handleChange}
+    className="
+        w-full
+        border
+        rounded-lg
+        px-3
+        py-2
+        focus:outline-none
+        focus:ring-2
+        focus:ring-blue-500
+    "
+>
+    <option value="">
+        Select Category
+    </option>
+
+    <option value="Pregnant Woman">
+        Pregnant Woman
+    </option>
+
+    <option value="Child">
+        Child
+    </option>
+
+    <option value="TB Patient">
+        TB Patient
+    </option>
+
+    <option value="Elderly">
+        Elderly
+    </option>
+</select>
           </div>
 
           {/* Disease */}

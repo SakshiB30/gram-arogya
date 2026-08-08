@@ -1,9 +1,6 @@
 package com.gramarogya.gramarogya_backend.controller;
 
-import com.gramarogya.gramarogya_backend.dto.LoginRequestDto;
-import com.gramarogya.gramarogya_backend.dto.LoginResponseDto;
-import com.gramarogya.gramarogya_backend.dto.RegisterRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
+import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +16,28 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
-    @PostMapping("/register")
-    public UserResponseDto register(
-            @Valid @RequestBody RegisterRequestDto request) {
+    // ===========================
+    // Register ANM
+    // ===========================
 
-        return authService.register(request);
+    @PostMapping("/register-anm")
+    public UserResponseDto registerAnm(
+            @Valid @RequestBody RegisterAnmRequestDto request) {
+
+        return authService.registerAnm(request);
     }
+
+    // ===========================
+    // Register ASHA
+    // ===========================
+
+    @PostMapping("/register-asha")
+    public UserResponseDto registerAsha(
+            @Valid @RequestBody RegisterAshaRequestDto request) {
+
+        return authService.registerAsha(request);
+    }
+
 
     @PostMapping("/login")
     public LoginResponseDto login(

@@ -3,9 +3,11 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.CreateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.VisitResponseDto;
+import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.mapper.VisitMapper;
+import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,93 +23,205 @@ public class VisitServiceImpl implements VisitService {
 
     private final VisitRepository visitRepository;
     private final UserRepository userRepository;
+    private final BeneficiaryRepository beneficiaryRepository;
     private final VisitMapper visitMapper;
+
+
+    // ==========================================
+    // CURRENT USER
+    // ==========================================
 
     private User getCurrentUser(Authentication authentication) {
 
         String email = authentication.getName();
 
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(
+                        () -> new RuntimeException("User not found")
+                );
     }
 
+
+    // ==========================================
+    // CREATE VISIT
+    // ==========================================
+
     @Override
-    public VisitResponseDto create(Authentication authentication,
-                                   CreateVisitRequestDto dto) {
+    public VisitResponseDto create(
+            Authentication authentication,
+            CreateVisitRequestDto dto) {
 
         User currentUser = getCurrentUser(authentication);
+
+
+        // Make sure beneficiary exists
+        beneficiaryRepository.findById(dto.getBeneficiaryId())
+                .orElseThrow(
+                        () -> new RuntimeException(
+                                "Beneficiary not found"
+                        )
+                );
+
 
         Visit visit = visitMapper.toEntity(dto);
 
         visit.setUserId(currentUser.getId());
+
+        // Actual visit/creation date
         visit.setVisitDate(LocalDate.now());
 
         visitRepository.save(visit);
 
-        return visitMapper.toResponseDto(visit);
+        return buildResponse(visit);
     }
 
+
+    // ==========================================
+    // GET ALL VISITS
+    // ==========================================
+
     @Override
-    public List<VisitResponseDto> getAll(Authentication authentication) {
+    public List<VisitResponseDto> getAll(
+            Authentication authentication) {
 
         User currentUser = getCurrentUser(authentication);
 
-        return visitRepository.findByUserId(currentUser.getId())
+        return visitRepository
+                .findByUserId(currentUser.getId())
                 .stream()
-                .map(visitMapper::toResponseDto)
+                .map(this::buildResponse)
                 .toList();
     }
 
+
+    // ==========================================
+    // GET VISIT BY ID
+    // ==========================================
+
     @Override
-    public VisitResponseDto getById(Authentication authentication,
-                                    String id) {
+    public VisitResponseDto getById(
+            Authentication authentication,
+            String id) {
 
         User currentUser = getCurrentUser(authentication);
 
-        Visit visit = visitRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visit not found"));
+        Visit visit =
+                visitRepository.findById(id)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Visit not found"
+                                )
+                        );
+
 
         if (!visit.getUserId().equals(currentUser.getId())) {
             throw new RuntimeException("Unauthorized");
         }
 
-        return visitMapper.toResponseDto(visit);
+
+        return buildResponse(visit);
     }
 
+
+    // ==========================================
+    // UPDATE VISIT
+    // ==========================================
+
     @Override
-    public VisitResponseDto update(Authentication authentication,
-                                   String id,
-                                   UpdateVisitRequestDto dto) {
+    public VisitResponseDto update(
+            Authentication authentication,
+            String id,
+            UpdateVisitRequestDto dto) {
 
         User currentUser = getCurrentUser(authentication);
 
-        Visit visit = visitRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visit not found"));
+        Visit visit =
+                visitRepository.findById(id)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Visit not found"
+                                )
+                        );
+
 
         if (!visit.getUserId().equals(currentUser.getId())) {
             throw new RuntimeException("Unauthorized");
         }
+
 
         visitMapper.updateEntity(dto, visit);
 
         visitRepository.save(visit);
 
-        return visitMapper.toResponseDto(visit);
+        return buildResponse(visit);
     }
 
+
+    // ==========================================
+    // DELETE VISIT
+    // ==========================================
+
     @Override
-    public void delete(Authentication authentication,
-                       String id) {
+    public void delete(
+            Authentication authentication,
+            String id) {
 
         User currentUser = getCurrentUser(authentication);
 
-        Visit visit = visitRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Visit not found"));
+        Visit visit =
+                visitRepository.findById(id)
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Visit not found"
+                                )
+                        );
+
 
         if (!visit.getUserId().equals(currentUser.getId())) {
             throw new RuntimeException("Unauthorized");
         }
 
+
         visitRepository.delete(visit);
+    }
+
+
+    // ==========================================
+    // BUILD RESPONSE
+    // ==========================================
+
+    private VisitResponseDto buildResponse(Visit visit) {
+
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(visit.getBeneficiaryId())
+                        .orElse(null);
+
+
+        VisitResponseDto dto =
+                visitMapper.toResponseDto(visit);
+
+
+        if (beneficiary != null) {
+
+            dto.setBeneficiaryName(
+                    beneficiary.getName()
+            );
+
+            dto.setCategory(
+                    beneficiary.getCategory()
+            );
+
+            dto.setVillage(
+                    beneficiary.getVillage()
+            );
+
+            dto.setPhone(
+                    beneficiary.getPhone()
+            );
+        }
+
+
+        return dto;
     }
 }

@@ -12,6 +12,8 @@ import MainLayout from "../layouts/MainLayout";
 // Auth
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import RegisterAnm from "../pages/RegisterAnm";
+import RegisterAsha from "../pages/RegisterAsha";
 import Unauthorized from "../pages/Unauthorized";
 
 // Dashboard
@@ -53,9 +55,11 @@ import HealthRecordDetail from "../components/healthRecords/HealthRecordDetail";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 
+// Landing Page
 import LandingPage from "../pages/LandingPage";
 
 import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
+import ManageAnms from "../components/dashboard/admin/ManageAnms";
 
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -63,40 +67,63 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Root */}
-       <Route
-  path="/"
-  element={
-    isAuthenticated ? (
-      <Navigate to="/app/dashboard" replace />
-    ) : (
-      <LandingPage />
-    )
-  }
-/>
-
-        {/* Auth */}
-        <Route path="/login"element={ isAuthenticated ? ( <Navigate to="/app/dashboard" replace />) : (<Login />) }/>
-
-<Route
-  path="/register"
-  element={
-    isAuthenticated ? (
-      <Navigate to="/app/dashboard" replace />
-    ) : (
-      <Register />
-    )
-  }
- />
-
-        {/* Unauthorized */}
+        {/* Root - Landing Page for unauthenticated users */}
         <Route
-          path="/unauthorized"
-          element={<Unauthorized />}
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/app" replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
+{/* Login */}
+        <Route
+          path="/login"
+          element={
+            isAuthenticated
+              ? <Navigate to="/app/dashboard" replace />
+              : <Login />
+          }
         />
 
-        {/* Protected App */}
+         {/* Register Selection */}
+        <Route
+          path="/register"
+          element={
+            isAuthenticated
+              ? <Navigate to="/app/dashboard" replace />
+              : <Register />
+          }
+        />
+
+        {/* Register ANM */}
+        <Route
+          path="/register/anm"
+          element={
+            isAuthenticated
+              ? <Navigate to="/app/dashboard" replace />
+              : <RegisterAnm />
+          }
+        />
+
+        {/* Register ASHA */}
+        <Route
+          path="/register/asha"
+          element={
+            isAuthenticated
+              ? <Navigate to="/app/dashboard" replace />
+              : <RegisterAsha />
+          }
+        />
+
+        
+
+        {/* Unauthorized */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Protected App Routes */}
         <Route
           path="/app"
           element={
@@ -105,12 +132,17 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         >
-
           {/* Default */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+
           <Route
-            index
-            element={<Navigate to="dashboard" replace />}
-          />
+  path="app/admin/manage-anms"
+  element={
+    <RoleRoute allowedRoles={["ADMIN"]}>
+      <ManageAnms />
+    </RoleRoute>
+  }
+/>
 
           {/* Dashboard */}
           <Route
@@ -133,7 +165,6 @@ const AppRoutes = () => {
           />
 
           {/* ================= BENEFICIARIES ================= */}
-
           <Route
             path="beneficiaries"
             element={
@@ -171,7 +202,6 @@ const AppRoutes = () => {
           />
 
           {/* ================= VISITS ================= */}
-
           <Route
             path="visit"
             element={
@@ -209,7 +239,6 @@ const AppRoutes = () => {
           />
 
           {/* ================= INVENTORY ================= */}
-
           <Route
             path="inventory"
             element={
@@ -255,28 +284,26 @@ const AppRoutes = () => {
             }
           />
 
-                <Route
+          <Route
             path="inventory/logs"
             element={
-            <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
-              <MedicineStockHistory />
-            </RoleRoute>
-          }
-        />
+              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+                <MedicineStockHistory />
+              </RoleRoute>
+            }
+          />
 
           {/* ================= REPORTS ================= */}
-
           <Route
             path="reports"
             element={
-              <RoleRoute allowedRoles={["ASHA","ADMIN", "ANM"]}>
+              <RoleRoute allowedRoles={["ASHA", "ADMIN", "ANM"]}>
                 <ReportsPage />
               </RoleRoute>
             }
           />
 
           {/* ================= HEALTH RECORDS ================= */}
-
           <Route
             path="health-records"
             element={
@@ -320,23 +347,23 @@ const AppRoutes = () => {
                 </RoleRoute>
               }
             />
+           
           </Route>
 
+           
         </Route>
 
-        {/* Catch All */}
-       <Route
-  path="*"
-  element={
-    isAuthenticated ? (
-      <Navigate to="/app/dashboard" replace />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
-
-    
+        {/* Catch All - Redirect to appropriate page */}
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/app/dashboard" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

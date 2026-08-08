@@ -15,6 +15,7 @@ const adminNavItems = [
   { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
   { label: "Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Reports", icon: BarChart2, path: "/app/reports" },
+  { label: "Manage ANMs", path: "app/admin/manage-anms", icon: Users },
 ];
 
 const anmNavItems = [

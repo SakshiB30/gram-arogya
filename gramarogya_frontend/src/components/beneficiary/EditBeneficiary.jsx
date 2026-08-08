@@ -135,13 +135,24 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
-        <input
-          className="border p-2 w-full"
-          name="category"
-          placeholder="Category"
-          value={form.category}
-          onChange={handleChange}
-        />
+        <select
+    name="category"
+    value={form.category}
+    onChange={handleChange}
+    className="
+        w-full
+        border
+        rounded-lg
+        px-3
+        py-2
+    "
+>
+    <option value="">Select Category</option>
+    <option value="Pregnant Woman">Pregnant Woman</option>
+    <option value="Child">Child</option>
+    <option value="TB Patient">TB Patient</option>
+    <option value="Elderly">Elderly</option>
+</select>
 
         <input
           className="border p-2 w-full"

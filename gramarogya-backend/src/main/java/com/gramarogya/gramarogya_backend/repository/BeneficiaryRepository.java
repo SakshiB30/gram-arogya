@@ -11,7 +11,10 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
 
     long countByUserId(String userId);
 
-    long countByUserIdAndCategory(String userId, String category);
+    long countByUserIdAndCategoryContainingIgnoreCase(
+            String userId,
+            String category
+    );
 
 //    List<Beneficiary> findByUserIdAndStatus(String userId, String status);
 
@@ -39,7 +42,7 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
 
     long countByUserIdIn(List<String> userIds);
 
-    long countByUserIdInAndCategory(
+    long countByUserIdInAndCategoryContainingIgnoreCase(
             List<String> userIds,
             String category
     );
