@@ -25,6 +25,12 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
     private final BeneficiaryRepository beneficiaryRepository;
     private final UserRepository userRepository;
     private final BeneficiaryMapper beneficiaryMapper;
+    private final ActivityService activityService;
+
+
+    // =========================================================
+    // GET CURRENT USER
+    // =========================================================
 
     private User getCurrentUser(Authentication authentication) {
 
@@ -35,6 +41,11 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                         new ResourceNotFoundException("User not found"));
     }
 
+
+    // =========================================================
+    // GET BENEFICIARY WITH ROLE-BASED ACCESS
+    // =========================================================
+
     private Beneficiary getBeneficiaryForCurrentUser(
             Authentication authentication,
             String id
@@ -42,124 +53,303 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         User currentUser = getCurrentUser(authentication);
 
-        Beneficiary beneficiary = beneficiaryRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Beneficiary not found"));
+        Beneficiary beneficiary =
+                beneficiaryRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Beneficiary not found"
+                                ));
+
 
         // ADMIN can access all beneficiaries
         if (currentUser.getRole() == Role.ADMIN) {
+
             return beneficiary;
         }
 
-        // ASHA can access only their own beneficiaries
+
+        // ASHA can access only own beneficiaries
         if (currentUser.getRole() == Role.ASHA) {
 
-            if (!beneficiary.getUserId().equals(currentUser.getId())) {
-                throw new UnauthorizedException("Unauthorized");
+            if (!beneficiary.getUserId()
+                    .equals(currentUser.getId())) {
+
+                throw new UnauthorizedException(
+                        "Unauthorized"
+                );
             }
 
             return beneficiary;
         }
 
-        // ANM can access beneficiaries of ASHAs under them
+
+        // ANM can access beneficiaries
+        // belonging to ASHAs under them
         if (currentUser.getRole() == Role.ANM) {
 
-            List<String> ashaIds = userRepository
-                    .findBySupervisorId(currentUser.getId())
-                    .stream()
-                    .map(User::getId)
-                    .toList();
+            List<String> ashaIds =
+                    userRepository
+                            .findBySupervisorId(currentUser.getId())
+                            .stream()
+                            .map(User::getId)
+                            .toList();
 
-            if (!ashaIds.contains(beneficiary.getUserId())) {
-                throw new UnauthorizedException("Unauthorized");
+
+            if (!ashaIds.contains(
+                    beneficiary.getUserId()
+            )) {
+
+                throw new UnauthorizedException(
+                        "Unauthorized"
+                );
             }
 
             return beneficiary;
         }
 
-        throw new UnauthorizedException("Unauthorized");
+
+        throw new UnauthorizedException(
+                "Unauthorized"
+        );
     }
 
+
+    // =========================================================
+    // CREATE BENEFICIARY
+    // =========================================================
+
     @Override
-    public BeneficiaryResponseDto create(Authentication authentication,
-                                         CreateBeneficiaryRequestDto dto) {
+    public BeneficiaryResponseDto create(
+            Authentication authentication,
+            CreateBeneficiaryRequestDto dto
+    ) {
 
-        User currentUser = getCurrentUser(authentication);
+        User currentUser =
+                getCurrentUser(authentication);
 
-        Beneficiary beneficiary = beneficiaryMapper.toEntity(dto);
 
-        beneficiary.setUserId(currentUser.getId());
-        beneficiary.setDateAdded(LocalDate.now());
+        Beneficiary beneficiary =
+                beneficiaryMapper.toEntity(dto);
 
-        beneficiary = beneficiaryRepository.save(beneficiary);
 
-        return beneficiaryMapper.toResponseDto(beneficiary);
+        beneficiary.setUserId(
+                currentUser.getId()
+        );
+
+
+        beneficiary.setDateAdded(
+                LocalDate.now()
+        );
+
+
+        beneficiary =
+                beneficiaryRepository.save(
+                        beneficiary
+                );
+
+
+        // CREATE ACTIVITY
+        activityService.log(
+                currentUser,
+                "CREATE",
+                "Beneficiary Added",
+                beneficiary.getName()
+                        + " • "
+                        + beneficiary.getVillage(),
+                "BENEFICIARY",
+                beneficiary.getId(),
+                "Beneficiary"
+        );
+
+
+        return beneficiaryMapper.toResponseDto(
+                beneficiary
+        );
     }
 
-    @Override
-    public List<BeneficiaryResponseDto> getAll(Authentication authentication) {
 
-        User currentUser = getCurrentUser(authentication);
+    // =========================================================
+    // GET ALL BENEFICIARIES
+    // =========================================================
+
+    @Override
+    public List<BeneficiaryResponseDto> getAll(
+            Authentication authentication
+    ) {
+
+        User currentUser =
+                getCurrentUser(authentication);
+
 
         List<Beneficiary> beneficiaries;
 
+
+        // ADMIN
         if (currentUser.getRole() == Role.ADMIN) {
 
-            beneficiaries = beneficiaryRepository.findAll();
-
-        } else if (currentUser.getRole() == Role.ANM) {
-
-            List<String> ashaIds = userRepository
-                    .findBySupervisorId(currentUser.getId())
-                    .stream()
-                    .map(User::getId)
-                    .toList();
-
-            beneficiaries = beneficiaryRepository.findByUserIdIn(ashaIds);
-
-        } else {
-
-            beneficiaries = beneficiaryRepository.findByUserId(currentUser.getId());
-
+            beneficiaries =
+                    beneficiaryRepository.findAll();
         }
 
+
+        // ANM
+        else if (currentUser.getRole() == Role.ANM) {
+
+            List<String> ashaIds =
+                    userRepository
+                            .findBySupervisorId(
+                                    currentUser.getId()
+                            )
+                            .stream()
+                            .map(User::getId)
+                            .toList();
+
+
+            beneficiaries =
+                    beneficiaryRepository
+                            .findByUserIdIn(ashaIds);
+        }
+
+
+        // ASHA
+        else {
+
+            beneficiaries =
+                    beneficiaryRepository
+                            .findByUserId(
+                                    currentUser.getId()
+                            );
+        }
+
+
         return beneficiaries.stream()
-                .map(beneficiaryMapper::toResponseDto)
+                .map(
+                        beneficiaryMapper::toResponseDto
+                )
                 .toList();
     }
 
+
+    // =========================================================
+    // GET BENEFICIARY BY ID
+    // =========================================================
+
     @Override
-    public BeneficiaryResponseDto getById(Authentication authentication,
-                                          String id) {
+    public BeneficiaryResponseDto getById(
+            Authentication authentication,
+            String id
+    ) {
 
         Beneficiary beneficiary =
-                getBeneficiaryForCurrentUser(authentication, id);
+                getBeneficiaryForCurrentUser(
+                        authentication,
+                        id
+                );
 
-        return beneficiaryMapper.toResponseDto(beneficiary);
+
+        return beneficiaryMapper.toResponseDto(
+                beneficiary
+        );
     }
 
+
+    // =========================================================
+    // UPDATE BENEFICIARY
+    // =========================================================
+
     @Override
-    public BeneficiaryResponseDto update(Authentication authentication,
-                                         String id,
-                                         UpdateBeneficiaryRequestDto dto) {
+    public BeneficiaryResponseDto update(
+            Authentication authentication,
+            String id,
+            UpdateBeneficiaryRequestDto dto
+    ) {
+
+        User currentUser =
+                getCurrentUser(authentication);
+
 
         Beneficiary beneficiary =
-                getBeneficiaryForCurrentUser(authentication, id);
+                getBeneficiaryForCurrentUser(
+                        authentication,
+                        id
+                );
 
-        beneficiaryMapper.updateEntity(dto, beneficiary);
 
-        beneficiary = beneficiaryRepository.save(beneficiary);
+        beneficiaryMapper.updateEntity(
+                dto,
+                beneficiary
+        );
 
-        return beneficiaryMapper.toResponseDto(beneficiary);
+
+        beneficiary =
+                beneficiaryRepository.save(
+                        beneficiary
+                );
+
+
+        // CREATE ACTIVITY
+        activityService.log(
+                currentUser,
+                "UPDATE",
+                "Beneficiary Updated",
+                beneficiary.getName()
+                        + " • "
+                        + beneficiary.getVillage(),
+                "BENEFICIARY",
+                beneficiary.getId(),
+                "Beneficiary"
+        );
+
+
+        return beneficiaryMapper.toResponseDto(
+                beneficiary
+        );
     }
 
+
+    // =========================================================
+    // DELETE BENEFICIARY
+    // =========================================================
+
     @Override
-    public void delete(Authentication authentication,
-                       String id) {
+    public void delete(
+            Authentication authentication,
+            String id
+    ) {
+
+        User currentUser =
+                getCurrentUser(authentication);
+
 
         Beneficiary beneficiary =
-                getBeneficiaryForCurrentUser(authentication, id);
+                getBeneficiaryForCurrentUser(
+                        authentication,
+                        id
+                );
 
-        beneficiaryRepository.delete(beneficiary);
+
+        String beneficiaryName =
+                beneficiary.getName();
+
+
+        String beneficiaryId =
+                beneficiary.getId();
+
+
+        // CREATE ACTIVITY BEFORE DELETE
+        activityService.log(
+                currentUser,
+                "DELETE",
+                "Beneficiary Deleted",
+                beneficiary.getName(),
+                "BENEFICIARY",
+                beneficiary.getId(),
+                "Beneficiary"
+        );
+
+
+        beneficiaryRepository.delete(
+                beneficiary
+        );
     }
 }

@@ -16,4 +16,7 @@ public class ActivityDto {
     private String description;
     private String time;
     private String type;
+    private String action;
+    private String referenceId;
+    private String referenceType;
 }

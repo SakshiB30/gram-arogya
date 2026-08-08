@@ -25,6 +25,7 @@ public class VisitServiceImpl implements VisitService {
     private final UserRepository userRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final VisitMapper visitMapper;
+    private final ActivityService activityService;
 
 
     // ==========================================
@@ -55,12 +56,13 @@ public class VisitServiceImpl implements VisitService {
 
 
         // Make sure beneficiary exists
-        beneficiaryRepository.findById(dto.getBeneficiaryId())
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "Beneficiary not found"
-                        )
-                );
+        Beneficiary beneficiary =
+                beneficiaryRepository.findById(dto.getBeneficiaryId())
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Beneficiary not found"
+                                )
+                        );
 
 
         Visit visit = visitMapper.toEntity(dto);
@@ -70,7 +72,27 @@ public class VisitServiceImpl implements VisitService {
         // Actual visit/creation date
         visit.setVisitDate(LocalDate.now());
 
-        visitRepository.save(visit);
+
+        // Save visit first so that visit.getId() is available
+        visit = visitRepository.save(visit);
+
+
+        // ==========================================
+        // CREATE ACTIVITY
+        // ==========================================
+
+        activityService.log(
+                currentUser,
+                "CREATE",
+                "Visit Scheduled",
+                beneficiary.getName()
+                        + " • "
+                        + beneficiary.getVillage(),
+                "VISIT",
+                visit.getId(),
+                "Visit"
+        );
+
 
         return buildResponse(visit);
     }
@@ -151,7 +173,44 @@ public class VisitServiceImpl implements VisitService {
 
         visitMapper.updateEntity(dto, visit);
 
-        visitRepository.save(visit);
+        visit = visitRepository.save(visit);
+
+
+        // ==========================================
+        // UPDATE ACTIVITY
+        // ==========================================
+
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(visit.getBeneficiaryId())
+                        .orElse(null);
+
+
+        String description;
+
+        if (beneficiary != null) {
+
+            description =
+                    beneficiary.getName()
+                            + " • "
+                            + beneficiary.getVillage();
+
+        } else {
+
+            description = "Visit details updated";
+        }
+
+
+        activityService.log(
+                currentUser,
+                "UPDATE",
+                "Visit Updated",
+                description,
+                "VISIT",
+                visit.getId(),
+                "Visit"
+        );
+
 
         return buildResponse(visit);
     }
@@ -182,6 +241,44 @@ public class VisitServiceImpl implements VisitService {
         }
 
 
+        // Get beneficiary information BEFORE deleting
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(visit.getBeneficiaryId())
+                        .orElse(null);
+
+
+        String description;
+
+        if (beneficiary != null) {
+
+            description =
+                    beneficiary.getName()
+                            + " • "
+                            + beneficiary.getVillage();
+
+        } else {
+
+            description = "Visit deleted";
+        }
+
+
+        // ==========================================
+        // DELETE ACTIVITY
+        // ==========================================
+
+        activityService.log(
+                currentUser,
+                "DELETE",
+                "Visit Deleted",
+                description,
+                "VISIT",
+                visit.getId(),
+                "Visit"
+        );
+
+
+        // Delete visit AFTER activity is logged
         visitRepository.delete(visit);
     }
 

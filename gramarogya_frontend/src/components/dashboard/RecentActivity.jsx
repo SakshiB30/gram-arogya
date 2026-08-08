@@ -1,13 +1,24 @@
 import React from "react";
 import {
   UserPlus,
+  UserRound,
   CalendarCheck,
   Activity,
+  Pill,
+  FolderKanban,
+  CheckCircle,
+  Edit,
+  Trash2,
+  Plus,
 } from "lucide-react";
 
 export default function RecentActivity({
   activities = [],
 }) {
+
+  // =========================================================
+  // ICON + COLOR BASED ON ACTIVITY TYPE
+  // =========================================================
 
   const getIcon = (type) => {
 
@@ -34,6 +45,27 @@ export default function RecentActivity({
           color: "text-purple-600",
         };
 
+      case "USER":
+        return {
+          icon: UserRound,
+          bg: "bg-indigo-100",
+          color: "text-indigo-600",
+        };
+
+      case "MEDICINE":
+        return {
+          icon: Pill,
+          bg: "bg-orange-100",
+          color: "text-orange-600",
+        };
+
+      case "PROJECT":
+        return {
+          icon: FolderKanban,
+          bg: "bg-cyan-100",
+          color: "text-cyan-600",
+        };
+
       default:
         return {
           icon: Activity,
@@ -44,25 +76,59 @@ export default function RecentActivity({
   };
 
 
+  // =========================================================
+  // ACTION ICON
+  // =========================================================
+
+  const getActionIcon = (action) => {
+
+    switch (action) {
+
+      case "CREATE":
+        return Plus;
+
+      case "UPDATE":
+        return Edit;
+
+      case "DELETE":
+        return Trash2;
+
+      case "COMPLETE":
+        return CheckCircle;
+
+      case "VERIFY":
+        return CheckCircle;
+
+      case "ASSIGN":
+        return UserPlus;
+
+      default:
+        return null;
+    }
+  };
+
+
   return (
 
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-      {/* Header */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <h2 className="mb-6 text-lg font-bold text-slate-900">
         Recent Activity
       </h2>
 
 
-      {/* Empty State */}
+      {/* =====================================================
+          EMPTY STATE
+      ===================================================== */}
 
       {activities.length === 0 ? (
 
         <div className="py-10 text-center text-slate-500">
-
           No recent activity found.
-
         </div>
 
       ) : (
@@ -74,6 +140,10 @@ export default function RecentActivity({
             const item = getIcon(activity.type);
 
             const Icon = item.icon;
+
+            const ActionIcon =
+              getActionIcon(activity.action);
+
 
             return (
 
@@ -92,10 +162,13 @@ export default function RecentActivity({
                 "
               >
 
-                {/* Icon */}
+                {/* =================================================
+                    MAIN ACTIVITY ICON
+                ================================================= */}
 
                 <div
                   className={`
+                    relative
                     flex
                     h-12
                     w-12
@@ -112,27 +185,88 @@ export default function RecentActivity({
                     className={item.color}
                   />
 
+
+                  {/* Small action badge */}
+
+                  {ActionIcon && (
+
+                    <div
+                      className="
+                        absolute
+                        -right-1
+                        -bottom-1
+                        flex
+                        h-5
+                        w-5
+                        items-center
+                        justify-center
+                        rounded-full
+                        border-2
+                        border-white
+                        bg-white
+                      "
+                    >
+
+                      <ActionIcon
+                        size={11}
+                        className={item.color}
+                      />
+
+                    </div>
+
+                  )}
+
                 </div>
 
 
-                {/* Activity Information */}
+                {/* =================================================
+                    ACTIVITY INFORMATION
+                ================================================= */}
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
 
                   <h4 className="font-semibold text-slate-800">
                     {activity.title}
                   </h4>
 
-                  <p className="text-sm text-slate-500 truncate">
+
+                  <p className="truncate text-sm text-slate-500">
                     {activity.description}
                   </p>
+
+
+                  {/* Optional action */}
+
+                  {activity.action && (
+
+                    <span
+                      className="
+                        mt-1
+                        inline-block
+                        text-xs
+                        font-medium
+                        text-slate-400
+                      "
+                    >
+                      {activity.action}
+                    </span>
+
+                  )}
 
                 </div>
 
 
-                {/* Date */}
+                {/* =================================================
+                    DATE
+                ================================================= */}
 
-                <span className="shrink-0 text-xs text-slate-400">
+                <span
+                  className="
+                    shrink-0
+                    text-xs
+                    text-slate-400
+                  "
+                >
                   {activity.time}
                 </span>
 
@@ -147,6 +281,5 @@ export default function RecentActivity({
       )}
 
     </div>
-
   );
 }

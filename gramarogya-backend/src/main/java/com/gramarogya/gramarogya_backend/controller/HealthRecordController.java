@@ -7,6 +7,7 @@ import com.gramarogya.gramarogya_backend.service.HealthRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,62 +19,122 @@ public class HealthRecordController {
 
     private final HealthRecordService healthRecordService;
 
-    // Create
+
+    // =====================================================
+    // CREATE
+    // =====================================================
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public HealthRecordResponseDto createHealthRecord(
+            Authentication authentication,
             @Valid @RequestBody CreateHealthRecordRequestDto requestDto) {
 
-        return healthRecordService.createHealthRecord(requestDto);
+        return healthRecordService.createHealthRecord(
+                authentication,
+                requestDto
+        );
     }
 
-    // Get All
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
+
     @GetMapping
-    public List<HealthRecordResponseDto> getAllHealthRecords() {
+    public List<HealthRecordResponseDto> getAllHealthRecords(
+            Authentication authentication) {
 
-        return healthRecordService.getAllHealthRecords();
+        return healthRecordService.getAllHealthRecords(
+                authentication
+        );
     }
 
-    // Get By ID
+
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @GetMapping("/{id}")
     public HealthRecordResponseDto getHealthRecordById(
+            Authentication authentication,
             @PathVariable String id) {
 
-        return healthRecordService.getHealthRecordById(id);
+        return healthRecordService.getHealthRecordById(
+                authentication,
+                id
+        );
     }
 
-    // Get By Beneficiary
+
+    // =====================================================
+    // GET BY BENEFICIARY
+    // =====================================================
+
     @GetMapping("/beneficiary/{beneficiaryId}")
-    public List<HealthRecordResponseDto> getHealthRecordsByBeneficiaryId(
+    public List<HealthRecordResponseDto>
+    getHealthRecordsByBeneficiaryId(
+            Authentication authentication,
             @PathVariable String beneficiaryId) {
 
         return healthRecordService
-                .getHealthRecordsByBeneficiaryId(beneficiaryId);
+                .getHealthRecordsByBeneficiaryId(
+                        authentication,
+                        beneficiaryId
+                );
     }
 
-    // Get By Visit
+
+    // =====================================================
+    // GET BY VISIT
+    // =====================================================
+
     @GetMapping("/visit/{visitId}")
-    public List<HealthRecordResponseDto> getHealthRecordsByVisitId(
+    public List<HealthRecordResponseDto>
+    getHealthRecordsByVisitId(
+            Authentication authentication,
             @PathVariable String visitId) {
 
         return healthRecordService
-                .getHealthRecordsByVisitId(visitId);
+                .getHealthRecordsByVisitId(
+                        authentication,
+                        visitId
+                );
     }
 
-    // Update
+
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
     @PutMapping("/{id}")
     public HealthRecordResponseDto updateHealthRecord(
+            Authentication authentication,
             @PathVariable String id,
             @Valid @RequestBody UpdateHealthRecordRequestDto requestDto) {
 
-        return healthRecordService.updateHealthRecord(id, requestDto);
+        return healthRecordService.updateHealthRecord(
+                authentication,
+                id,
+                requestDto
+        );
     }
 
-    // Delete
+
+    // =====================================================
+    // DELETE
+    // =====================================================
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteHealthRecord(@PathVariable String id) {
+    public void deleteHealthRecord(
+            Authentication authentication,
+            @PathVariable String id) {
 
-        healthRecordService.deleteHealthRecord(id);
+        healthRecordService.deleteHealthRecord(
+                authentication,
+                id
+        );
     }
 }
+
