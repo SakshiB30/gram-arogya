@@ -36,7 +36,7 @@ const adminService = {
   rejectAnm,
   blockAnm,
   unblockAnm,
-    getAllAnms,
+  getAllAnms,
 };
 
 export default adminService;
