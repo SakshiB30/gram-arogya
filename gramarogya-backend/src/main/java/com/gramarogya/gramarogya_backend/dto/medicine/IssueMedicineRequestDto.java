@@ -15,15 +15,10 @@ public class IssueMedicineRequestDto {
     @NotBlank(message = "Beneficiary ID is required")
     private String beneficiaryId;
 
-    @NotBlank(message = "Beneficiary name is required")
-    private String beneficiaryName;
-
     @NotNull(message = "Quantity is required")
     @Min(value = 1, message = "Quantity must be greater than 0")
     private Integer quantity;
 
     @NotBlank(message = "Reason is required")
     private String reason;
-
-
 }

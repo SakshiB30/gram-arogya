@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.controller.medicine;
 import com.gramarogya.gramarogya_backend.dto.medicine.IssueMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.MedicineIssueResponseDto;
 import com.gramarogya.gramarogya_backend.service.medicine.MedicineIssueService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,7 +22,7 @@ public class MedicineIssueController {
     @PostMapping("/{id}/issue")
     public ResponseEntity<MedicineIssueResponseDto> issueMedicine(
             @PathVariable String id,
-            @RequestBody IssueMedicineRequestDto request,
+            @Valid @RequestBody IssueMedicineRequestDto request,
             Authentication authentication) {
 
         return ResponseEntity.ok(

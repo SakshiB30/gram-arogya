@@ -1,15 +1,17 @@
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { History } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { getStockLogs } from "../../redux/slices/inventorySlice";
 
 export default function MedicineStockHistory() {
   const dispatch = useDispatch();
 
-  const { logs, loading } = useSelector(
-    (state) => state.inventory
-  );
+  const {
+    logs = [],
+    loading,
+    error,
+  } = useSelector((state) => state.inventory);
 
   useEffect(() => {
     dispatch(getStockLogs());
@@ -37,9 +39,21 @@ export default function MedicineStockHistory() {
     }
   };
 
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow">
+  const getQuantityChange = (log) => {
+    if (log.action === "ISSUE") {
+      return `-${log.quantityChanged}`;
+    }
 
+    if (log.action === "RECEIVE") {
+      return `+${log.quantityChanged}`;
+    }
+
+    return log.quantityChanged;
+  };
+
+  return (
+    <div>
+      {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <History className="text-blue-600" />
 
@@ -54,16 +68,25 @@ export default function MedicineStockHistory() {
         </div>
       </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : logs.length === 0 ? (
-        <p className="py-10 text-center text-slate-500">
-          No stock history found.
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
+      {/* Error */}
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
+          {error}
+        </div>
+      )}
 
+      {/* Loading */}
+      {loading ? (
+        <div className="rounded-lg bg-white p-10 text-center text-slate-500">
+          Loading stock history...
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="rounded-lg bg-white py-10 text-center text-slate-500">
+          No stock history found.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border bg-white">
+          <table className="min-w-full border-collapse">
             <thead className="bg-slate-100">
               <tr>
                 <th className="px-4 py-3 text-left">
@@ -103,13 +126,15 @@ export default function MedicineStockHistory() {
                   className="border-b hover:bg-slate-50"
                 >
                   <td className="px-4 py-3">
-                    {new Date(
-                      log.performedAt
-                    ).toLocaleString()}
+                    {log.performedAt
+                      ? new Date(
+                          log.performedAt
+                        ).toLocaleString()
+                      : "-"}
                   </td>
 
-                  <td className="px-4 py-3">
-                    {log.medicineName}
+                  <td className="px-4 py-3 font-medium">
+                    {log.medicineName || "-"}
                   </td>
 
                   <td className="px-4 py-3 text-center">
@@ -123,30 +148,26 @@ export default function MedicineStockHistory() {
                   </td>
 
                   <td className="px-4 py-3 text-center">
-                    {log.previousStock}
+                    {log.previousStock ?? 0}
+                  </td>
+
+                  <td className="px-4 py-3 text-center font-semibold">
+                    {getQuantityChange(log)}
                   </td>
 
                   <td className="px-4 py-3 text-center">
-                    {log.action === "ISSUE"
-                      ? `-${log.quantityChanged}`
-                      : `+${log.quantityChanged}`}
-                  </td>
-
-                  <td className="px-4 py-3 text-center">
-                    {log.updatedStock}
+                    {log.updatedStock ?? 0}
                   </td>
 
                   <td className="px-4 py-3">
-                    {log.performedBy}
+                    {log.performedBy || "-"}
                   </td>
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       )}
-
     </div>
   );
 }

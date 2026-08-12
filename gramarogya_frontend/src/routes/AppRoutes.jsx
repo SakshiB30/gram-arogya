@@ -61,6 +61,8 @@ import LandingPage from "../pages/LandingPage";
 import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
 import ManageAnms from "../components/dashboard/admin/ManageAnms";
 
+import IssueMedicine from "../components/inventory/IssueMedicine";
+
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -291,6 +293,13 @@ const AppRoutes = () => {
                 <MedicineStockHistory />
               </RoleRoute>
             }
+          />
+
+          <Route
+            path="/app/inventory/issue/:id"
+            element={<RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+                <IssueMedicine />
+              </RoleRoute>}
           />
 
           {/* ================= REPORTS ================= */}
