@@ -150,4 +150,71 @@ public class AdminServiceImpl implements AdminService {
                 .toList();
 
     }
+
+    @Override
+    public List<UserResponseDto> getAllAshas() {
+
+        return userRepository
+                .findByRole(Role.ASHA)
+                .stream()
+                .map(userMapper::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    public UserResponseDto blockAsha(String id) {
+
+        User asha = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ASHA not found"));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new RuntimeException("User is not an ASHA");
+        }
+
+        asha.setAccountStatus(AccountStatus.BLOCKED);
+
+        asha = userRepository.save(asha);
+
+        return userMapper.toResponseDto(asha);
+    }
+
+
+    @Override
+    public UserResponseDto unblockAsha(String id) {
+
+        User asha = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("ASHA not found"));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new RuntimeException("User is not an ASHA");
+        }
+
+        // ASHA must be verified by ANM before activation
+        if (asha.getVerificationStatus() != VerificationStatus.APPROVED) {
+            throw new RuntimeException(
+                    "ASHA must be approved by ANM before activation."
+            );
+        }
+
+        asha.setAccountStatus(AccountStatus.ACTIVE);
+
+        asha = userRepository.save(asha);
+
+        return userMapper.toResponseDto(asha);
+    }
+
+    @Override
+    public List<UserResponseDto> getAllUsers() {
+
+        return userRepository.findAll()
+                .stream()
+                .filter(user ->
+                        user.getRole() == Role.ANM ||
+                                user.getRole() == Role.ASHA
+                )
+                .map(userMapper::toResponseDto)
+                .toList();
+    }
 }

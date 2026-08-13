@@ -62,9 +62,9 @@ export default function AdminStatsCards({ stats }) {
                 </h2>
               </div>
 
-              <div className={`${card.color} rounded-xl p-3`}>
-                <Icon className="text-white" size={24} />
-              </div>
+              <div className={`${card.iconBg} rounded-xl p-3`}>
+    <Icon className={card.iconColor} size={24} />
+</div>
             </div>
           </div>
         );

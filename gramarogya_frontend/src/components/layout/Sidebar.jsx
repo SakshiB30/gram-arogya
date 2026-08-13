@@ -15,7 +15,7 @@ const adminNavItems = [
   { label: "Dashboard", icon: LayoutGrid, path: "/app/dashboard" },
   { label: "Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Reports", icon: BarChart2, path: "/app/reports" },
-  { label: "Manage ANMs", path: "app/admin/manage-anms", icon: Users },
+  { label: "Manage Users", icon: Users, path: "manage-users" },
 ];
 
 const anmNavItems = [
@@ -142,14 +142,14 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-violet-600">
+        {/* <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-violet-600">
           <LifeBuoy size={15} />
           Help &amp; Support
         </button>
 
         <p className="mt-3 px-3 text-[10.5px] leading-relaxed text-slate-400">
           GramArogya Health Information System · Data secured under IT Act, 2000
-        </p>
+        </p> */}
       </div>
     </div>
   );

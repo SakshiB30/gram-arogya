@@ -18,22 +18,29 @@ export const fetchPendingAnms = createAsyncThunk(
   }
 );
 
-// ================= FETCH ALL ANMS =================
+// ================= FETCH ALL USERS =================
 
-export const fetchAllAnms = createAsyncThunk(
-  "admin/fetchAllAnms",
+export const fetchAllUsers = createAsyncThunk(
+  "admin/fetchAllUsers",
   async (_, thunkAPI) => {
+
     try {
-      return await adminService.getAllAnms();
+
+      return await adminService.getAllUsers();
+
     } catch (error) {
+
       return thunkAPI.rejectWithValue(
         error.response?.data?.message ||
-          error.message ||
-          "Failed to load ANMs"
+        error.message ||
+        "Failed to load users"
       );
+
     }
+
   }
 );
+
 
 // ================= APPROVE =================
 
@@ -86,6 +93,41 @@ export const blockAnm = createAsyncThunk(
   }
 );
 
+
+// ================= BLOCK ASHA =================
+
+export const blockAsha = createAsyncThunk(
+  "admin/blockAsha",
+  async (id, thunkAPI) => {
+    try {
+      return await adminService.blockAsha(id);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to block ASHA"
+      );
+    }
+  }
+);
+
+// ================= UNBLOCK ASHA =================
+
+export const unblockAsha = createAsyncThunk(
+  "admin/unblockAsha",
+  async (id, thunkAPI) => {
+    try {
+      return await adminService.unblockAsha(id);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to unblock ASHA"
+      );
+    }
+  }
+);
+
 // ================= UNBLOCK =================
 
 export const unblockAnm = createAsyncThunk(
@@ -106,6 +148,8 @@ export const unblockAnm = createAsyncThunk(
 const initialState = {
   pendingAnms: [],
   allAnms: [],
+  allAshas: [],
+  allUsers: [],
   loading: false,
   error: null,
 };
@@ -141,22 +185,28 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ================= FETCH ALL =================
+  
 
-      .addCase(fetchAllAnms.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+.addCase(fetchAllUsers.pending, (state) => {
 
-      .addCase(fetchAllAnms.fulfilled, (state, action) => {
-        state.loading = false;
-        state.allAnms = action.payload;
-      })
+  state.loading = true;
+  state.error = null;
 
-      .addCase(fetchAllAnms.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+})
+
+.addCase(fetchAllUsers.fulfilled, (state, action) => {
+
+  state.loading = false;
+  state.allUsers = action.payload;
+
+})
+
+.addCase(fetchAllUsers.rejected, (state, action) => {
+
+  state.loading = false;
+  state.error = action.payload;
+
+})
 
       // ================= APPROVE =================
 
@@ -214,12 +264,16 @@ const adminSlice = createSlice({
       })
 
       .addCase(blockAnm.fulfilled, (state, action) => {
-        state.loading = false;
+  state.loading = false;
 
-        state.allAnms = state.allAnms.map((anm) =>
-          anm.id === action.payload.id ? action.payload : anm
-        );
-      })
+  state.allAnms = state.allAnms.map((anm) =>
+    anm.id === action.payload.id ? action.payload : anm
+  );
+
+  state.allUsers = state.allUsers.map((user) =>
+    user.id === action.payload.id ? action.payload : user
+  );
+})
 
       .addCase(blockAnm.rejected, (state, action) => {
         state.loading = false;
@@ -234,17 +288,71 @@ const adminSlice = createSlice({
       })
 
       .addCase(unblockAnm.fulfilled, (state, action) => {
-        state.loading = false;
+  state.loading = false;
 
-        state.allAnms = state.allAnms.map((anm) =>
-          anm.id === action.payload.id ? action.payload : anm
-        );
-      })
+  state.allAnms = state.allAnms.map((anm) =>
+    anm.id === action.payload.id ? action.payload : anm
+  );
+
+  state.allUsers = state.allUsers.map((user) =>
+    user.id === action.payload.id ? action.payload : user
+  );
+})
 
       .addCase(unblockAnm.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+
+      // ================= BLOCK ASHA =================
+
+.addCase(blockAsha.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+
+.addCase(blockAsha.fulfilled, (state, action) => {
+  state.loading = false;
+
+  state.allAshas = state.allAshas.map((asha) =>
+    asha.id === action.payload.id ? action.payload : asha
+  );
+
+  state.allUsers = state.allUsers.map((user) =>
+    user.id === action.payload.id ? action.payload : user
+  );
+})
+
+.addCase(blockAsha.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+})
+
+
+// ================= UNBLOCK ASHA =================
+
+.addCase(unblockAsha.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+
+.addCase(unblockAsha.fulfilled, (state, action) => {
+  state.loading = false;
+
+  state.allAshas = state.allAshas.map((asha) =>
+    asha.id === action.payload.id ? action.payload : asha
+  );
+
+  state.allUsers = state.allUsers.map((user) =>
+    user.id === action.payload.id ? action.payload : user
+  );
+})
+
+.addCase(unblockAsha.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+});
+
   },
 });
 

@@ -59,9 +59,9 @@ import RoleRoute from "./RoleRoute";
 import LandingPage from "../pages/LandingPage";
 
 import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
-import ManageAnms from "../components/dashboard/admin/ManageAnms";
 
 import IssueMedicine from "../components/inventory/IssueMedicine";
+import ManageUsers from "../components/dashboard/admin/ManageUsers";
 
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -138,10 +138,10 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route
-  path="app/admin/manage-anms"
+  path="manage-users"
   element={
     <RoleRoute allowedRoles={["ADMIN"]}>
-      <ManageAnms />
+      <ManageUsers />
     </RoleRoute>
   }
 />

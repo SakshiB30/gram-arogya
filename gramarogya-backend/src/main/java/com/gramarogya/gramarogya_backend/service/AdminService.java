@@ -17,4 +17,13 @@ public interface AdminService {
     UserResponseDto unblockAnm(String id);
 
     List<UserResponseDto> getAllAnms();
+
+    List<UserResponseDto> getAllAshas();
+
+    UserResponseDto blockAsha(String id);
+
+    UserResponseDto unblockAsha(String id);
+
+    List<UserResponseDto> getAllUsers();
+
 }

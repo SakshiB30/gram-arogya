@@ -9,6 +9,18 @@ import {
 export default function AnmRow({ anm }) {
   const dispatch = useDispatch();
 
+  const handleBlock = () => {
+    if (window.confirm(`Block ${anm.name}?`)) {
+        dispatch(blockAnm(anm.id));
+    }
+};
+
+const handleReject = () => {
+    if (window.confirm(`Reject ${anm.name}'s registration?`)) {
+        dispatch(rejectAnm(anm.id));
+    }
+};
+
   return (
     <tr className="border-b hover:bg-slate-50">
 
@@ -91,7 +103,7 @@ export default function AnmRow({ anm }) {
               </button>
 
               <button
-                onClick={() => dispatch(rejectAnm(anm.id))}
+                onClick={handleReject}
                 className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-700"
               >
                 Reject
@@ -104,7 +116,7 @@ export default function AnmRow({ anm }) {
           {anm.verificationStatus === "APPROVED" &&
             anm.accountStatus === "ACTIVE" && (
               <button
-                onClick={() => dispatch(blockAnm(anm.id))}
+                onClick={handleBlock}
                 className="rounded bg-orange-500 px-3 py-2 text-white hover:bg-orange-600"
               >
                 Block

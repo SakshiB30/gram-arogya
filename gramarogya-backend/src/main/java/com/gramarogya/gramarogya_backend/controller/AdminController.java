@@ -52,4 +52,28 @@ public class AdminController {
     public List<UserResponseDto> getAllAnms() {
         return adminService.getAllAnms();
     }
+
+    @GetMapping("/all-ashas")
+    public List<UserResponseDto> getAllAshas() {
+        return adminService.getAllAshas();
+    }
+
+    @PutMapping("/block-asha/{id}")
+    public UserResponseDto blockAsha(
+            @PathVariable String id
+    ) {
+        return adminService.blockAsha(id);
+    }
+
+    @PutMapping("/unblock-asha/{id}")
+    public UserResponseDto unblockAsha(
+            @PathVariable String id
+    ) {
+        return adminService.unblockAsha(id);
+    }
+
+    @GetMapping("/users")
+    public List<UserResponseDto> getAllUsers() {
+        return adminService.getAllUsers();
+    }
 }
