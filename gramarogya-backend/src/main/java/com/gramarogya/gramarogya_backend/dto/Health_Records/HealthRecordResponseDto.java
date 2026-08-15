@@ -49,6 +49,17 @@ public class HealthRecordResponseDto {
 
 
     // =====================================================
+    // CLINICAL ASSESSMENT TIME
+    // =====================================================
+
+    /**
+     * Actual date/time when the health assessment
+     * was performed.
+     */
+    private LocalDateTime recordedAt;
+
+
+    // =====================================================
     // VITAL SIGNS
     // =====================================================
 

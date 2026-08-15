@@ -16,17 +16,6 @@ import lombok.NoArgsConstructor;
 public class UpdateHealthRecordRequestDto {
 
     // =====================================================
-    // REFERENCES
-    // =====================================================
-
-    @NotBlank(message = "Beneficiary ID is required")
-    private String beneficiaryId;
-
-    @NotBlank(message = "Visit ID is required")
-    private String visitId;
-
-
-    // =====================================================
     // VITAL SIGNS
     // =====================================================
 

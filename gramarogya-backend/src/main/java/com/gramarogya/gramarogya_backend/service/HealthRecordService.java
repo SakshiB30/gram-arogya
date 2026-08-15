@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.CreateHealthRecordRequestDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordResponseDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRequestDto;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -23,8 +24,10 @@ public interface HealthRecordService {
     // READ
     // =====================================================
 
-    List<HealthRecordResponseDto> getAllHealthRecords(
-            Authentication authentication
+    Page<HealthRecordResponseDto> getAllHealthRecords(
+            Authentication authentication,
+            int page,
+            int size
     );
 
     HealthRecordResponseDto getHealthRecordById(

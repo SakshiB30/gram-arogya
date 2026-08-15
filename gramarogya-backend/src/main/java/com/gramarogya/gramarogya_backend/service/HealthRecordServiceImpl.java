@@ -7,6 +7,8 @@ import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
+import com.gramarogya.gramarogya_backend.exception.AccessDeniedException;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.mapper.HealthRecordMapper;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
@@ -14,6 +16,10 @@ import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +46,8 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             Authentication authentication) {
 
         if (authentication == null ||
-                authentication.getName() == null) {
+                authentication.getName() == null ||
+                authentication.getName().isBlank()) {
 
             throw new IllegalArgumentException(
                     "User authentication is required"
@@ -88,6 +95,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
 
         // -----------------------------------------
+        // Validate current user's access
+        // -----------------------------------------
+
+        validateBeneficiaryAccess(
+                currentUser,
+                beneficiary.getId()
+        );
+
+
+        // -----------------------------------------
         // Find visit
         // -----------------------------------------
 
@@ -105,17 +122,30 @@ public class HealthRecordServiceImpl implements HealthRecordService {
 
 
         // -----------------------------------------
-        // Validate visit belongs to beneficiary
+        // Prevent duplicate health record
         // -----------------------------------------
 
-        if (!beneficiary.getId()
-                .equals(visit.getBeneficiaryId())) {
+        if (healthRecordRepository.existsByVisitId(
+                requestDto.getVisitId())) {
 
-            throw new IllegalArgumentException(
-                    "Selected visit does not belong to the selected beneficiary."
+            throw new BusinessValidationException(
+                    "A health record already exists for this visit."
             );
         }
 
+        // -----------------------------------------
+        // Validate visit belongs to beneficiary
+        // -----------------------------------------
+
+        validateVisitBelongsToBeneficiary(
+                visit,
+                beneficiary.getId()
+        );
+
+        validateVisitDate(
+                visit,
+                requestDto.getRecordedAt()
+        );
 
         // -----------------------------------------
         // Convert DTO -> Entity
@@ -181,16 +211,14 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     // =====================================================
 
     @Override
-    public List<HealthRecordResponseDto> getAllHealthRecords(
-            Authentication authentication) {
+    public Page<HealthRecordResponseDto> getAllHealthRecords(
+            Authentication authentication,
+            int page,
+            int size) {
 
         User currentUser =
                 getCurrentUser(authentication);
 
-        /*
-         * Only return records belonging to beneficiaries
-         * managed by the current user.
-         */
         List<String> beneficiaryIds =
                 beneficiaryRepository
                         .findByUserId(currentUser.getId())
@@ -199,16 +227,25 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                         .toList();
 
         if (beneficiaryIds.isEmpty()) {
-            return List.of();
+            return Page.empty();
         }
 
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(
+                                Sort.Direction.DESC,
+                                "createdAt"
+                        )
+                );
+
         return healthRecordRepository
-                .findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
-                        beneficiaryIds
+                .findByBeneficiaryIdIn(
+                        beneficiaryIds,
+                        pageable
                 )
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .map(this::mapToResponse);
     }
 
 
@@ -264,6 +301,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
 
+        // -----------------------------------------
+        // Authorization
+        // -----------------------------------------
+
         validateBeneficiaryAccess(
                 currentUser,
                 beneficiaryId
@@ -294,6 +335,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
 
+        // -----------------------------------------
+        // Find visit
+        // -----------------------------------------
+
         Visit visit =
                 visitRepository
                         .findById(visitId)
@@ -304,6 +349,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                 )
                         );
 
+
+        // -----------------------------------------
+        // Validate beneficiary access
+        // -----------------------------------------
 
         validateBeneficiaryAccess(
                 currentUser,
@@ -580,8 +629,57 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         if (!currentUser.getId()
                 .equals(beneficiary.getUserId())) {
 
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "You do not have access to this beneficiary's health records."
+            );
+        }
+    }
+
+
+    // =====================================================
+    // VISIT-BENEFICIARY VALIDATION
+    // =====================================================
+
+    private void validateVisitBelongsToBeneficiary(
+            Visit visit,
+            String beneficiaryId) {
+
+        if (visit.getBeneficiaryId() == null ||
+                !beneficiaryId.equals(
+                        visit.getBeneficiaryId()
+                )) {
+
+            throw new BusinessValidationException(
+                    "Selected visit does not belong to the selected beneficiary."
+            );
+        }
+    }
+
+    // =====================================================
+// VALIDATE VISIT DATE
+// =====================================================
+
+    private void validateVisitDate(
+            Visit visit,
+            LocalDateTime recordedAt) {
+
+        if (visit.getVisitDate() == null) {
+            throw new BusinessValidationException(
+                    "Visit date is not available."
+            );
+        }
+
+        if (recordedAt == null) {
+            throw new BusinessValidationException(
+                    "Health record date and time is required."
+            );
+        }
+
+        if (recordedAt.toLocalDate()
+                .isBefore(visit.getVisitDate())) {
+
+            throw new BusinessValidationException(
+                    "Health record cannot be recorded before the visit date."
             );
         }
     }

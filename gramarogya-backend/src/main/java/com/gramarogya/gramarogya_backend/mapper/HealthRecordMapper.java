@@ -29,6 +29,12 @@ public class HealthRecordMapper {
                 .visitId(dto.getVisitId())
 
                 // -----------------------------------------
+                // Clinical Assessment Time
+                // -----------------------------------------
+
+                .recordedAt(dto.getRecordedAt())
+
+                // -----------------------------------------
                 // Vital Signs
                 // -----------------------------------------
 
@@ -61,15 +67,7 @@ public class HealthRecordMapper {
 
         return HealthRecordResponseDto.builder()
 
-                // -----------------------------------------
-                // Health Record
-                // -----------------------------------------
-
                 .id(healthRecord.getId())
-
-                // -----------------------------------------
-                // Beneficiary
-                // -----------------------------------------
 
                 .beneficiaryId(
                         healthRecord.getBeneficiaryId()
@@ -81,10 +79,6 @@ public class HealthRecordMapper {
                                 : null
                 )
 
-                // -----------------------------------------
-                // Visit
-                // -----------------------------------------
-
                 .visitId(
                         healthRecord.getVisitId()
                 )
@@ -95,17 +89,17 @@ public class HealthRecordMapper {
                                 : null
                 )
 
-                // -----------------------------------------
-                // Recorded By
-                // -----------------------------------------
-
                 .recordedBy(
                         healthRecord.getRecordedBy()
                 )
 
                 // -----------------------------------------
-                // Vital Signs
+                // Clinical Assessment Time
                 // -----------------------------------------
+
+                .recordedAt(
+                        healthRecord.getRecordedAt()
+                )
 
                 .bloodPressure(
                         healthRecord.getBloodPressure()
@@ -123,10 +117,6 @@ public class HealthRecordMapper {
                         healthRecord.getHemoglobin()
                 )
 
-                // -----------------------------------------
-                // Medical Information
-                // -----------------------------------------
-
                 .diagnosis(
                         healthRecord.getDiagnosis()
                 )
@@ -138,10 +128,6 @@ public class HealthRecordMapper {
                 .notes(
                         healthRecord.getNotes()
                 )
-
-                // -----------------------------------------
-                // Audit Timestamps
-                // -----------------------------------------
 
                 .createdAt(
                         healthRecord.getCreatedAt()

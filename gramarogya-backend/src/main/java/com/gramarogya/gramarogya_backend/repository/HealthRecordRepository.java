@@ -1,6 +1,8 @@
 package com.gramarogya.gramarogya_backend.repository;
 
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,66 +13,49 @@ import java.util.List;
 public interface HealthRecordRepository
         extends MongoRepository<HealthRecord, String> {
 
-    // =====================================================
-    // BENEFICIARY HEALTH HISTORY
-    // =====================================================
-
     List<HealthRecord> findByBeneficiaryIdOrderByCreatedAtDesc(
             String beneficiaryId
     );
-
-
-    // =====================================================
-    // VISIT
-    // =====================================================
 
     List<HealthRecord> findByVisitIdOrderByCreatedAtDesc(
             String visitId
     );
 
-
-    // =====================================================
-    // RECENT RECORDS
-    // =====================================================
-
     List<HealthRecord> findTop5ByOrderByCreatedAtDesc();
-
-
-    // =====================================================
-    // RECORDED BY USER
-    // =====================================================
 
     List<HealthRecord> findByRecordedByOrderByCreatedAtDesc(
             String recordedBy
     );
-
-
-    // =====================================================
-    // DATE RANGE
-    // =====================================================
 
     List<HealthRecord> findByCreatedAtBetweenOrderByCreatedAtDesc(
             LocalDateTime start,
             LocalDateTime end
     );
 
-
-    // =====================================================
-    // DIAGNOSIS SEARCH
-    // =====================================================
-
     List<HealthRecord>
     findByDiagnosisContainingIgnoreCaseOrderByCreatedAtDesc(
             String diagnosis
     );
 
-
-    // =====================================================
-    // MULTIPLE BENEFICIARIES
-    // =====================================================
-
     List<HealthRecord>
     findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
             List<String> beneficiaryIds
     );
+
+
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
+    Page<HealthRecord> findByBeneficiaryIdIn(
+            List<String> beneficiaryIds,
+            Pageable pageable
+    );
+
+    // =====================================================
+    // DUPLICATE CHECK
+    // =====================================================
+
+    boolean existsByVisitId(String visitId);
+
 }

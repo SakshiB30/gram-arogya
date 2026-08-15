@@ -3,7 +3,7 @@ package com.gramarogya.gramarogya_backend.controller;
 import com.gramarogya.gramarogya_backend.dto.BeneficiaryReportDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
-import com.gramarogya.gramarogya_backend.dto.ReportSummaryDto;
+import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
 import com.gramarogya.gramarogya_backend.service.ReportService;
 import lombok.RequiredArgsConstructor;

@@ -80,7 +80,7 @@ const HealthRecordList = () => {
 
 
   // Search filter
-  const filteredRecords = healthRecords.filter(
+  const filteredRecords = (Array.isArray(healthRecords) ? healthRecords : []).filter(
     (record) => {
 
       const beneficiary =

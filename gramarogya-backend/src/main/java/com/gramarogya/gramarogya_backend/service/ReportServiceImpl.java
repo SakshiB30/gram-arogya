@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
+import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;

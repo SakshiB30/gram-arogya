@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -17,6 +20,20 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "health_records")
+@CompoundIndexes({
+        @CompoundIndex(
+                name = "beneficiary_createdAt_idx",
+                def = "{'beneficiaryId': 1, 'createdAt': -1}"
+        ),
+        @CompoundIndex(
+                name = "visit_createdAt_idx",
+                def = "{'visitId': 1, 'createdAt': -1}"
+        ),
+        @CompoundIndex(
+                name = "recordedBy_createdAt_idx",
+                def = "{'recordedBy': 1, 'createdAt': -1}"
+        )
+})
 public class HealthRecord {
 
     // =====================================================
@@ -34,7 +51,7 @@ public class HealthRecord {
     /**
      * Beneficiary whose health was assessed.
      *
-     * Immutable after record creation.
+     * Immutable after creation.
      */
     private String beneficiaryId;
 
@@ -44,10 +61,12 @@ public class HealthRecord {
     // =====================================================
 
     /**
-     * Visit during which this health record was created.
+     * Visit during which this health assessment
+     * was performed.
      *
-     * Immutable after record creation.
+     * Immutable after creation.
      */
+    @Indexed(unique = true)
     private String visitId;
 
 
@@ -56,9 +75,11 @@ public class HealthRecord {
     // =====================================================
 
     /**
-     * User who recorded the health record.
+     * ID of the user who recorded the health assessment.
      *
-     * Usually ASHA or ANM.
+     * Usually ASHA / ANM.
+     *
+     * Immutable after creation.
      */
     private String recordedBy;
 
@@ -68,8 +89,8 @@ public class HealthRecord {
     // =====================================================
 
     /**
-     * Actual date/time when the health assessment
-     * was recorded.
+     * Actual date and time when the health assessment
+     * was performed.
      */
     private LocalDateTime recordedAt;
 
@@ -79,6 +100,8 @@ public class HealthRecord {
     // =====================================================
 
     /**
+     * Blood pressure.
+     *
      * Example:
      * 120/80
      *
@@ -88,13 +111,17 @@ public class HealthRecord {
 
 
     /**
-     * Weight in kilograms.
+     * Weight of beneficiary.
+     *
+     * Unit: kilograms.
      */
     private Double weight;
 
 
     /**
-     * Body temperature in Celsius.
+     * Body temperature.
+     *
+     * Unit: Celsius.
      */
     private Double temperature;
 
@@ -102,7 +129,7 @@ public class HealthRecord {
     /**
      * Hemoglobin level.
      *
-     * Unit: g/dL
+     * Unit: g/dL.
      */
     private Double hemoglobin;
 
@@ -112,39 +139,38 @@ public class HealthRecord {
     // =====================================================
 
     /**
-     * Health condition / assessment identified
+     * Health condition or assessment recorded
      * during the visit.
      */
     private String diagnosis;
 
 
     /**
-     * Medicines/instructions prescribed during
-     * the visit.
+     * Prescription or medicine instructions.
      *
-     * Kept temporarily as text.
-     * This can later be replaced/extended with
-     * structured MedicineItem data.
+     * Kept as text for the current implementation.
+     *
+     * Structured medicine information will be handled
+     * through the Medicine module.
      */
     private String prescription;
 
 
     /**
-     * Additional observations made by ASHA/ANM.
+     * Additional observations or remarks.
      */
     private String notes;
 
 
     // =====================================================
-    // MEDICINE ITEMS
+    // MEDICINES
     // =====================================================
 
     /**
-     * Structured medicines associated with this
-     * health record.
+     * Medicines associated with this health record.
      *
-     * This allows the Health Records module to
-     * connect with the Medicine Inventory module.
+     * This will later connect the Health Record module
+     * with the Medicine Inventory module.
      */
     private List<MedicineItem> medicines;
 
@@ -153,10 +179,16 @@ public class HealthRecord {
     // AUDIT TIMESTAMPS
     // =====================================================
 
+    /**
+     * Date and time when the database record was created.
+     */
     @CreatedDate
     private LocalDateTime createdAt;
 
 
+    /**
+     * Date and time when the database record was last modified.
+     */
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }

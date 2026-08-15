@@ -3,31 +3,73 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.BeneficiaryReportDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
-import com.gramarogya.gramarogya_backend.dto.ReportSummaryDto;
+import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 public interface ReportService {
 
-    // Dashboard Summary
-    ReportSummaryDto getSummary();
+    // =====================================================
+    // DASHBOARD SUMMARY
+    // =====================================================
 
-    // Beneficiary Report
-    List<BeneficiaryReportDto> getBeneficiaryReport();
+    ReportSummaryDto getSummary(
+            Authentication authentication
+    );
 
-    // Visit Report
-    List<VisitReportDto> getVisitReport();
 
-    // Inventory Report
-    List<InventoryReportDto> getInventoryReport();
+    // =====================================================
+    // BENEFICIARY REPORT
+    // =====================================================
 
-    // Health Record Report
-    List<HealthRecordReportDto> getHealthRecordReport();
+    List<BeneficiaryReportDto> getBeneficiaryReport(
+            Authentication authentication
+    );
 
-    // Low Stock Medicines
-    List<InventoryReportDto> getLowStockReport();
 
-    // Out of Stock Medicines
-    List<InventoryReportDto> getOutOfStockReport();
+    // =====================================================
+    // VISIT REPORT
+    // =====================================================
+
+    List<VisitReportDto> getVisitReport(
+            Authentication authentication
+    );
+
+
+    // =====================================================
+    // INVENTORY REPORT
+    // =====================================================
+
+    List<InventoryReportDto> getInventoryReport(
+            Authentication authentication
+    );
+
+
+    // =====================================================
+    // HEALTH RECORD REPORT
+    // =====================================================
+
+    List<HealthRecordReportDto> getHealthRecordReport(
+            Authentication authentication
+    );
+
+
+    // =====================================================
+    // LOW STOCK MEDICINES
+    // =====================================================
+
+    List<InventoryReportDto> getLowStockReport(
+            Authentication authentication
+    );
+
+
+    // =====================================================
+    // OUT OF STOCK MEDICINES
+    // =====================================================
+
+    List<InventoryReportDto> getOutOfStockReport(
+            Authentication authentication
+    );
 }

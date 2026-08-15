@@ -198,9 +198,15 @@ const healthRecordSlice = createSlice({
       })
 
       .addCase(fetchHealthRecords.fulfilled, (state, action) => {
-        state.loading = false;
-        state.healthRecords = action.payload || [];
-      })
+  state.loading = false;
+
+  state.healthRecords =
+    Array.isArray(action.payload)
+      ? action.payload
+      : action.payload?.content || [];
+
+  state.error = null;
+})
 
       .addCase(fetchHealthRecords.rejected, (state, action) => {
         state.loading = false;

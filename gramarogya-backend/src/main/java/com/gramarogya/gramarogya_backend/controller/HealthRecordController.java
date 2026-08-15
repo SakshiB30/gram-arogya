@@ -6,6 +6,7 @@ import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRe
 import com.gramarogya.gramarogya_backend.service.HealthRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -42,11 +43,27 @@ public class HealthRecordController {
     // =====================================================
 
     @GetMapping
-    public List<HealthRecordResponseDto> getAllHealthRecords(
-            Authentication authentication) {
+    public Page<HealthRecordResponseDto> getAllHealthRecords(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size < 1 || size > 50) {
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 50"
+            );
+        }
 
         return healthRecordService.getAllHealthRecords(
-                authentication
+                authentication,
+                page,
+                size
         );
     }
 
