@@ -4,25 +4,73 @@ import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface HealthRecordRepository
         extends MongoRepository<HealthRecord, String> {
 
-    // Get all health records of a beneficiary
-    List<HealthRecord> findByBeneficiaryId(String beneficiaryId);
+    // =====================================================
+    // BENEFICIARY HEALTH HISTORY
+    // =====================================================
 
-    // Get all health records of a visit
-    List<HealthRecord> findByVisitId(String visitId);
+    List<HealthRecord> findByBeneficiaryIdOrderByCreatedAtDesc(
+            String beneficiaryId
+    );
+
+
+    // =====================================================
+    // VISIT
+    // =====================================================
+
+    List<HealthRecord> findByVisitIdOrderByCreatedAtDesc(
+            String visitId
+    );
+
+
+    // =====================================================
+    // RECENT RECORDS
+    // =====================================================
 
     List<HealthRecord> findTop5ByOrderByCreatedAtDesc();
 
-    List<HealthRecord> findByDiagnosisContainingIgnoreCase(
+
+    // =====================================================
+    // RECORDED BY USER
+    // =====================================================
+
+    List<HealthRecord> findByRecordedByOrderByCreatedAtDesc(
+            String recordedBy
+    );
+
+
+    // =====================================================
+    // DATE RANGE
+    // =====================================================
+
+    List<HealthRecord> findByCreatedAtBetweenOrderByCreatedAtDesc(
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+
+    // =====================================================
+    // DIAGNOSIS SEARCH
+    // =====================================================
+
+    List<HealthRecord>
+    findByDiagnosisContainingIgnoreCaseOrderByCreatedAtDesc(
             String diagnosis
     );
 
-    List<HealthRecord> findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
+
+    // =====================================================
+    // MULTIPLE BENEFICIARIES
+    // =====================================================
+
+    List<HealthRecord>
+    findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
             List<String> beneficiaryIds
     );
 }

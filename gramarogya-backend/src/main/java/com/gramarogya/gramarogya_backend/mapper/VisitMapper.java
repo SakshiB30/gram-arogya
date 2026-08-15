@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.mapper;
 
-import com.gramarogya.gramarogya_backend.dto.CreateVisitRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateVisitRequestDto;
-import com.gramarogya.gramarogya_backend.dto.VisitResponseDto;
+import com.gramarogya.gramarogya_backend.dto.visit.CreateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.visit.UpdateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import org.springframework.stereotype.Component;
 

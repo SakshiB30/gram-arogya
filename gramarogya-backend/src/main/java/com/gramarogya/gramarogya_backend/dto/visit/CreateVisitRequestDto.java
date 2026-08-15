@@ -1,4 +1,4 @@
-package com.gramarogya.gramarogya_backend.dto;
+package com.gramarogya.gramarogya_backend.dto.visit;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

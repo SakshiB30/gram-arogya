@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.CreateHealthRecordRequestDto;
-import com.gramarogya.gramarogya_backend.dto.HealthRecordResponseDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.CreateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordResponseDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRequestDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
@@ -29,8 +29,6 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     private final VisitRepository visitRepository;
     private final UserRepository userRepository;
     private final HealthRecordMapper healthRecordMapper;
-
-    // Activity logging
     private final ActivityService activityService;
 
 
@@ -41,9 +39,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     private User getCurrentUser(
             Authentication authentication) {
 
-        String email = authentication.getName();
+        if (authentication == null ||
+                authentication.getName() == null) {
 
-        return userRepository.findByEmail(email)
+            throw new IllegalArgumentException(
+                    "User authentication is required"
+            );
+        }
+
+        return userRepository
+                .findByEmail(authentication.getName())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found"
@@ -65,6 +70,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
 
+        // -----------------------------------------
+        // Find beneficiary
+        // -----------------------------------------
+
         Beneficiary beneficiary =
                 beneficiaryRepository
                         .findById(
@@ -72,10 +81,15 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                         )
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Beneficiary not found"
+                                        "Beneficiary not found with id: "
+                                                + requestDto.getBeneficiaryId()
                                 )
                         );
 
+
+        // -----------------------------------------
+        // Find visit
+        // -----------------------------------------
 
         Visit visit =
                 visitRepository
@@ -84,14 +98,18 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                         )
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Visit not found"
+                                        "Visit not found with id: "
+                                                + requestDto.getVisitId()
                                 )
                         );
 
 
-        // Validate that the visit belongs to the beneficiary
-        if (!visit.getBeneficiaryId()
-                .equals(beneficiary.getId())) {
+        // -----------------------------------------
+        // Validate visit belongs to beneficiary
+        // -----------------------------------------
+
+        if (!beneficiary.getId()
+                .equals(visit.getBeneficiaryId())) {
 
             throw new IllegalArgumentException(
                     "Selected visit does not belong to the selected beneficiary."
@@ -99,20 +117,37 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         }
 
 
+        // -----------------------------------------
+        // Convert DTO -> Entity
+        // -----------------------------------------
+
         HealthRecord healthRecord =
-                healthRecordMapper.toEntity(
-                        requestDto
-                );
+                healthRecordMapper.toEntity(requestDto);
 
 
-        healthRecord.setCreatedAt(
-                LocalDateTime.now()
+        // -----------------------------------------
+        // Recorded by
+        // -----------------------------------------
+
+        healthRecord.setRecordedBy(
+                currentUser.getId()
         );
 
-        healthRecord.setUpdatedAt(
-                LocalDateTime.now()
-        );
 
+        // -----------------------------------------
+        // Timestamps
+        // -----------------------------------------
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        healthRecord.setCreatedAt(now);
+        healthRecord.setUpdatedAt(now);
+
+
+        // -----------------------------------------
+        // Save
+        // -----------------------------------------
 
         HealthRecord saved =
                 healthRecordRepository.save(
@@ -120,9 +155,9 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 );
 
 
-        // =================================================
-        // ACTIVITY
-        // =================================================
+        // -----------------------------------------
+        // Activity
+        // -----------------------------------------
 
         activityService.log(
                 currentUser,
@@ -149,10 +184,28 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     public List<HealthRecordResponseDto> getAllHealthRecords(
             Authentication authentication) {
 
-        getCurrentUser(authentication);
+        User currentUser =
+                getCurrentUser(authentication);
+
+        /*
+         * Only return records belonging to beneficiaries
+         * managed by the current user.
+         */
+        List<String> beneficiaryIds =
+                beneficiaryRepository
+                        .findByUserId(currentUser.getId())
+                        .stream()
+                        .map(Beneficiary::getId)
+                        .toList();
+
+        if (beneficiaryIds.isEmpty()) {
+            return List.of();
+        }
 
         return healthRecordRepository
-                .findAll()
+                .findTop5ByBeneficiaryIdInOrderByCreatedAtDesc(
+                        beneficiaryIds
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -168,7 +221,9 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             Authentication authentication,
             String id) {
 
-        getCurrentUser(authentication);
+        User currentUser =
+                getCurrentUser(authentication);
+
 
         HealthRecord healthRecord =
                 healthRecordRepository
@@ -179,6 +234,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                                 + id
                                 )
                         );
+
+
+        // -----------------------------------------
+        // Authorization
+        // -----------------------------------------
+
+        validateBeneficiaryAccess(
+                currentUser,
+                healthRecord.getBeneficiaryId()
+        );
 
 
         return mapToResponse(healthRecord);
@@ -195,10 +260,20 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             Authentication authentication,
             String beneficiaryId) {
 
-        getCurrentUser(authentication);
+        User currentUser =
+                getCurrentUser(authentication);
+
+
+        validateBeneficiaryAccess(
+                currentUser,
+                beneficiaryId
+        );
+
 
         return healthRecordRepository
-                .findByBeneficiaryId(beneficiaryId)
+                .findByBeneficiaryIdOrderByCreatedAtDesc(
+                        beneficiaryId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -215,10 +290,31 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             Authentication authentication,
             String visitId) {
 
-        getCurrentUser(authentication);
+        User currentUser =
+                getCurrentUser(authentication);
+
+
+        Visit visit =
+                visitRepository
+                        .findById(visitId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Visit not found with id: "
+                                                + visitId
+                                )
+                        );
+
+
+        validateBeneficiaryAccess(
+                currentUser,
+                visit.getBeneficiaryId()
+        );
+
 
         return healthRecordRepository
-                .findByVisitId(visitId)
+                .findByVisitIdOrderByCreatedAtDesc(
+                        visitId
+                )
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -239,6 +335,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
 
+        // -----------------------------------------
+        // Find existing record
+        // -----------------------------------------
+
         HealthRecord healthRecord =
                 healthRecordRepository
                         .findById(id)
@@ -250,39 +350,19 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                         );
 
 
-        Beneficiary beneficiary =
-                beneficiaryRepository
-                        .findById(
-                                requestDto.getBeneficiaryId()
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Beneficiary not found"
-                                )
-                        );
+        // -----------------------------------------
+        // Authorization
+        // -----------------------------------------
+
+        validateBeneficiaryAccess(
+                currentUser,
+                healthRecord.getBeneficiaryId()
+        );
 
 
-        Visit visit =
-                visitRepository
-                        .findById(
-                                requestDto.getVisitId()
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Visit not found"
-                                )
-                        );
-
-
-        // Validate that the visit belongs to the beneficiary
-        if (!visit.getBeneficiaryId()
-                .equals(beneficiary.getId())) {
-
-            throw new IllegalArgumentException(
-                    "Selected visit does not belong to the selected beneficiary."
-            );
-        }
-
+        // -----------------------------------------
+        // Update editable fields only
+        // -----------------------------------------
 
         healthRecordMapper.updateEntity(
                 requestDto,
@@ -290,10 +370,18 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         );
 
 
+        // -----------------------------------------
+        // Update timestamp
+        // -----------------------------------------
+
         healthRecord.setUpdatedAt(
                 LocalDateTime.now()
         );
 
+
+        // -----------------------------------------
+        // Save
+        // -----------------------------------------
 
         HealthRecord updated =
                 healthRecordRepository.save(
@@ -301,17 +389,43 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 );
 
 
-        // =================================================
-        // ACTIVITY
-        // =================================================
+        // -----------------------------------------
+        // Get beneficiary for activity
+        // -----------------------------------------
+
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(
+                                updated.getBeneficiaryId()
+                        )
+                        .orElse(null);
+
+
+        String description;
+
+        if (beneficiary != null) {
+
+            description =
+                    beneficiary.getName()
+                            + " • "
+                            + beneficiary.getVillage();
+
+        } else {
+
+            description =
+                    "Health record updated";
+        }
+
+
+        // -----------------------------------------
+        // Activity
+        // -----------------------------------------
 
         activityService.log(
                 currentUser,
                 "UPDATE",
                 "Health Record Updated",
-                beneficiary.getName()
-                        + " • "
-                        + beneficiary.getVillage(),
+                description,
                 "HEALTH_RECORD",
                 updated.getId(),
                 "HealthRecord"
@@ -335,6 +449,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
 
+        // -----------------------------------------
+        // Find record
+        // -----------------------------------------
+
         HealthRecord healthRecord =
                 healthRecordRepository
                         .findById(id)
@@ -345,6 +463,20 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                 )
                         );
 
+
+        // -----------------------------------------
+        // Authorization
+        // -----------------------------------------
+
+        validateBeneficiaryAccess(
+                currentUser,
+                healthRecord.getBeneficiaryId()
+        );
+
+
+        // -----------------------------------------
+        // Find beneficiary
+        // -----------------------------------------
 
         Beneficiary beneficiary =
                 beneficiaryRepository
@@ -370,9 +502,9 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         }
 
 
-        // =================================================
-        // ACTIVITY BEFORE DELETE
-        // =================================================
+        // -----------------------------------------
+        // Activity BEFORE delete
+        // -----------------------------------------
 
         activityService.log(
                 currentUser,
@@ -384,6 +516,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 "HealthRecord"
         );
 
+
+        // -----------------------------------------
+        // Delete
+        // -----------------------------------------
 
         healthRecordRepository.delete(
                 healthRecord
@@ -420,5 +556,33 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 visit
         );
     }
-}
 
+
+    // =====================================================
+    // AUTHORIZATION
+    // =====================================================
+
+    private void validateBeneficiaryAccess(
+            User currentUser,
+            String beneficiaryId) {
+
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(beneficiaryId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Beneficiary not found with id: "
+                                                + beneficiaryId
+                                )
+                        );
+
+
+        if (!currentUser.getId()
+                .equals(beneficiary.getUserId())) {
+
+            throw new IllegalArgumentException(
+                    "You do not have access to this beneficiary's health records."
+            );
+        }
+    }
+}

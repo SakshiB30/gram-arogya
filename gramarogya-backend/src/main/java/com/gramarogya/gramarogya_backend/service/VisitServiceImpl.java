@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.CreateVisitRequestDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateVisitRequestDto;
-import com.gramarogya.gramarogya_backend.dto.VisitResponseDto;
+import com.gramarogya.gramarogya_backend.dto.visit.CreateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.visit.UpdateVisitRequestDto;
+import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.entity.User;

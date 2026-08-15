@@ -1,10 +1,10 @@
 package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.BeneficiaryReportDto;
-import com.gramarogya.gramarogya_backend.dto.HealthRecordReportDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
 import com.gramarogya.gramarogya_backend.dto.ReportSummaryDto;
-import com.gramarogya.gramarogya_backend.dto.VisitReportDto;
+import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
 
 import java.util.List;
 

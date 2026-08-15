@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.mapper;
 
-import com.gramarogya.gramarogya_backend.dto.CreateHealthRecordRequestDto;
-import com.gramarogya.gramarogya_backend.dto.HealthRecordResponseDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.CreateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordResponseDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRequestDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.Visit;
@@ -11,23 +11,48 @@ import org.springframework.stereotype.Component;
 @Component
 public class HealthRecordMapper {
 
-    // Create DTO -> Entity
-    public HealthRecord toEntity(CreateHealthRecordRequestDto dto) {
+    // =====================================================
+    // CREATE DTO -> ENTITY
+    // =====================================================
+
+    public HealthRecord toEntity(
+            CreateHealthRecordRequestDto dto
+    ) {
 
         return HealthRecord.builder()
+
+                // -----------------------------------------
+                // References
+                // -----------------------------------------
+
                 .beneficiaryId(dto.getBeneficiaryId())
                 .visitId(dto.getVisitId())
+
+                // -----------------------------------------
+                // Vital Signs
+                // -----------------------------------------
+
                 .bloodPressure(dto.getBloodPressure())
                 .weight(dto.getWeight())
                 .temperature(dto.getTemperature())
                 .hemoglobin(dto.getHemoglobin())
+
+                // -----------------------------------------
+                // Medical Information
+                // -----------------------------------------
+
                 .diagnosis(dto.getDiagnosis())
                 .prescription(dto.getPrescription())
                 .notes(dto.getNotes())
+
                 .build();
     }
 
-    // Entity -> Response DTO
+
+    // =====================================================
+    // ENTITY -> RESPONSE DTO
+    // =====================================================
+
     public HealthRecordResponseDto toResponseDto(
             HealthRecord healthRecord,
             Beneficiary beneficiary,
@@ -35,54 +60,159 @@ public class HealthRecordMapper {
     ) {
 
         return HealthRecordResponseDto.builder()
+
+                // -----------------------------------------
+                // Health Record
+                // -----------------------------------------
+
                 .id(healthRecord.getId())
 
+                // -----------------------------------------
                 // Beneficiary
-                .beneficiaryId(healthRecord.getBeneficiaryId())
+                // -----------------------------------------
+
+                .beneficiaryId(
+                        healthRecord.getBeneficiaryId()
+                )
+
                 .beneficiaryName(
-                        beneficiary != null ? beneficiary.getName() : null
+                        beneficiary != null
+                                ? beneficiary.getName()
+                                : null
                 )
 
+                // -----------------------------------------
                 // Visit
-                .visitId(healthRecord.getVisitId())
-                .visitType(
-                        visit != null ? visit.getVisitType() : null
+                // -----------------------------------------
+
+                .visitId(
+                        healthRecord.getVisitId()
                 )
 
-                // Vitals
-                .bloodPressure(healthRecord.getBloodPressure())
-                .weight(healthRecord.getWeight())
-                .temperature(healthRecord.getTemperature())
-                .hemoglobin(healthRecord.getHemoglobin())
+                .visitType(
+                        visit != null
+                                ? visit.getVisitType()
+                                : null
+                )
 
-                // Medical
-                .diagnosis(healthRecord.getDiagnosis())
-                .prescription(healthRecord.getPrescription())
-                .notes(healthRecord.getNotes())
+                // -----------------------------------------
+                // Recorded By
+                // -----------------------------------------
 
-                // Dates
-                .createdAt(healthRecord.getCreatedAt())
-                .updatedAt(healthRecord.getUpdatedAt())
+                .recordedBy(
+                        healthRecord.getRecordedBy()
+                )
+
+                // -----------------------------------------
+                // Vital Signs
+                // -----------------------------------------
+
+                .bloodPressure(
+                        healthRecord.getBloodPressure()
+                )
+
+                .weight(
+                        healthRecord.getWeight()
+                )
+
+                .temperature(
+                        healthRecord.getTemperature()
+                )
+
+                .hemoglobin(
+                        healthRecord.getHemoglobin()
+                )
+
+                // -----------------------------------------
+                // Medical Information
+                // -----------------------------------------
+
+                .diagnosis(
+                        healthRecord.getDiagnosis()
+                )
+
+                .prescription(
+                        healthRecord.getPrescription()
+                )
+
+                .notes(
+                        healthRecord.getNotes()
+                )
+
+                // -----------------------------------------
+                // Audit Timestamps
+                // -----------------------------------------
+
+                .createdAt(
+                        healthRecord.getCreatedAt()
+                )
+
+                .updatedAt(
+                        healthRecord.getUpdatedAt()
+                )
 
                 .build();
     }
 
-    // Update existing entity
+
+    // =====================================================
+    // UPDATE DTO -> EXISTING ENTITY
+    // =====================================================
+
     public void updateEntity(
             UpdateHealthRecordRequestDto dto,
             HealthRecord healthRecord
     ) {
 
-        healthRecord.setBeneficiaryId(dto.getBeneficiaryId());
-        healthRecord.setVisitId(dto.getVisitId());
+        // =================================================
+        // DO NOT UPDATE
+        // =================================================
+        //
+        // beneficiaryId
+        // visitId
+        // recordedBy
+        // createdAt
+        //
+        // These represent the original context of
+        // the health record.
+        // =================================================
 
-        healthRecord.setBloodPressure(dto.getBloodPressure());
-        healthRecord.setWeight(dto.getWeight());
-        healthRecord.setTemperature(dto.getTemperature());
-        healthRecord.setHemoglobin(dto.getHemoglobin());
 
-        healthRecord.setDiagnosis(dto.getDiagnosis());
-        healthRecord.setPrescription(dto.getPrescription());
-        healthRecord.setNotes(dto.getNotes());
+        // -----------------------------------------
+        // Vital Signs
+        // -----------------------------------------
+
+        healthRecord.setBloodPressure(
+                dto.getBloodPressure()
+        );
+
+        healthRecord.setWeight(
+                dto.getWeight()
+        );
+
+        healthRecord.setTemperature(
+                dto.getTemperature()
+        );
+
+        healthRecord.setHemoglobin(
+                dto.getHemoglobin()
+        );
+
+
+        // -----------------------------------------
+        // Medical Information
+        // -----------------------------------------
+
+        healthRecord.setDiagnosis(
+                dto.getDiagnosis()
+        );
+
+        healthRecord.setPrescription(
+                dto.getPrescription()
+        );
+
+        healthRecord.setNotes(
+                dto.getNotes()
+        );
     }
 }

@@ -153,12 +153,20 @@ const AddHealthRecord = () => {
                 </label>
 
                 <input
-                  type="number"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  name="temperature"
-                  value={formData.temperature}
-                  onChange={handleChange}
-                />
+  type="number"
+  step="0.1"
+  min="30"
+  max="45"
+  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+  name="temperature"
+  value={formData.temperature}
+  onChange={handleChange}
+  placeholder="e.g. 36.5"
+  required
+/>
+<p className="mt-1 text-xs text-slate-500">
+  Temperature in °C (normal range approximately 36–37°C)
+</p>
               </div>
 
               {/* Hemoglobin */}

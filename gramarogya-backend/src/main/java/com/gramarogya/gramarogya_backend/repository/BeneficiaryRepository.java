@@ -1,13 +1,20 @@
 package com.gramarogya.gramarogya_backend.repository;
 
-
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface BeneficiaryRepository extends MongoRepository<Beneficiary,String> {
+public interface BeneficiaryRepository
+        extends MongoRepository<Beneficiary, String> {
+
     List<Beneficiary> findByUserId(String userId);
+
+    Optional<Beneficiary> findByIdAndUserId(
+            String id,
+            String userId
+    );
 
     long countByUserId(String userId);
 
@@ -15,8 +22,6 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
             String userId,
             String category
     );
-
-//    List<Beneficiary> findByUserIdAndStatus(String userId, String status);
 
     List<Beneficiary> findByUserIdAndStatusIgnoreCase(
             String userId,
@@ -27,7 +32,6 @@ public interface BeneficiaryRepository extends MongoRepository<Beneficiary,Strin
             String userId,
             String category
     );
-
 
     List<Beneficiary> findByUserIdAndNameContainingIgnoreCase(
             String userId,

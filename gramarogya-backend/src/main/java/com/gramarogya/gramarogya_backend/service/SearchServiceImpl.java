@@ -5,9 +5,9 @@ import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
-import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
+import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -25,21 +25,41 @@ public class SearchServiceImpl implements SearchService {
     private final MedicineRepository medicineRepository;
     private final UserRepository userRepository;
 
-    private User getCurrentUser(Authentication authentication) {
 
-        return userRepository.findByEmail(authentication.getName())
+    // =====================================================
+    // CURRENT USER
+    // =====================================================
+
+    private User getCurrentUser(
+            Authentication authentication) {
+
+        return userRepository
+                .findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new RuntimeException("User not found")
+                );
     }
+
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
 
     @Override
     public List<SearchResultDto> search(
             Authentication authentication,
             String keyword) {
 
-        User user = getCurrentUser(authentication);
+        User user =
+                getCurrentUser(authentication);
 
-        List<SearchResultDto> results = new ArrayList<>();
+        List<SearchResultDto> results =
+                new ArrayList<>();
+
+
+        // =================================================
+        // BENEFICIARIES
+        // =================================================
 
         beneficiaryRepository
                 .findByUserIdAndNameContainingIgnoreCase(
@@ -58,11 +78,19 @@ public class SearchServiceImpl implements SearchService {
                                                         + beneficiary.getVillage()
                                         )
                                         .type("BENEFICIARY")
-                                        .route("/app/beneficiaries/" + beneficiary.getId())
+                                        .route(
+                                                "/app/beneficiaries/"
+                                                        + beneficiary.getId()
+                                        )
                                         .build()
                         )
-
                 );
+
+
+        // =================================================
+        // VISITS
+        // =================================================
+
         visitRepository
                 .findByUserIdAndVisitTypeContainingIgnoreCase(
                         user.getId(),
@@ -70,10 +98,14 @@ public class SearchServiceImpl implements SearchService {
                 )
                 .forEach(visit -> {
 
-                    String beneficiaryName = beneficiaryRepository
-                            .findById(visit.getBeneficiaryId())
-                            .map(Beneficiary::getName)
-                            .orElse("Unknown");
+                    String beneficiaryName =
+                            beneficiaryRepository
+                                    .findById(
+                                            visit.getBeneficiaryId()
+                                    )
+                                    .map(Beneficiary::getName)
+                                    .orElse("Unknown");
+
 
                     results.add(
                             SearchResultDto.builder()
@@ -85,58 +117,98 @@ public class SearchServiceImpl implements SearchService {
                                                     + visit.getStatus()
                                     )
                                     .type("VISIT")
-                                    .route("/app/visit/" + visit.getId())
+                                    .route(
+                                            "/app/visit/"
+                                                    + visit.getId()
+                                    )
                                     .build()
                     );
-
                 });
-        healthRecordRepository
-                .findByDiagnosisContainingIgnoreCase(keyword)
-                .forEach(record -> {
 
-                    beneficiaryRepository
-                            .findById(record.getBeneficiaryId())
-                            .ifPresent(beneficiary -> {
 
-                                if (beneficiary.getUserId().equals(user.getId())) {
+        // =================================================
+        // HEALTH RECORDS
+        // =================================================
 
-                                    results.add(
-                                            SearchResultDto.builder()
-                                                    .id(record.getId())
-                                                    .title(record.getDiagnosis())
-                                                    .subtitle(
-                                                            beneficiary.getName()
-                                                                    + " • Health Record"
-                                                    )
-                                                    .type("HEALTH_RECORD")
-                                                    .route("/app/health-records/" + record.getId())
-                                                    .build()
+        /*
+         * Search only health records belonging to
+         * beneficiaries managed by the current user.
+         */
+        List<String> beneficiaryIds =
+                beneficiaryRepository
+                        .findByUserId(user.getId())
+                        .stream()
+                        .map(Beneficiary::getId)
+                        .toList();
+
+
+        if (!beneficiaryIds.isEmpty()) {
+
+            healthRecordRepository
+                    .findByDiagnosisContainingIgnoreCaseOrderByCreatedAtDesc(
+                            keyword
+                    )
+                    .forEach(record -> {
+
+                        if (beneficiaryIds.contains(
+                                record.getBeneficiaryId()
+                        )) {
+
+                            beneficiaryRepository
+                                    .findById(
+                                            record.getBeneficiaryId()
+                                    )
+                                    .ifPresent(beneficiary ->
+
+                                            results.add(
+                                                    SearchResultDto.builder()
+                                                            .id(record.getId())
+                                                            .title(
+                                                                    record.getDiagnosis()
+                                                            )
+                                                            .subtitle(
+                                                                    beneficiary.getName()
+                                                                            + " • Health Record"
+                                                            )
+                                                            .type("HEALTH_RECORD")
+                                                            .route(
+                                                                    "/app/health-records/"
+                                                                            + record.getId()
+                                                            )
+                                                            .build()
+                                            )
                                     );
+                        }
+                    });
+        }
 
-                                }
 
-                            });
+        // =================================================
+        // MEDICINES
+        // =================================================
 
-                });
         medicineRepository
                 .findByNameContainingIgnoreCase(keyword)
-                .forEach(medicine -> {
+                .forEach(medicine ->
 
-                    results.add(
-                            SearchResultDto.builder()
-                                    .id(medicine.getId())
-                                    .title(medicine.getName())
-                                    .subtitle(
-                                            medicine.getType()
-                                                    + " • Stock: "
-                                                    + medicine.getStock()
-                                    )
-                                    .type("MEDICINE")
-                                    .route("/app/inventory/" + medicine.getId())
-                                    .build()
-                    );
+                        results.add(
+                                SearchResultDto.builder()
+                                        .id(medicine.getId())
+                                        .title(medicine.getName())
+                                        .subtitle(
+                                                medicine.getType()
+                                                        + " • Stock: "
+                                                        + medicine.getStock()
+                                        )
+                                        .type("MEDICINE")
+                                        .route(
+                                                "/app/inventory/"
+                                                        + medicine.getId()
+                                        )
+                                        .build()
+                        )
+                );
 
-                });
 
         return results;
     }

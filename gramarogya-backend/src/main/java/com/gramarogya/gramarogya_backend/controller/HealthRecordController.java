@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.controller;
 
-import com.gramarogya.gramarogya_backend.dto.CreateHealthRecordRequestDto;
-import com.gramarogya.gramarogya_backend.dto.HealthRecordResponseDto;
-import com.gramarogya.gramarogya_backend.dto.UpdateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.CreateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordResponseDto;
+import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRequestDto;
 import com.gramarogya.gramarogya_backend.service.HealthRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
