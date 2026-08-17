@@ -15,9 +15,7 @@ public interface ReportService {
     // DASHBOARD SUMMARY
     // =====================================================
 
-    ReportSummaryDto getSummary(
-            Authentication authentication
-    );
+    ReportSummaryDto getSummary(Authentication authentication);
 
 
     // =====================================================
@@ -57,7 +55,7 @@ public interface ReportService {
 
 
     // =====================================================
-    // LOW STOCK MEDICINES
+    // LOW STOCK
     // =====================================================
 
     List<InventoryReportDto> getLowStockReport(
@@ -66,7 +64,7 @@ public interface ReportService {
 
 
     // =====================================================
-    // OUT OF STOCK MEDICINES
+    // OUT OF STOCK
     // =====================================================
 
     List<InventoryReportDto> getOutOfStockReport(

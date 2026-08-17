@@ -1,16 +1,8 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Download,
-  FileSpreadsheet,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-import { getReportById } from "../../redux/slices/reportSlice";
-
-import ExportButtons from "./ExportButton";
-
+import ExportButton from "./ExportButton";
 
 const STATUS_STYLES = {
   Completed: "bg-green-100 text-green-700",
@@ -18,153 +10,93 @@ const STATUS_STYLES = {
   Failed: "bg-red-100 text-red-700",
 };
 
-
 export default function ReportDetail() {
 
   const { id } = useParams();
 
   const navigate = useNavigate();
 
-  const dispatch = useDispatch();
-
-
-  // Replace with Redux later
+  /*
+   * Temporary report data.
+   *
+   * We will replace this with backend data
+   * once /reports/{id} API is implemented.
+   */
   const report = {
     id,
+
     reportName: "Monthly Health Report",
+
     reportType: "Health",
+
     generatedBy: "ASHA Worker",
+
     createdAt: "10 July 2026",
+
     status: "Completed",
+
     totalBeneficiaries: 150,
+
     totalVisits: 320,
+
     summary:
       "This report contains monthly health records, visits and beneficiary statistics.",
   };
-
-
-  const loading = false;
-
-
-
-  useEffect(() => {
-
-    dispatch(getReportById(id));
-
-  }, [dispatch, id]);
-
-
-
-  if (loading) {
-
-    return (
-
-      <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-
-        Loading report...
-
-      </div>
-
-    );
-
-  }
-
-
-
-  if (!report) {
-
-    return (
-
-      <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-
-        <h2 className="text-xl font-bold">
-          Report Not Found
-        </h2>
-
-
-        <button
-          onClick={() =>
-            navigate("/app/reports")
-          }
-          className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-white"
-        >
-
-          Back
-
-        </button>
-
-      </div>
-
-    );
-
-  }
-
 
 
   return (
 
     <div className="space-y-6">
 
+      {/* =========================================
+          HEADER
+      ========================================= */}
 
-
-      {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-
 
         <div className="flex items-center gap-3">
 
+          {/* Back Button */}
 
           <button
-            onClick={() =>
-              navigate("/app/reports")
-            }
+            onClick={() => navigate("/app/reports")}
             className="rounded-lg border p-2 hover:bg-slate-100"
           >
-
-            <ArrowLeft size={18}/>
-
+            <ArrowLeft size={18} />
           </button>
 
 
+          {/* Heading */}
 
           <div>
 
             <h1 className="text-3xl font-bold text-slate-900">
-
               Report Details
-
             </h1>
 
-
             <p className="text-slate-500">
-
               View complete report information.
-
             </p>
 
           </div>
 
-
         </div>
 
 
+        {/* Export */}
 
-        <ExportButtons report={report}/>
-
+        <ExportButton data={[report]} />
 
       </div>
 
 
+      {/* =========================================
+          REPORT DETAILS
+      ========================================= */}
 
-
-
-      {/* Details Card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
-
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-
 
           <DetailItem
             label="Report Name"
@@ -190,6 +122,7 @@ export default function ReportDetail() {
           />
 
 
+          {/* Status */}
 
           <div>
 
@@ -197,42 +130,33 @@ export default function ReportDetail() {
               Status
             </p>
 
-
             <span
               className={`mt-2 inline-block rounded-full px-3 py-1 text-sm font-semibold ${
                 STATUS_STYLES[report.status]
               }`}
             >
-
               {report.status}
-
             </span>
 
           </div>
 
-
         </div>
-
 
       </div>
 
 
+      {/* =========================================
+          SUMMARY
+      ========================================= */}
 
-
-
-      {/* Summary */}
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
-
         <h2 className="text-lg font-bold text-slate-900">
-
           Report Summary
-
         </h2>
 
 
         <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
-
 
           <SummaryCard
             title="Beneficiaries"
@@ -251,28 +175,23 @@ export default function ReportDetail() {
             value={report.id}
           />
 
-
         </div>
 
 
-
         <p className="mt-6 text-slate-600">
-
           {report.summary}
-
         </p>
-
 
       </div>
 
-
     </div>
-
   );
 }
 
 
-
+/* =========================================
+   DETAIL ITEM
+========================================= */
 
 function DetailItem({
   label,
@@ -287,20 +206,18 @@ function DetailItem({
         {label}
       </p>
 
-
       <p className="mt-2 font-semibold text-slate-900">
-        {value}
+        {value || "-"}
       </p>
 
     </div>
-
   );
-
 }
 
 
-
-
+/* =========================================
+   SUMMARY CARD
+========================================= */
 
 function SummaryCard({
   title,
@@ -315,13 +232,10 @@ function SummaryCard({
         {title}
       </p>
 
-
       <p className="mt-2 text-2xl font-bold text-slate-900">
-        {value}
+        {value ?? "-"}
       </p>
 
     </div>
-
   );
-
 }

@@ -11,23 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class HealthRecordReportDto {
 
-    // =====================================================
-    // HEALTH RECORD
-    // =====================================================
-
     private String id;
 
-
-    // =====================================================
-    // BENEFICIARY
-    // =====================================================
-
     private String beneficiaryName;
-
-
-    // =====================================================
-    // VITAL SIGNS
-    // =====================================================
 
     private String bloodPressure;
 
@@ -37,21 +23,11 @@ public class HealthRecordReportDto {
 
     private Double hemoglobin;
 
-
-    // =====================================================
-    // MEDICAL INFORMATION
-    // =====================================================
-
     private String diagnosis;
 
     private String prescription;
 
     private String notes;
-
-
-    // =====================================================
-    // CREATED DATE
-    // =====================================================
 
     private String createdAt;
 }

@@ -3,7 +3,26 @@ import { Search } from "lucide-react";
 export default function ReportFilter({
   searchTerm,
   onSearchChange,
+  reportType,
 }) {
+
+  const placeholder = {
+
+    beneficiary:
+      "Search beneficiary, village or category...",
+
+    visit:
+      "Search beneficiary, visit type or worker...",
+
+    health:
+      "Search beneficiary, diagnosis or prescription...",
+
+    inventory:
+      "Search medicine, batch or status...",
+
+  }[reportType] || "Search reports...";
+
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
 
@@ -16,9 +35,11 @@ export default function ReportFilter({
 
         <input
           type="text"
-          placeholder="Search beneficiary, village or category..."
+          placeholder={placeholder}
           value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) =>
+            onSearchChange(e.target.value)
+          }
           className="w-full rounded-xl border border-slate-300 py-3 pl-10 pr-4 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         />
 
