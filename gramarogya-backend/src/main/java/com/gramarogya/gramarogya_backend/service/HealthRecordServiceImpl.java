@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.CreateHealthRecordRequestDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordResponseDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.UpdateHealthRecordRequestDto;
+import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
@@ -24,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -220,8 +222,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 getCurrentUser(authentication);
 
         List<String> beneficiaryIds =
-                beneficiaryRepository
-                        .findByUserId(currentUser.getId())
+                getAccessibleBeneficiaries(currentUser)
                         .stream()
                         .map(Beneficiary::getId)
                         .toList();
@@ -626,13 +627,61 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                         );
 
 
-        if (!currentUser.getId()
-                .equals(beneficiary.getUserId())) {
-
-            throw new AccessDeniedException(
-                    "You do not have access to this beneficiary's health records."
-            );
+        if (currentUser.getRole() == Role.ADMIN) {
+            return;
         }
+
+        if (currentUser.getRole() == Role.ASHA &&
+                currentUser.getId().equals(beneficiary.getUserId())) {
+            return;
+        }
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            boolean supervisedBeneficiary =
+                    userRepository
+                            .findBySupervisorId(currentUser.getId())
+                            .stream()
+                            .map(User::getId)
+                            .anyMatch(beneficiary.getUserId()::equals);
+
+            if (supervisedBeneficiary ||
+                    currentUser.getId().equals(beneficiary.getUserId())) {
+                return;
+            }
+        }
+
+        throw new AccessDeniedException(
+                "You do not have access to this beneficiary's health records."
+        );
+    }
+
+
+    private List<Beneficiary> getAccessibleBeneficiaries(
+            User currentUser) {
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return beneficiaryRepository.findAll();
+        }
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            List<String> userIds =
+                    userRepository
+                            .findBySupervisorId(currentUser.getId())
+                            .stream()
+                            .map(User::getId)
+                            .toList();
+
+            List<String> accessibleUserIds =
+                    new ArrayList<>(userIds);
+
+            accessibleUserIds.add(currentUser.getId());
+
+            return beneficiaryRepository.findByUserIdIn(accessibleUserIds);
+        }
+
+        return beneficiaryRepository.findByUserId(currentUser.getId());
     }
 
 

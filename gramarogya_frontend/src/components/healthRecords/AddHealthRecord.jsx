@@ -6,6 +6,20 @@ import { createHealthRecord } from "../../redux/slices/healthRecordSlice";
 import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
 import { fetchVisits } from "../../redux/slices/visitSlice";
 
+const toLocalDateTimeString = (date) => {
+  const pad = (value) => String(value).padStart(2, "0");
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-") + "T" + [
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join(":");
+};
+
 const AddHealthRecord = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -132,9 +146,7 @@ const AddHealthRecord = () => {
       beneficiaryId: formData.beneficiaryId,
       visitId: formData.visitId,
 
-      recordedAt: new Date()
-        .toISOString()
-        .slice(0, 19),
+      recordedAt: toLocalDateTimeString(new Date()),
 
       bloodPressure: formData.bloodPressure.trim(),
 

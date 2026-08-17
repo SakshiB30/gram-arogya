@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.visit.CreateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
+import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.entity.User;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -108,8 +110,7 @@ public class VisitServiceImpl implements VisitService {
 
         User currentUser = getCurrentUser(authentication);
 
-        return visitRepository
-                .findByUserId(currentUser.getId())
+        return getAccessibleVisits(currentUser)
                 .stream()
                 .map(this::buildResponse)
                 .toList();
@@ -320,5 +321,32 @@ public class VisitServiceImpl implements VisitService {
 
 
         return dto;
+    }
+
+
+    private List<Visit> getAccessibleVisits(User currentUser) {
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return visitRepository.findAll();
+        }
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            List<String> userIds =
+                    userRepository
+                            .findBySupervisorId(currentUser.getId())
+                            .stream()
+                            .map(User::getId)
+                            .toList();
+
+            List<String> accessibleUserIds =
+                    new ArrayList<>(userIds);
+
+            accessibleUserIds.add(currentUser.getId());
+
+            return visitRepository.findByUserIdIn(accessibleUserIds);
+        }
+
+        return visitRepository.findByUserId(currentUser.getId());
     }
 }
