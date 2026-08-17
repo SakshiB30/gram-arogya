@@ -6,8 +6,14 @@ const BASE_URL = "/health-records";
 // GET ALL HEALTH RECORDS
 // =====================================================
 
-const getAllHealthRecords = async () => {
-  const response = await axiosClient.get(BASE_URL);
+const getAllHealthRecords = async (page = 0, size = 10) => {
+  const response = await axiosClient.get(BASE_URL, {
+    params: {
+      page,
+      size,
+    },
+  });
+
   return response.data;
 };
 

@@ -94,9 +94,18 @@ export const createHealthRecord = createAsyncThunk(
         healthRecord
       );
     } catch (error) {
+
+      console.error("========== BACKEND ERROR ==========");
+      console.error("Status:", error.response?.status);
+      console.error("Response:", error.response?.data);
+      console.error("Message:", error.response?.data?.message);
+      console.error("Errors:", error.response?.data?.errors);
+      console.error("===================================");
+
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to create health record"
+        error.response?.data || {
+          message: "Failed to create health record"
+        }
       );
     }
   }

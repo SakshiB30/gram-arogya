@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 
 const HealthRecordsPage = () => {
   return (
-    <div className="container-fluid p-4">
+    <div className="min-h-screen bg-slate-50 p-6">
       <Outlet />
     </div>
   );
