@@ -165,32 +165,18 @@ const AddHealthRecord = () => {
         formData.notes.trim() || null,
     };
 
-    console.log(
-      "HEALTH RECORD REQUEST:",
-      healthRecord
-    );
-
     // =================================================
     // API CALL
     // =================================================
 
     try {
-      const result = await dispatch(
+      await dispatch(
         createHealthRecord(healthRecord)
       ).unwrap();
-
-      console.log(
-        "HEALTH RECORD CREATED:",
-        result
-      );
 
       navigate("/app/health-records");
 
     } catch (error) {
-      console.error(
-        "BACKEND ERROR:",
-        error
-      );
 
       // Display backend message if available
       if (typeof error === "string") {

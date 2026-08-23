@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +19,8 @@ public class CreateVisitRequestDto {
 
     @NotBlank(message = "Status is required")
     private String status;
+
+    private LocalDate scheduledDate;
 
     private String notes;
 

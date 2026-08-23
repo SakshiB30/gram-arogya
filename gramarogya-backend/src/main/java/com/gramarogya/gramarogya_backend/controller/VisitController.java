@@ -64,4 +64,11 @@ public class VisitController {
 
         visitService.delete(authentication, id);
     }
+
+    @GetMapping("/today")
+    public List<VisitResponseDto> getTodayVisits(
+            Authentication authentication) {
+
+        return visitService.getTodayVisits(authentication);
+    }
 }

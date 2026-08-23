@@ -17,8 +17,14 @@ const AddVisit = () => {
     beneficiaryId: "",
     visitType: "",
     status: "Pending",
-    notes: "",
+
+    // Date on which ASHA should perform the visit
+    scheduledDate: "",
+
+    // Date for future follow-up
     nextVisitDate: "",
+
+    notes: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -37,16 +43,45 @@ const AddVisit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // =========================
+    // VALIDATION
+    // =========================
+
+    if (!formData.beneficiaryId) {
+      alert("Please select a beneficiary");
+      return;
+    }
+
+    if (!formData.visitType) {
+      alert("Please select visit type");
+      return;
+    }
+
+    if (!formData.scheduledDate) {
+      alert("Please select scheduled date");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await dispatch(createVisit(formData)).unwrap();
+      await dispatch(
+        createVisit(formData)
+      ).unwrap();
 
-      alert("Visit created successfully");
+      alert("Visit scheduled successfully");
 
       navigate("/app/visit");
+
     } catch (err) {
-      alert(err || "Failed to create visit");
+      console.error("Create visit error:", err);
+
+      alert(
+        typeof err === "string"
+          ? err
+          : err?.message || "Failed to schedule visit"
+      );
+
     } finally {
       setLoading(false);
     }
@@ -54,21 +89,33 @@ const AddVisit = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
+
       <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-lg">
+
+        {/* =========================
+            HEADER
+        ========================= */}
+
         <h1 className="text-3xl font-bold text-gray-800">
-          Add New Visit
+          Schedule New Visit
         </h1>
 
         <p className="mt-2 mb-8 text-gray-500">
-          Create beneficiary visit record
+          Schedule a beneficiary visit
         </p>
+
 
         <form
           onSubmit={handleSubmit}
           className="space-y-6"
         >
-          {/* Beneficiary */}
+
+          {/* =========================
+              BENEFICIARY
+          ========================= */}
+
           <div>
+
             <label className="mb-2 block font-medium">
               Beneficiary
             </label>
@@ -78,25 +125,47 @@ const AddVisit = () => {
               value={formData.beneficiaryId}
               onChange={handleChange}
               required
-              className="w-full rounded-xl border px-4 py-3"
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
             >
+
               <option value="">
                 Select Beneficiary
               </option>
 
               {beneficiaries.map((beneficiary) => (
+
                 <option
                   key={beneficiary.id}
                   value={beneficiary.id}
                 >
-                  {beneficiary.name} ({beneficiary.category})
+
+                  {beneficiary.name}{" "}
+                  ({beneficiary.category})
+
                 </option>
+
               ))}
+
             </select>
+
           </div>
 
-          {/* Visit Type */}
+
+          {/* =========================
+              VISIT TYPE
+          ========================= */}
+
           <div>
+
             <label className="mb-2 block font-medium">
               Visit Type
             </label>
@@ -106,8 +175,18 @@ const AddVisit = () => {
               value={formData.visitType}
               onChange={handleChange}
               required
-              className="w-full rounded-xl border px-4 py-3"
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
             >
+
               <option value="">
                 Select Visit Type
               </option>
@@ -131,11 +210,53 @@ const AddVisit = () => {
               <option value="PNC Visit">
                 PNC Visit
               </option>
+
             </select>
+
           </div>
 
-          {/* Status */}
+
+          {/* =========================
+              SCHEDULED DATE
+          ========================= */}
+
           <div>
+
+            <label className="mb-2 block font-medium">
+              Scheduled Date
+            </label>
+
+            <input
+              type="date"
+              name="scheduledDate"
+              value={formData.scheduledDate}
+              onChange={handleChange}
+              required
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
+            />
+
+            <p className="mt-1 text-sm text-gray-500">
+              The visit will appear in Today's Schedule on this date.
+            </p>
+
+          </div>
+
+
+          {/* =========================
+              STATUS
+          ========================= */}
+
+          <div>
+
             <label className="mb-2 block font-medium">
               Status
             </label>
@@ -144,8 +265,18 @@ const AddVisit = () => {
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full rounded-xl border px-4 py-3"
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
             >
+
               <option value="Pending">
                 Pending
               </option>
@@ -157,11 +288,18 @@ const AddVisit = () => {
               <option value="Cancelled">
                 Cancelled
               </option>
+
             </select>
+
           </div>
 
-          {/* Next Visit Date */}
+
+          {/* =========================
+              NEXT VISIT DATE
+          ========================= */}
+
           <div>
+
             <label className="mb-2 block font-medium">
               Next Visit Date
             </label>
@@ -171,12 +309,31 @@ const AddVisit = () => {
               name="nextVisitDate"
               value={formData.nextVisitDate}
               onChange={handleChange}
-              className="w-full rounded-xl border px-4 py-3"
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
             />
+
+            <p className="mt-1 text-sm text-gray-500">
+              Optional. Use this when another follow-up visit is required.
+            </p>
+
           </div>
 
-          {/* Notes */}
+
+          {/* =========================
+              NOTES
+          ========================= */}
+
           <div>
+
             <label className="mb-2 block font-medium">
               Notes
             </label>
@@ -186,15 +343,40 @@ const AddVisit = () => {
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full rounded-xl border px-4 py-3"
+              placeholder="Add visit instructions or notes..."
+              className="
+                w-full
+                rounded-xl
+                border
+                px-4
+                py-3
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
             />
+
           </div>
 
-          <div className="flex justify-end gap-4">
+
+          {/* =========================
+              BUTTONS
+          ========================= */}
+
+          <div className="flex justify-end gap-4 pt-2">
+
             <button
               type="button"
               onClick={() => navigate("/app/visit")}
-              className="rounded-xl border px-6 py-3"
+              disabled={loading}
+              className="
+                rounded-xl
+                border
+                px-6
+                py-3
+                hover:bg-gray-50
+                disabled:opacity-50
+              "
             >
               Cancel
             </button>
@@ -202,13 +384,29 @@ const AddVisit = () => {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 disabled:bg-gray-400"
+              className="
+                rounded-xl
+                bg-blue-600
+                px-6
+                py-3
+                text-white
+                hover:bg-blue-700
+                disabled:bg-gray-400
+              "
             >
-              {loading ? "Saving..." : "Save Visit"}
+
+              {loading
+                ? "Scheduling..."
+                : "Schedule Visit"}
+
             </button>
+
           </div>
+
         </form>
+
       </div>
+
     </div>
   );
 };

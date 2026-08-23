@@ -11,29 +11,24 @@ const StatCard = ({
   footerColor,
 }) => {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg">
-      {/* Header */}
+    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg">
       <div className="flex items-center justify-between">
-
         <div>
           <p className="text-sm font-medium text-slate-500">
             {title}
           </p>
 
-          <h2 className="mt-2 text-3xl font-bold text-slate-900">
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
             {value}
           </h2>
         </div>
 
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-full ${iconBg}`}
+          className={`flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 ${iconBg}`}
         >
           <Icon className={iconColor} size={22} />
         </div>
-
       </div>
-
-      {/* Footer */}
 
       {footer && (
         <div
@@ -43,7 +38,6 @@ const StatCard = ({
           <span>{footer}</span>
         </div>
       )}
-
     </div>
   );
 };

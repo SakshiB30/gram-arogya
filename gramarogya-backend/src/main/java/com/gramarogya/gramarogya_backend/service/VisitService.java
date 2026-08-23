@@ -23,4 +23,10 @@ public interface VisitService {
 
     void delete(Authentication authentication,
                 String id);
+
+    List<VisitResponseDto> getTodayVisits(
+            Authentication authentication
+    );
+
+
 }

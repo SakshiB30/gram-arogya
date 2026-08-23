@@ -2,71 +2,88 @@ import axiosClient from "../api/axiosClient";
 
 const BASE_URL = "/visits";
 
+/* =========================================================
+   GET ALL VISITS
+========================================================= */
 
-// Get all visits
 const getAllVisits = async () => {
-
   const response = await axiosClient.get(BASE_URL);
 
   return response.data;
-
 };
 
 
+/* =========================================================
+   GET VISIT BY ID
+========================================================= */
 
-// Get visit by id
 const getVisitById = async (id) => {
-
   const response = await axiosClient.get(
     `${BASE_URL}/${id}`
   );
 
   return response.data;
-
 };
 
 
+/* =========================================================
+   CREATE VISIT
+========================================================= */
 
-// Create visit
 const createVisit = async (visit) => {
-
   const response = await axiosClient.post(
     BASE_URL,
     visit
   );
 
   return response.data;
-
 };
 
 
+/* =========================================================
+   UPDATE VISIT
+========================================================= */
 
-// Update visit
 const updateVisit = async (id, visit) => {
-
   const response = await axiosClient.put(
     `${BASE_URL}/${id}`,
     visit
   );
 
   return response.data;
-
 };
 
 
+/* =========================================================
+   DELETE VISIT
+========================================================= */
 
-// Delete visit
 const deleteVisit = async (id) => {
-
   const response = await axiosClient.delete(
     `${BASE_URL}/${id}`
   );
 
   return response.data;
-
 };
 
 
+/* =========================================================
+   GET TODAY'S VISITS
+   Date only - no scheduled time
+========================================================= */
+
+const getTodayVisits = async () => {
+  const response = await axiosClient.get(
+    `${BASE_URL}/today`
+  );
+
+  return response.data;
+};
+
+
+/* =========================================================
+   EXPORT
+========================================================= */
 
 export default {
   getAllVisits,
@@ -74,4 +91,5 @@ export default {
   createVisit,
   updateVisit,
   deleteVisit,
+  getTodayVisits,
 };

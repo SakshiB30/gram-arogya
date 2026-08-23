@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @Builder
@@ -28,6 +29,9 @@ public class VisitResponseDto {
     private String visitType;
 
     private LocalDate visitDate;
+
+    private LocalDate scheduledDate;
+
 
     private LocalDate nextVisitDate;
 

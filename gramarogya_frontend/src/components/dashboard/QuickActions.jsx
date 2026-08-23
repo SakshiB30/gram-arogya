@@ -3,28 +3,16 @@ import { useSelector } from "react-redux";
 import { dashboardConfig } from "./config/dashboardConfig";
 
 const QuickActions = () => {
-
   const { user } = useSelector((state) => state.auth);
 
-  const actions =
-    dashboardConfig[user?.role]?.actions || [];
-
+  const actions = dashboardConfig[user?.role]?.actions || [];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md">
 
       <h2 className="text-lg font-bold text-slate-900">
         Quick Actions
       </h2>
-
-
-      {/* =====================================================
-          ACTION CARDS
-      ===================================================== */}
 
       <div
         className={`
@@ -42,9 +30,7 @@ const QuickActions = () => {
           }
         `}
       >
-
         {actions.map((action) => {
-
           const Icon = action.icon;
 
           return (
@@ -52,6 +38,7 @@ const QuickActions = () => {
               key={action.title}
               to={action.path}
               className="
+                group
                 flex
                 min-h-[130px]
                 flex-col
@@ -61,18 +48,14 @@ const QuickActions = () => {
                 border
                 border-slate-200
                 p-5
-                transition
+                transition-all
                 duration-200
                 hover:-translate-y-1
+                hover:border-blue-200
                 hover:bg-slate-50
-                hover:shadow-md
+                hover:shadow-lg
               "
             >
-
-              {/* =================================================
-                  ICON
-              ================================================= */}
-
               <div
                 className={`
                   mb-3
@@ -82,35 +65,22 @@ const QuickActions = () => {
                   items-center
                   justify-center
                   rounded-full
+                  transition-transform
+                  duration-200
+                  group-hover:scale-110
                   ${action.bg}
                 `}
               >
-
-                <Icon
-                  size={22}
-                  className={action.color}
-                />
-
+                <Icon size={22} className={action.color} />
               </div>
 
-
-              {/* =================================================
-                  TITLE
-              ================================================= */}
-
               <span className="text-center text-sm font-medium text-slate-700">
-
                 {action.title}
-
               </span>
-
             </Link>
           );
-
         })}
-
       </div>
-
     </div>
   );
 };

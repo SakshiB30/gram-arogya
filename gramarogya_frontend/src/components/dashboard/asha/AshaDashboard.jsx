@@ -12,62 +12,188 @@ import CriticalAlerts from "../CriticalAlerts";
 import UpcomingVisits from "./UpcomingVisits";
 
 import { fetchDashboard } from "../../../redux/slices/dashboardSlice";
+import { fetchTodayVisits } from "../../../redux/slices/visitSlice";
+
+import TodaySchedule from "../../visit/TodaySchedule";
+
 
 export default function AshaDashboard() {
+
   const dispatch = useDispatch();
 
-  const { user } = useSelector((state) => state.auth);
+  // ==============================
+  // AUTH
+  // ==============================
 
-  const config = dashboardConfig[user.role];
+  const { user } = useSelector(
+    (state) => state.auth
+  );
+
+  // ==============================
+  // DASHBOARD CONFIG
+  // ==============================
+
+  const config =
+    dashboardConfig[user?.role];
+
+  // ==============================
+  // DASHBOARD STATE
+  // ==============================
 
   const {
     stats,
     recentActivities,
     alerts,
     upcomingVisits,
-    loading,
-    error,
-  } = useSelector((state) => state.dashboard);
+    loading: dashboardLoading,
+    error: dashboardError,
+  } = useSelector(
+    (state) => state.dashboard
+  );
+
+  // ==============================
+  // VISIT STATE
+  // ==============================
+
+  const {
+    todayVisits = [],
+    loading: visitLoading,
+    error: visitError,
+  } = useSelector(
+    (state) => state.visit
+  );
+
+  // ==============================
+  // FETCH DASHBOARD
+  // ==============================
 
   useEffect(() => {
     dispatch(fetchDashboard());
   }, [dispatch]);
 
-  if (loading) {
+  // ==============================
+  // FETCH TODAY VISITS
+  // ==============================
+
+  useEffect(() => {
+    dispatch(fetchTodayVisits());
+  }, [dispatch]);
+
+  // ==============================
+  // LOADING
+  // ==============================
+
+  if (dashboardLoading || visitLoading) {
     return (
-      <div className="flex justify-center py-24">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      <div className="flex min-h-75 items-center justify-center">
+
+        <div
+          className="
+            h-10
+            w-10
+            animate-spin
+            rounded-full
+            border-4
+            border-blue-600
+            border-t-transparent
+          "
+        />
+
       </div>
     );
   }
 
-  if (error) {
+  // ==============================
+  // ERROR
+  // ==============================
+
+  if (dashboardError || visitError) {
+
+    const message =
+      typeof dashboardError === "string"
+        ? dashboardError
+        : typeof visitError === "string"
+        ? visitError
+        : "Failed to load dashboard.";
+
     return (
-      <div className="rounded-xl bg-red-100 p-5 text-red-600">
-        {error}
+      <div
+        className="
+          rounded-xl
+          border
+          border-red-200
+          bg-red-50
+          p-5
+          text-red-700
+        "
+      >
+        {message}
       </div>
     );
   }
+
+  // ==============================
+  // DASHBOARD
+  // ==============================
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
+
+      {/* Header */}
+
       <DashboardHeader
-        userName={user?.name || stats?.userName}
-        roleTitle={config.header.roleTitle}
-        subtitle={config.header.subtitle}
+        userName={
+          user?.name ||
+          stats?.userName ||
+          "ASHA Worker"
+        }
+        roleTitle={
+          config?.header?.roleTitle ||
+          "ASHA Worker"
+        }
+        subtitle={
+          config?.header?.subtitle ||
+          "Manage your community health activities"
+        }
       />
 
-      <StatsCards stats={stats} />
+      {/* Statistics */}
+
+      <StatsCards
+        stats={stats}
+      />
+
+      {/* Quick Actions */}
 
       <QuickActions />
 
-      <UpcomingVisits visits={upcomingVisits} />
+      {/* Today's Schedule */}
+
+      <TodaySchedule
+        visits={todayVisits}
+        loading={visitLoading}
+      />
+
+      {/* Upcoming Visits */}
+
+      <UpcomingVisits
+        visits={upcomingVisits || []}
+      />
+
+      {/* Recent Activity + Alerts */}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <RecentActivity activities={recentActivities} />
 
-        <CriticalAlerts alerts={alerts} />
+        <RecentActivity
+          activities={recentActivities || []}
+        />
+
+        <CriticalAlerts
+          alerts={alerts || []}
+        />
+
       </div>
+
     </div>
   );
 }

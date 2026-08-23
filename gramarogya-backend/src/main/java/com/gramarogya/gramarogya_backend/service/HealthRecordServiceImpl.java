@@ -78,16 +78,10 @@ public class HealthRecordServiceImpl implements HealthRecordService {
         User currentUser =
                 getCurrentUser(authentication);
 
-
-        // -----------------------------------------
         // Find beneficiary
-        // -----------------------------------------
-
         Beneficiary beneficiary =
                 beneficiaryRepository
-                        .findById(
-                                requestDto.getBeneficiaryId()
-                        )
+                        .findById(requestDto.getBeneficiaryId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Beneficiary not found with id: "
@@ -95,26 +89,16 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                 )
                         );
 
-
-        // -----------------------------------------
         // Validate current user's access
-        // -----------------------------------------
-
         validateBeneficiaryAccess(
                 currentUser,
                 beneficiary.getId()
         );
 
-
-        // -----------------------------------------
         // Find visit
-        // -----------------------------------------
-
         Visit visit =
                 visitRepository
-                        .findById(
-                                requestDto.getVisitId()
-                        )
+                        .findById(requestDto.getVisitId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Visit not found with id: "
@@ -122,11 +106,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                 )
                         );
 
-
-        // -----------------------------------------
         // Prevent duplicate health record
-        // -----------------------------------------
-
         if (healthRecordRepository.existsByVisitId(
                 requestDto.getVisitId())) {
 
@@ -135,62 +115,41 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             );
         }
 
-        // -----------------------------------------
         // Validate visit belongs to beneficiary
-        // -----------------------------------------
-
         validateVisitBelongsToBeneficiary(
                 visit,
                 beneficiary.getId()
         );
 
+        // Validate visit date
         validateVisitDate(
                 visit,
                 requestDto.getRecordedAt()
         );
 
-        // -----------------------------------------
         // Convert DTO -> Entity
-        // -----------------------------------------
-
         HealthRecord healthRecord =
                 healthRecordMapper.toEntity(requestDto);
 
-
-        // -----------------------------------------
-        // Recorded by
-        // -----------------------------------------
-
+        // Set recorded by
         healthRecord.setRecordedBy(
                 currentUser.getId()
         );
 
-
-        // -----------------------------------------
-        // Timestamps
-        // -----------------------------------------
-
+        // Set timestamps
         LocalDateTime now =
                 LocalDateTime.now();
 
         healthRecord.setCreatedAt(now);
         healthRecord.setUpdatedAt(now);
 
-
-        // -----------------------------------------
         // Save
-        // -----------------------------------------
-
         HealthRecord saved =
                 healthRecordRepository.save(
                         healthRecord
                 );
 
-
-        // -----------------------------------------
-        // Activity
-        // -----------------------------------------
-
+        // Activity log
         activityService.log(
                 currentUser,
                 "CREATE",
@@ -203,9 +162,9 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                 "HealthRecord"
         );
 
-
         return mapToResponse(saved);
     }
+
 
 
     // =====================================================

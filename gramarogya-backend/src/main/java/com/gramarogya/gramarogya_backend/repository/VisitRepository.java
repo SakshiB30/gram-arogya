@@ -111,4 +111,10 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
     List<Visit> findByUserIdIn(
             List<String> userIds
     );
+
+    List<Visit> findByUserIdAndScheduledDate(
+            String userId,
+            LocalDate scheduledDate
+    );
+
 }

@@ -19,7 +19,6 @@ const BeneficiaryPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-
   const {
   beneficiaries,
   loading,

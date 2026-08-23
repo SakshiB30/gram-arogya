@@ -25,6 +25,11 @@ public class VisitMapper {
                         dto.getStatus()
                 )
 
+                .scheduledDate(
+                        dto.getScheduledDate()
+                )
+
+
                 .notes(
                         dto.getNotes()
                 )
@@ -51,6 +56,10 @@ public class VisitMapper {
 
                 .visitDate(
                         visit.getVisitDate()
+                )
+
+                .scheduledDate(
+                        visit.getScheduledDate()
                 )
 
                 .visitType(
@@ -89,6 +98,13 @@ public class VisitMapper {
 
             visit.setStatus(
                     dto.getStatus()
+            );
+        }
+
+        if (dto.getScheduledDate() != null) {
+
+            visit.setScheduledDate(
+                    dto.getScheduledDate()
             );
         }
 

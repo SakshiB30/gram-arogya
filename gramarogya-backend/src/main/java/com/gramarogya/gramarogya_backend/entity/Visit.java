@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Document(collection = "visits")
 @Getter
@@ -25,6 +26,9 @@ public class Visit {
 
     // Automatically set when visit is created
     private LocalDate visitDate;
+
+    // Planned date of the visit
+    private LocalDate scheduledDate;
 
     // Example: Home Visit, Follow-up Visit, Immunization Visit
     private String visitType;

@@ -283,6 +283,24 @@ public class VisitServiceImpl implements VisitService {
         visitRepository.delete(visit);
     }
 
+    @Override
+    public List<VisitResponseDto> getTodayVisits(
+            Authentication authentication) {
+
+        User currentUser = getCurrentUser(authentication);
+
+        LocalDate today = LocalDate.now();
+
+        return visitRepository
+                .findByUserIdAndScheduledDate(
+                        currentUser.getId(),
+                        today
+                )
+                .stream()
+                .map(this::buildResponse)
+                .toList();
+    }
+
 
     // ==========================================
     // BUILD RESPONSE
