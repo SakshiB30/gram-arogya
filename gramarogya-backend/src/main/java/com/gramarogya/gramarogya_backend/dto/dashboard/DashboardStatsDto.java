@@ -18,6 +18,7 @@ public class DashboardStatsDto {
     private long totalVisits;
     private long todayVisits;
     private long upcomingVisits;
+    private long pendingVisits;
 
     // ASHA
     private long pregnantWomen;
@@ -33,4 +34,6 @@ public class DashboardStatsDto {
 
     // ANM
     private long assignedAshas;
+
+    private long criticalAlerts;
 }

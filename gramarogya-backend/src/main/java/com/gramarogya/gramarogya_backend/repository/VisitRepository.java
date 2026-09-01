@@ -30,6 +30,12 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             LocalDate visitDate
     );
 
+    long countByUserIdAndVisitDateAndStatus(
+            String userId,
+            LocalDate visitDate,
+            String status
+    );
+
     long countByUserIdAndNextVisitDateAfter(
             String userId,
             LocalDate date
@@ -82,6 +88,13 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             LocalDate visitDate
     );
 
+    // Pending visits for assigned ASHAs on a specific date
+    long countByUserIdInAndVisitDateAndStatus(
+            List<String> userIds,
+            LocalDate visitDate,
+            String status
+    );
+
     long countByUserIdInAndNextVisitDateAfter(
             List<String> userIds,
             LocalDate date
@@ -116,5 +129,4 @@ public interface VisitRepository extends MongoRepository<Visit, String> {
             String userId,
             LocalDate scheduledDate
     );
-
 }

@@ -8,7 +8,6 @@ import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
-import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
@@ -27,7 +26,6 @@ public class DashboardServiceImpl implements DashboardService {
     private final BeneficiaryRepository beneficiaryRepository;
     private final VisitRepository visitRepository;
     private final UserRepository userRepository;
-    private final HealthRecordRepository healthRecordRepository;
     private final MedicineRepository medicineRepository;
     private final ActivityService activityService;
 
@@ -64,7 +62,6 @@ public class DashboardServiceImpl implements DashboardService {
             case ANM -> getAnmDashboard(currentUser);
 
             case ASHA -> getAshaDashboard(currentUser);
-
         };
     }
 
@@ -73,11 +70,61 @@ public class DashboardServiceImpl implements DashboardService {
     // ASHA DASHBOARD
     // =========================================================
 
-    private DashboardResponseDto getAshaDashboard(
-            User currentUser
-    ) {
+    private DashboardResponseDto getAshaDashboard(User currentUser) {
 
         String userId = currentUser.getId();
+
+        LocalDate today = LocalDate.now();
+
+        // Get all beneficiaries belonging to this ASHA
+        List<Beneficiary> beneficiaries =
+                beneficiaryRepository.findByUserId(userId);
+
+        // Calculate health program counts from actual beneficiary data
+        long pregnantWomen = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("pregnant"))
+                .count();
+
+        long children = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("child"))
+                .count();
+
+        long tbPatients = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("tb"))
+                .count();
+
+        long elderly = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("elder"))
+                .count();
+
+        // Debug
+        System.out.println("========== HEALTH PROGRAM ==========");
+        System.out.println("ASHA ID       : " + userId);
+        System.out.println("Beneficiaries : " + beneficiaries.size());
+        System.out.println("Pregnant      : " + pregnantWomen);
+        System.out.println("Children      : " + children);
+        System.out.println("TB Patients   : " + tbPatients);
+        System.out.println("Elderly       : " + elderly);
+        System.out.println("====================================");
+
+
+        // Alerts
+        List<AlertDto> alerts = buildAlerts(currentUser);
+
+        long criticalAlerts = countCriticalAlerts(alerts);
+
 
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
@@ -85,8 +132,7 @@ public class DashboardServiceImpl implements DashboardService {
                         .userName(currentUser.getName())
 
                         .totalBeneficiaries(
-                                beneficiaryRepository
-                                        .countByUserId(userId)
+                                beneficiaries.size()
                         )
 
                         .totalVisits(
@@ -98,7 +144,16 @@ public class DashboardServiceImpl implements DashboardService {
                                 visitRepository
                                         .countByUserIdAndVisitDate(
                                                 userId,
-                                                LocalDate.now()
+                                                today
+                                        )
+                        )
+
+                        .pendingVisits(
+                                visitRepository
+                                        .countByUserIdAndVisitDateAndStatus(
+                                                userId,
+                                                today,
+                                                "Pending"
                                         )
                         )
 
@@ -106,43 +161,8 @@ public class DashboardServiceImpl implements DashboardService {
                                 visitRepository
                                         .countByUserIdAndNextVisitDateAfter(
                                                 userId,
-                                                LocalDate.now()
-                                        )
-                        )
-
-                        .pregnantWomen(
-                                beneficiaryRepository
-                                        .countByUserIdAndCategoryContainingIgnoreCase(
-                                                userId,
-                                                "pregnant"
-                                        )
-                        )
-
-                        .children(
-                                beneficiaryRepository
-                                        .countByUserIdAndCategoryContainingIgnoreCase(
-                                                userId,
-                                                "child"
-                                        )
-                        )
-
-                        .tbPatients(
-                                beneficiaryRepository
-                                        .countByUserIdAndCategoryContainingIgnoreCase(
-                                                userId,
-                                                "tb"
-                                        )
-                        )
-
-                        .elderly(
-                                beneficiaryRepository
-                                        .countByUserIdAndCategoryContainingIgnoreCase(
-                                                userId,
-                                                "elder"
-                                        )
-                        )
-
-                        .build();
+                                                today
+                                        )).build();
 
 
         return DashboardResponseDto.builder()
@@ -153,8 +173,10 @@ public class DashboardServiceImpl implements DashboardService {
                         buildRecentActivities(currentUser)
                 )
 
-                .alerts(
-                        buildAlerts(currentUser)
+                .alerts(alerts)
+
+                .healthPrograms(
+                        buildHealthPrograms(stats)
                 )
 
                 .upcomingVisits(
@@ -172,7 +194,6 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-
     // =========================================================
     // ANM DASHBOARD
     // =========================================================
@@ -181,15 +202,25 @@ public class DashboardServiceImpl implements DashboardService {
             User currentUser
     ) {
 
+        // Get ASHAs assigned to this ANM
         List<User> ashas =
                 userRepository.findBySupervisorId(
                         currentUser.getId()
                 );
 
+        // Extract ASHA IDs
         List<String> ashaIds =
                 ashas.stream()
                         .map(User::getId)
                         .toList();
+
+        LocalDate today = LocalDate.now();
+
+        // Build alerts once
+        List<AlertDto> alerts = buildAlerts(currentUser);
+
+        // Count HIGH priority alerts
+        long criticalAlerts = countCriticalAlerts(alerts);
 
 
         DashboardStatsDto stats =
@@ -197,38 +228,75 @@ public class DashboardServiceImpl implements DashboardService {
 
                         .userName(currentUser.getName())
 
+                        // -----------------------------------------
+                        // ASSIGNED ASHAS
+                        // -----------------------------------------
+
                         .assignedAshas(
                                 ashas.size()
                         )
 
+                        // -----------------------------------------
+                        // BENEFICIARIES
+                        // -----------------------------------------
+
                         .totalBeneficiaries(
-                                beneficiaryRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : beneficiaryRepository
                                         .countByUserIdIn(ashaIds)
                         )
 
+                        // -----------------------------------------
+                        // VISITS
+                        // -----------------------------------------
+
                         .totalVisits(
-                                visitRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : visitRepository
                                         .countByUserIdIn(ashaIds)
                         )
 
                         .todayVisits(
-                                visitRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : visitRepository
                                         .countByUserIdInAndVisitDate(
                                                 ashaIds,
-                                                LocalDate.now()
+                                                today
+                                        )
+                        )
+
+                        .pendingVisits(
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : visitRepository
+                                        .countByUserIdInAndVisitDateAndStatus(
+                                                ashaIds,
+                                                today,
+                                                "Pending"
                                         )
                         )
 
                         .upcomingVisits(
-                                visitRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : visitRepository
                                         .countByUserIdInAndNextVisitDateAfter(
                                                 ashaIds,
-                                                LocalDate.now()
+                                                today
                                         )
                         )
 
+                        // -----------------------------------------
+                        // HEALTH PROGRAMS
+                        // -----------------------------------------
+
                         .pregnantWomen(
-                                beneficiaryRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : beneficiaryRepository
                                         .countByUserIdInAndCategoryContainingIgnoreCase(
                                                 ashaIds,
                                                 "pregnant"
@@ -236,7 +304,9 @@ public class DashboardServiceImpl implements DashboardService {
                         )
 
                         .children(
-                                beneficiaryRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : beneficiaryRepository
                                         .countByUserIdInAndCategoryContainingIgnoreCase(
                                                 ashaIds,
                                                 "child"
@@ -244,7 +314,9 @@ public class DashboardServiceImpl implements DashboardService {
                         )
 
                         .tbPatients(
-                                beneficiaryRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : beneficiaryRepository
                                         .countByUserIdInAndCategoryContainingIgnoreCase(
                                                 ashaIds,
                                                 "tb"
@@ -252,12 +324,20 @@ public class DashboardServiceImpl implements DashboardService {
                         )
 
                         .elderly(
-                                beneficiaryRepository
+                                ashaIds.isEmpty()
+                                        ? 0
+                                        : beneficiaryRepository
                                         .countByUserIdInAndCategoryContainingIgnoreCase(
                                                 ashaIds,
                                                 "elder"
                                         )
                         )
+
+                        // -----------------------------------------
+                        // CRITICAL ALERTS
+                        // -----------------------------------------
+
+                        .criticalAlerts(criticalAlerts)
 
                         .build();
 
@@ -270,8 +350,10 @@ public class DashboardServiceImpl implements DashboardService {
                         buildRecentActivities(currentUser)
                 )
 
-                .alerts(
-                        buildAlerts(currentUser)
+                .alerts(alerts)
+
+                .healthPrograms(
+                        buildHealthPrograms(stats)
                 )
 
                 .upcomingVisits(
@@ -298,14 +380,31 @@ public class DashboardServiceImpl implements DashboardService {
             User currentUser
     ) {
 
+        LocalDate today = LocalDate.now();
+
+        // Build alerts once
+        List<AlertDto> alerts = buildAlerts(currentUser);
+
+        // Count HIGH priority alerts
+        long criticalAlerts = countCriticalAlerts(alerts);
+
+
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
 
                         .userName(currentUser.getName())
 
+                        // -----------------------------------------
+                        // BENEFICIARIES
+                        // -----------------------------------------
+
                         .totalBeneficiaries(
                                 beneficiaryRepository.count()
                         )
+
+                        // -----------------------------------------
+                        // VISITS
+                        // -----------------------------------------
 
                         .totalVisits(
                                 visitRepository.count()
@@ -313,37 +412,27 @@ public class DashboardServiceImpl implements DashboardService {
 
                         .todayVisits(
                                 visitRepository.countByVisitDate(
-                                        LocalDate.now()
+                                        today
+                                )
+                        )
+
+                        .pendingVisits(
+                                visitRepository.countByStatus(
+                                        "Pending"
                                 )
                         )
 
                         .upcomingVisits(
                                 visitRepository.countByNextVisitDateAfter(
-                                        LocalDate.now()
+                                        today
                                 )
                         )
 
-                        .totalUsers(
-                                userRepository.count()
-                        )
+                        // -----------------------------------------
+                        // CRITICAL ALERTS
+                        // -----------------------------------------
 
-                        .totalAnms(
-                                userRepository.countByRole(
-                                        Role.ANM
-                                )
-                        )
-
-                        .totalAshas(
-                                userRepository.countByRole(
-                                        Role.ASHA
-                                )
-                        )
-
-                        .pendingVerifications(
-                                visitRepository.countByStatus(
-                                        "Pending"
-                                )
-                        )
+                        .criticalAlerts(criticalAlerts)
 
                         .build();
 
@@ -356,8 +445,10 @@ public class DashboardServiceImpl implements DashboardService {
                         buildRecentActivities(currentUser)
                 )
 
-                .alerts(
-                        buildAlerts(currentUser)
+                .alerts(alerts)
+
+                .healthPrograms(
+                        buildHealthPrograms(stats)
                 )
 
                 .upcomingVisits(
@@ -384,18 +475,12 @@ public class DashboardServiceImpl implements DashboardService {
             User currentUser
     ) {
 
-        /*
-         * Determine which users' activities this dashboard
-         * is allowed to see.
-         */
-
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
 
-
-        /*
-         * Get latest activities from ActivityService.
-         */
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
 
         return activityService.getActivities(userIds);
     }
@@ -412,9 +497,6 @@ public class DashboardServiceImpl implements DashboardService {
         // -----------------------------------------------------
         // ADMIN
         // -----------------------------------------------------
-        //
-        // Admin should see activities from ALL users.
-        //
 
         if (currentUser.getRole() == Role.ADMIN) {
 
@@ -429,11 +511,6 @@ public class DashboardServiceImpl implements DashboardService {
         // -----------------------------------------------------
         // ANM
         // -----------------------------------------------------
-        //
-        // ANM sees:
-        // 1. Their own activities
-        // 2. Activities of ASHAs assigned to them
-        //
 
         if (currentUser.getRole() == Role.ANM) {
 
@@ -445,7 +522,7 @@ public class DashboardServiceImpl implements DashboardService {
                     currentUser.getId()
             );
 
-            // ASHA activities
+            // Assigned ASHA activities
             List<String> ashaIds =
                     userRepository
                             .findBySupervisorId(
@@ -464,9 +541,6 @@ public class DashboardServiceImpl implements DashboardService {
         // -----------------------------------------------------
         // ASHA
         // -----------------------------------------------------
-        //
-        // ASHA sees only their own activities.
-        //
 
         return List.of(
                 currentUser.getId()
@@ -484,6 +558,10 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
+
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
 
         LocalDate today =
                 LocalDate.now();
@@ -503,10 +581,6 @@ public class DashboardServiceImpl implements DashboardService {
 
         return visits.stream()
 
-                /*
-                 * Only pending visits should appear
-                 * in Upcoming Visits.
-                 */
                 .filter(visit ->
                         visit.getStatus() != null
                                 && visit.getStatus()
@@ -525,7 +599,9 @@ public class DashboardServiceImpl implements DashboardService {
 
                     return UpcomingVisitDto.builder()
 
-                            .id(visit.getId())
+                            .id(
+                                    visit.getId()
+                            )
 
                             .beneficiaryName(
                                     beneficiary != null
@@ -539,8 +615,7 @@ public class DashboardServiceImpl implements DashboardService {
 
                             .nextVisitDate(
                                     visit.getNextVisitDate() != null
-                                            ? visit.getNextVisitDate()
-                                            .toString()
+                                            ? visit.getNextVisitDate().toString()
                                             : ""
                             )
 
@@ -579,7 +654,10 @@ public class DashboardServiceImpl implements DashboardService {
         List<User> pendingUsers;
 
 
-        // ADMIN verifies ANMs
+        // -----------------------------------------------------
+        // ADMIN VERIFIES ANMs
+        // -----------------------------------------------------
+
         if (currentUser.getRole() == Role.ADMIN) {
 
             pendingUsers =
@@ -589,9 +667,14 @@ public class DashboardServiceImpl implements DashboardService {
                                     VerificationStatus.PENDING
                             );
 
-        } else {
+        }
 
-            // ANM verifies ASHAs assigned to them
+        // -----------------------------------------------------
+        // ANM VERIFIES ASHAs
+        // -----------------------------------------------------
+
+        else {
+
             pendingUsers =
                     userRepository
                             .findBySupervisorIdAndVerificationStatus(
@@ -606,9 +689,13 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(user ->
                         PendingVerificationDto.builder()
 
-                                .id(user.getId())
+                                .id(
+                                        user.getId()
+                                )
 
-                                .name(user.getName())
+                                .name(
+                                        user.getName()
+                                )
 
                                 .role(
                                         user.getRole() != null
@@ -630,8 +717,7 @@ public class DashboardServiceImpl implements DashboardService {
 
                                 .status(
                                         user.getVerificationStatus() != null
-                                                ? user.getVerificationStatus()
-                                                .name()
+                                                ? user.getVerificationStatus().name()
                                                 : ""
                                 )
 
@@ -643,14 +729,15 @@ public class DashboardServiceImpl implements DashboardService {
 
 
     // =========================================================
-// ALERTS
-// =========================================================
+    // ALERTS
+    // =========================================================
 
     private List<AlertDto> buildAlerts(
             User currentUser
     ) {
 
-        List<AlertDto> alerts = new ArrayList<>();
+        List<AlertDto> alerts =
+                new ArrayList<>();
 
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
@@ -663,14 +750,17 @@ public class DashboardServiceImpl implements DashboardService {
         if (currentUser.getRole() != Role.ASHA) {
 
             long pendingCount =
-                    buildPendingVerifications(currentUser).size();
+                    buildPendingVerifications(currentUser)
+                            .size();
 
             if (pendingCount > 0) {
 
                 alerts.add(
                         AlertDto.builder()
 
-                                .id("verification-alert")
+                                .id(
+                                        "verification-alert"
+                                )
 
                                 .title(
                                         "Pending Verifications"
@@ -681,9 +771,13 @@ public class DashboardServiceImpl implements DashboardService {
                                                 + " users waiting for verification"
                                 )
 
-                                .priority("HIGH")
+                                .priority(
+                                        "HIGH"
+                                )
 
-                                .type("VERIFICATION")
+                                .type(
+                                        "VERIFICATION"
+                                )
 
                                 .build()
                 );
@@ -722,6 +816,7 @@ public class DashboardServiceImpl implements DashboardService {
                                     + medicine.getStock()
                                     + " units remaining.";
 
+
                     alerts.add(
                             AlertDto.builder()
 
@@ -740,9 +835,13 @@ public class DashboardServiceImpl implements DashboardService {
                                             description
                                     )
 
-                                    .priority(priority)
+                                    .priority(
+                                            priority
+                                    )
 
-                                    .type("MEDICINE")
+                                    .type(
+                                            "MEDICINE"
+                                    )
 
                                     .build()
                     );
@@ -753,139 +852,150 @@ public class DashboardServiceImpl implements DashboardService {
         // 3. UPCOMING VISITS
         // =====================================================
 
-        LocalDate today =
-                LocalDate.now();
+        if (!userIds.isEmpty()) {
 
-        LocalDate threeDaysLater =
-                today.plusDays(3);
+            LocalDate today =
+                    LocalDate.now();
 
-        visitRepository
-                .findByUserIdInAndNextVisitDateBetween(
-                        userIds,
-                        today,
-                        threeDaysLater
-                )
-                .stream()
-
-                .filter(visit ->
-                        visit.getStatus() != null
-                                && visit.getStatus()
-                                .equalsIgnoreCase("Pending")
-                )
-
-                .limit(5)
-
-                .forEach(visit -> {
-
-                    Beneficiary beneficiary =
-                            beneficiaryRepository
-                                    .findById(
-                                            visit.getBeneficiaryId()
-                                    )
-                                    .orElse(null);
-
-                    String beneficiaryName =
-                            beneficiary != null
-                                    ? beneficiary.getName()
-                                    : "Unknown";
+            LocalDate threeDaysLater =
+                    today.plusDays(3);
 
 
-                    alerts.add(
-                            AlertDto.builder()
+            visitRepository
+                    .findByUserIdInAndNextVisitDateBetween(
+                            userIds,
+                            today,
+                            threeDaysLater
+                    )
+                    .stream()
 
-                                    .id(
-                                            "visit-"
-                                                    + visit.getId()
-                                    )
+                    .filter(visit ->
+                            visit.getStatus() != null
+                                    && visit.getStatus()
+                                    .equalsIgnoreCase("Pending")
+                    )
 
-                                    .title(
-                                            "Upcoming Visit"
-                                    )
+                    .limit(5)
 
-                                    .description(
-                                            "Visit scheduled for "
-                                                    + beneficiaryName
-                                                    + " on "
-                                                    + visit.getNextVisitDate()
-                                    )
+                    .forEach(visit -> {
 
-                                    .priority("MEDIUM")
+                        Beneficiary beneficiary =
+                                beneficiaryRepository
+                                        .findById(
+                                                visit.getBeneficiaryId()
+                                        )
+                                        .orElse(null);
 
-                                    .type("UPCOMING_VISIT")
 
-                                    .build()
-                    );
-                });
+                        String beneficiaryName =
+                                beneficiary != null
+                                        ? beneficiary.getName()
+                                        : "Unknown";
+
+
+                        alerts.add(
+                                AlertDto.builder()
+
+                                        .id(
+                                                "visit-"
+                                                        + visit.getId()
+                                        )
+
+                                        .title(
+                                                "Upcoming Visit"
+                                        )
+
+                                        .description(
+                                                "Visit scheduled for "
+                                                        + beneficiaryName
+                                                        + " on "
+                                                        + visit.getNextVisitDate()
+                                        )
+
+                                        .priority(
+                                                "MEDIUM"
+                                        )
+
+                                        .type(
+                                                "UPCOMING_VISIT"
+                                        )
+
+                                        .build()
+                        );
+                    });
+        }
 
 
         // =====================================================
         // 4. TB PATIENT ALERTS
         // =====================================================
 
-        beneficiaryRepository
-                .findByUserIdIn(userIds)
-                .stream()
+        if (!userIds.isEmpty()) {
 
-                .filter(beneficiary ->
-                        beneficiary.getCategory() != null
-                                && beneficiary.getCategory()
-                                .toLowerCase()
-                                .contains("tb")
-                )
+            beneficiaryRepository
+                    .findByUserIdIn(userIds)
+                    .stream()
 
-                .limit(5)
+                    .filter(beneficiary ->
+                            beneficiary.getCategory() != null
+                                    && beneficiary.getCategory()
+                                    .toLowerCase()
+                                    .contains("tb")
+                    )
 
-                .forEach(beneficiary -> {
+                    .limit(5)
 
-                    alerts.add(
-                            AlertDto.builder()
+                    .forEach(beneficiary -> {
 
-                                    .id(
-                                            "tb-"
-                                                    + beneficiary.getId()
-                                    )
+                        alerts.add(
+                                AlertDto.builder()
 
-                                    .title(
-                                            "TB Patient"
-                                    )
+                                        .id(
+                                                "tb-"
+                                                        + beneficiary.getId()
+                                        )
 
-                                    .description(
-                                            beneficiary.getName()
-                                                    + " requires TB follow-up."
-                                    )
+                                        .title(
+                                                "TB Patient"
+                                        )
 
-                                    .priority("HIGH")
+                                        .description(
+                                                beneficiary.getName()
+                                                        + " requires TB follow-up."
+                                        )
 
-                                    .type("TB_PATIENT")
+                                        .priority(
+                                                "HIGH"
+                                        )
 
-                                    .build()
-                    );
-                });
+                                        .type(
+                                                "TB_PATIENT"
+                                        )
+
+                                        .build()
+                        );
+                    });
+        }
 
 
         // =====================================================
-        // SORT ALERTS
+        // SORT ALERTS BY PRIORITY
         // =====================================================
 
-        alerts.sort((a, b) -> {
-
-            int priorityA =
-                    getPriorityValue(
-                            a.getPriority()
-                    );
-
-            int priorityB =
-                    getPriorityValue(
-                            b.getPriority()
-                    );
-
-            return Integer.compare(
-                    priorityA,
-                    priorityB
-            );
-        });
+        alerts.sort(
+                (a, b) ->
+                        Integer.compare(
+                                getPriorityValue(
+                                        a.getPriority()
+                                ),
+                                getPriorityValue(
+                                        b.getPriority()
+                                )
+                        )
+        );
 
 
+        // Show maximum 10 alerts on dashboard
         return alerts
                 .stream()
                 .limit(10)
@@ -893,9 +1003,29 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
 
-// =========================================================
-// ALERT PRIORITY
-// =========================================================
+    // =========================================================
+    // COUNT CRITICAL ALERTS
+    // =========================================================
+
+    private long countCriticalAlerts(
+            List<AlertDto> alerts
+    ) {
+
+        return alerts.stream()
+
+                .filter(alert ->
+                        alert.getPriority() != null
+                                && alert.getPriority()
+                                .equalsIgnoreCase("HIGH")
+                )
+
+                .count();
+    }
+
+
+    // =========================================================
+    // ALERT PRIORITY
+    // =========================================================
 
     private int getPriorityValue(
             String priority
@@ -905,7 +1035,9 @@ public class DashboardServiceImpl implements DashboardService {
             return 3;
         }
 
-        return switch (priority.toUpperCase()) {
+        return switch (
+                priority.toUpperCase()
+                ) {
 
             case "HIGH" -> 1;
 
@@ -939,15 +1071,25 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(medicine ->
                         MedicineAlertDto.builder()
 
-                                .id(medicine.getId())
+                                .id(
+                                        medicine.getId()
+                                )
 
-                                .name(medicine.getName())
+                                .name(
+                                        medicine.getName()
+                                )
 
-                                .batch(medicine.getBatch())
+                                .batch(
+                                        medicine.getBatch()
+                                )
 
-                                .stock(medicine.getStock())
+                                .stock(
+                                        medicine.getStock()
+                                )
 
-                                .status(medicine.getStatus())
+                                .status(
+                                        medicine.getStatus()
+                                )
 
                                 .build()
                 )
@@ -956,4 +1098,124 @@ public class DashboardServiceImpl implements DashboardService {
 
                 .toList();
     }
+
+
+    // =========================================================
+    // HEALTH PROGRAMS
+    // =========================================================
+
+    private List<HealthProgramDto> buildHealthPrograms(
+            DashboardStatsDto stats
+    ) {
+
+        long total =
+                stats.getTotalBeneficiaries();
+
+
+        // -----------------------------------------------------
+        // NO BENEFICIARIES
+        // -----------------------------------------------------
+
+        if (total == 0) {
+
+            return List.of(
+
+                    HealthProgramDto.builder()
+                            .key("pregnant")
+                            .label("Pregnant Women")
+                            .percent(0)
+                            .build(),
+
+                    HealthProgramDto.builder()
+                            .key("children")
+                            .label("Children")
+                            .percent(0)
+                            .build(),
+
+                    HealthProgramDto.builder()
+                            .key("tb")
+                            .label("TB Patients")
+                            .percent(0)
+                            .build(),
+
+                    HealthProgramDto.builder()
+                            .key("elderly")
+                            .label("Elderly")
+                            .percent(0)
+                            .build()
+            );
+        }
+
+
+        // -----------------------------------------------------
+        // PROGRAM PERCENTAGES
+        // -----------------------------------------------------
+
+        return List.of(
+
+                HealthProgramDto.builder()
+                        .key("pregnant")
+                        .label("Pregnant Women")
+                        .percent(
+                                calculatePercentage(
+                                        stats.getPregnantWomen(),
+                                        total
+                                )
+                        )
+                        .build(),
+
+                HealthProgramDto.builder()
+                        .key("children")
+                        .label("Children")
+                        .percent(
+                                calculatePercentage(
+                                        stats.getChildren(),
+                                        total
+                                )
+                        )
+                        .build(),
+
+                HealthProgramDto.builder()
+                        .key("tb")
+                        .label("TB Patients")
+                        .percent(
+                                calculatePercentage(
+                                        stats.getTbPatients(),
+                                        total
+                                )
+                        )
+                        .build(),
+
+                HealthProgramDto.builder()
+                        .key("elderly")
+                        .label("Elderly")
+                        .percent(
+                                calculatePercentage(
+                                        stats.getElderly(),
+                                        total
+                                )
+                        )
+                        .build()
+        );
+    }
+
+
+    // =========================================================
+    // CALCULATE PERCENTAGE
+    // =========================================================
+
+    private int calculatePercentage(
+            long count,
+            long total
+    ) {
+
+        if (total == 0) {
+            return 0;
+        }
+
+        return (int) Math.round(
+                ((double) count / total) * 100
+        );
+    }
 }
+

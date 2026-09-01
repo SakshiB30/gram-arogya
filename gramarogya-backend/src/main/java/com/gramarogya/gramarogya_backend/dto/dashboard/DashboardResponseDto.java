@@ -25,4 +25,7 @@ public class DashboardResponseDto {
 
     private List<PendingVerificationDto> pendingVerifications;
 
+    // Health program progress data
+    private List<HealthProgramDto> healthPrograms;
 }
+

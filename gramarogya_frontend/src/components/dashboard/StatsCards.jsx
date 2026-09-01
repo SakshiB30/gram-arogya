@@ -1,11 +1,33 @@
-import { useSelector } from "react-redux";
+import { Users, Calendar, ClipboardList, AlertTriangle } from "lucide-react";
 import StatCard from "./StatCard";
-import { dashboardConfig } from "./config/dashboardConfig";
 
+// Maps redux `stats` object -> the 4 cards from the screenshot.
+// Expects stats = { totalBeneficiaries, todaysVisits, pendingVisits, criticalAlerts }
 const StatsCards = ({ stats }) => {
-  const { user } = useSelector((state) => state.auth);
-
-  const cards = dashboardConfig[user.role]?.stats || [];
+  const cards = [
+    {
+      key: "totalBeneficiaries",
+      title: "Total Beneficiaries",
+      icon: Users,
+    },
+    {
+      key: "todayVisits",
+      title: "Today's Visits",
+      icon: Calendar,
+    },
+    {
+      key: "pendingVisits",
+      title: "Pending Visits",
+      icon: ClipboardList,
+      highlight: "amber",
+    },
+    {
+      key: "criticalAlerts",
+      title: "Critical Alerts",
+      icon: AlertTriangle,
+      highlight: "red",
+    },
+  ];
 
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -15,11 +37,7 @@ const StatsCards = ({ stats }) => {
           title={card.title}
           value={stats?.[card.key] ?? 0}
           icon={card.icon}
-          iconBg={card.iconBg}
-          iconColor={card.iconColor}
-          footer={card.footer}
-          footerIcon={card.footerIcon}
-          footerColor={card.footerColor}
+          highlight={card.highlight}
         />
       ))}
     </div>
