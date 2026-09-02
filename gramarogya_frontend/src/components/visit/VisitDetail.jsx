@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-
+import MedicineFollowUpForm from "../inventory/MedicineFollowUpForm"; 
+import MedicineFollowUpHistory from "../inventory/MedicineFollowUpHistory";
 import {
   fetchVisitById,
 } from "../../redux/slices/visitSlice";
@@ -251,6 +252,7 @@ const VisitDetail = () => {
             gap-6
           ">
 
+
             {/* Beneficiary ID */}
             <div className="
               bg-gray-50
@@ -326,6 +328,15 @@ const VisitDetail = () => {
 
         </div>
 
+        {/* Medicine Follow-Up */}
+        <MedicineFollowUpForm
+          beneficiaryId={selectedVisit.beneficiaryId}
+          visitId={selectedVisit.id}
+        />
+
+        <MedicineFollowUpHistory
+          beneficiaryId={selectedVisit.beneficiaryId}
+        />
       </div>
     </div>
   );

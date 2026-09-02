@@ -11,6 +11,7 @@ import searchReducer from "./slices/searchSlice";
 import notificationReducer from "./slices/notificationSlice";
 import adminReducer from "./slices/adminSlice";
 import ashaReducer from "./slices/ashaSlice";
+import medicineFollowUpReducer from "./slices/medicineFollowUpSlice"; // Import the medicineFollowUp reducer
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     notification: notificationReducer,
     admin: adminReducer,
     asha: ashaReducer,
+    medicineFollowUp: medicineFollowUpReducer,
   },
 });
 
