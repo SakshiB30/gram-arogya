@@ -21,6 +21,8 @@ import {
 export default function ReportsPage() {
   const dispatch = useDispatch();
 
+  const { user } = useSelector((state) => state.auth);
+
   const {
     summary,
     beneficiaryReport,
@@ -53,35 +55,44 @@ export default function ReportsPage() {
   // =====================================================
 
   useEffect(() => {
-    switch (reportType) {
-      case "beneficiary":
-        dispatch(fetchBeneficiaryReport());
-        break;
+  // Inventory reports are ADMIN only
+  if (
+    user?.role !== "ADMIN" &&
+    ["inventory", "low-stock", "out-of-stock"].includes(reportType)
+  ) {
+    setReportType("beneficiary");
+    return;
+  }
 
-      case "visit":
-        dispatch(fetchVisitReport());
-        break;
+  switch (reportType) {
+    case "beneficiary":
+      dispatch(fetchBeneficiaryReport());
+      break;
 
-      case "health":
-        dispatch(fetchHealthRecordReport());
-        break;
+    case "visit":
+      dispatch(fetchVisitReport());
+      break;
 
-      case "inventory":
-        dispatch(fetchInventoryReport());
-        break;
+    case "health":
+      dispatch(fetchHealthRecordReport());
+      break;
 
-      case "low-stock":
-        dispatch(fetchLowStockReport());
-        break;
+    case "inventory":
+      dispatch(fetchInventoryReport());
+      break;
 
-      case "out-of-stock":
-        dispatch(fetchOutOfStockReport());
-        break;
+    case "low-stock":
+      dispatch(fetchLowStockReport());
+      break;
 
-      default:
-        dispatch(fetchBeneficiaryReport());
-    }
-  }, [dispatch, reportType]);
+    case "out-of-stock":
+      dispatch(fetchOutOfStockReport());
+      break;
+
+    default:
+      dispatch(fetchBeneficiaryReport());
+  }
+}, [dispatch, reportType, user?.role]);
 
   // =====================================================
   // GET CURRENT REPORT DATA
@@ -187,6 +198,7 @@ export default function ReportsPage() {
 
       <ReportStats
         summary={summary}
+        role={user?.role}
       />
 
 
@@ -227,18 +239,21 @@ export default function ReportsPage() {
                 Health Record Report
               </option>
 
-              <option value="inventory">
-                Inventory Report
-              </option>
+             {user?.role === "ADMIN" && (
+  <>
+    <option value="inventory">
+      Inventory Report
+    </option>
 
-              <option value="low-stock">
-                Low Stock Report
-              </option>
+    <option value="low-stock">
+      Low Stock Report
+    </option>
 
-              <option value="out-of-stock">
-                Out of Stock Report
-              </option>
-
+    <option value="out-of-stock">
+      Out of Stock Report
+    </option>
+  </>
+)}
             </select>
 
           </div>

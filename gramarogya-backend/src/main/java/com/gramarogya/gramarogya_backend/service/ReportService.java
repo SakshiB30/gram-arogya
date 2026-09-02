@@ -4,7 +4,7 @@ import com.gramarogya.gramarogya_backend.dto.BeneficiaryReportDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
 import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
-import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
+import com.gramarogya.gramarogya_backend.dto.report.VisitReportDto;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;

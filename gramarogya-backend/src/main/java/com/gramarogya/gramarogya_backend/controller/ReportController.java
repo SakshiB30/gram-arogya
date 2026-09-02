@@ -4,10 +4,11 @@ import com.gramarogya.gramarogya_backend.dto.BeneficiaryReportDto;
 import com.gramarogya.gramarogya_backend.dto.Health_Records.HealthRecordReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
 import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
-import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
+import com.gramarogya.gramarogya_backend.dto.report.VisitReportDto;
 import com.gramarogya.gramarogya_backend.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,9 +72,11 @@ public class ReportController {
 
     // =====================================================
     // INVENTORY
+    // ADMIN ONLY
     // =====================================================
 
     @GetMapping("/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InventoryReportDto>>
     getInventoryReport(
             Authentication authentication
@@ -103,9 +106,11 @@ public class ReportController {
 
     // =====================================================
     // LOW STOCK
+    // ADMIN ONLY
     // =====================================================
 
     @GetMapping("/inventory/low-stock")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InventoryReportDto>>
     getLowStockReport(
             Authentication authentication
@@ -119,9 +124,11 @@ public class ReportController {
 
     // =====================================================
     // OUT OF STOCK
+    // ADMIN ONLY
     // =====================================================
 
     @GetMapping("/inventory/out-of-stock")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InventoryReportDto>>
     getOutOfStockReport(
             Authentication authentication

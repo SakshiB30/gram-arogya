@@ -35,10 +35,4 @@ public interface MedicineService {
             String id,
             Authentication authentication
     );
-
-    MedicineResponseDto issueMedicine(
-            String id,
-            IssueMedicineRequestDto request,
-            Authentication authentication
-    );
 }

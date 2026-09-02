@@ -60,7 +60,6 @@ import LandingPage from "../pages/LandingPage";
 
 import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
 
-import IssueMedicine from "../components/inventory/IssueMedicine";
 import ManageUsers from "../components/dashboard/admin/ManageUsers";
 
 const AppRoutes = () => {
@@ -244,7 +243,7 @@ const AppRoutes = () => {
           <Route
             path="inventory"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <InventoryPage />
               </RoleRoute>
             }
@@ -253,7 +252,7 @@ const AppRoutes = () => {
           <Route
             path="inventory/add"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <AddMedicine />
               </RoleRoute>
             }
@@ -262,7 +261,7 @@ const AppRoutes = () => {
           <Route
             path="inventory/edit/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <EditMedicine />
               </RoleRoute>
             }
@@ -271,7 +270,7 @@ const AppRoutes = () => {
           <Route
             path="inventory/restock/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <ReceiveMedicine />
               </RoleRoute>
             }
@@ -280,7 +279,7 @@ const AppRoutes = () => {
           <Route
             path="inventory/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <MedicineDetail />
               </RoleRoute>
             }
@@ -289,18 +288,12 @@ const AppRoutes = () => {
           <Route
             path="inventory/logs"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM"]}>
+              <RoleRoute allowedRoles={["ADMIN"]}>
                 <MedicineStockHistory />
               </RoleRoute>
             }
           />
 
-          <Route
-            path="/app/inventory/issue/:id"
-            element={<RoleRoute allowedRoles={["ADMIN", "ANM"]}>
-                <IssueMedicine />
-              </RoleRoute>}
-          />
 
           {/* ================= REPORTS ================= */}
           <Route

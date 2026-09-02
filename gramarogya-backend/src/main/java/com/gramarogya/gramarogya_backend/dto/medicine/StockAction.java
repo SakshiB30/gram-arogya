@@ -4,6 +4,5 @@ public enum StockAction {
     ADD,
     UPDATE,
     RECEIVE,
-    ISSUE,
     DELETE
 }

@@ -23,7 +23,7 @@ const anmNavItems = [
   { label: "Beneficiaries", icon: Users, path: "/app/beneficiaries" },
   { label: "Visits", icon: Stethoscope, path: "/app/visit" },
   { label: "Health Records", icon: ClipboardList, path: "/app/health-records" },
-  { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
+  // { label: "Medicine Inventory", icon: Archive, path: "/app/inventory" },
   { label: "Reports", icon: BarChart2, path: "/app/reports" },
 ];
 

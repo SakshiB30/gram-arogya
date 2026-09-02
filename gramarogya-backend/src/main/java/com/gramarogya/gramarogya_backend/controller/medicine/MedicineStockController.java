@@ -5,6 +5,7 @@ import com.gramarogya.gramarogya_backend.service.medicine.MedicineStockLogServic
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ public class MedicineStockController {
     private final MedicineStockLogService medicineStockLogService;
 
     @GetMapping("/logs")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<MedicineStockLogResponseDto>> getAllLogs(
             Authentication authentication) {
 
@@ -29,6 +31,7 @@ public class MedicineStockController {
     }
 
     @GetMapping("/{medicineId}/logs")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<MedicineStockLogResponseDto>> getMedicineLogs(
             @PathVariable String medicineId,
             Authentication authentication) {

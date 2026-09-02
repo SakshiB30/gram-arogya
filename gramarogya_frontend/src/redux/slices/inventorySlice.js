@@ -102,27 +102,6 @@ export const receiveMedicine = createAsyncThunk(
   }
 );
 
-// ===========================
-// ISSUE MEDICINE
-// ===========================
-export const issueMedicine = createAsyncThunk(
-  "inventory/issueMedicine",
-  async ({ id, issueData }, thunkAPI) => {
-    try {
-      return await inventoryService.issueMedicine(
-        id,
-        issueData
-      );
-    } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to issue medicine";
-
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
 
 // ===========================
 // DELETE MEDICINE
@@ -185,24 +164,6 @@ export const getMedicineLogs = createAsyncThunk(
   }
 );
 
-// ===========================
-// GET ALL ISSUED MEDICINES
-// ===========================
-export const getIssuedMedicines = createAsyncThunk(
-  "inventory/getIssuedMedicines",
-  async (_, thunkAPI) => {
-    try {
-      return await inventoryService.getIssuedMedicines();
-    } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch issued medicines";
-
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
 
 // ===========================
 // GET BENEFICIARY MEDICINE HISTORY
@@ -392,51 +353,6 @@ const inventorySlice = createSlice({
         state.error = action.payload;
       })
 
-      // ==================================================
-      // ISSUE MEDICINE
-      // ==================================================
-      .addCase(issueMedicine.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.success = false;
-      })
-
-      .addCase(issueMedicine.fulfilled, (state, action) => {
-        state.loading = false;
-        state.success = true;
-
-        /*
-         * Backend returns MedicineIssueResponseDto.
-         *
-         * It contains:
-         * medicineId
-         * medicineName
-         * beneficiaryId
-         * beneficiaryName
-         * quantity
-         * reason
-         * issuedBy
-         * issuedByRole
-         * issuedAt
-         *
-         * We add the issue record to the issued medicines list.
-         */
-        state.issuedMedicines.unshift(action.payload);
-
-        /*
-         * We do NOT directly modify stock here because
-         * the backend should be responsible for decreasing
-         * stock.
-         *
-         * Refresh inventory after issuing medicine if you
-         * want the latest stock value.
-         */
-      })
-
-      .addCase(issueMedicine.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
 
       // ==================================================
       // DELETE MEDICINE
@@ -501,23 +417,6 @@ const inventorySlice = createSlice({
         state.error = action.payload;
       })
 
-      // ==================================================
-      // GET ALL ISSUED MEDICINES
-      // ==================================================
-      .addCase(getIssuedMedicines.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-
-      .addCase(getIssuedMedicines.fulfilled, (state, action) => {
-        state.loading = false;
-        state.issuedMedicines = action.payload;
-      })
-
-      .addCase(getIssuedMedicines.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
 
       // ==================================================
       // GET BENEFICIARY MEDICINE HISTORY

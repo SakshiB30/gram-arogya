@@ -7,6 +7,7 @@ import com.gramarogya.gramarogya_backend.entity.medicine.MedicineStockLog;
 import com.gramarogya.gramarogya_backend.mapper.medicine.MedicineStockLogMapper;
 import com.gramarogya.gramarogya_backend.repository.medicine.MedicineStockLogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class MedicineStockLogServiceImpl implements MedicineStockLogService {
+public class MedicineStockLogServiceImpl
+        implements MedicineStockLogService {
 
     private final MedicineStockLogRepository medicineStockLogRepository;
-
     private final MedicineStockLogMapper medicineStockLogMapper;
+
     @Override
     public void logMedicineAction(
             Medicine medicine,
@@ -44,6 +46,7 @@ public class MedicineStockLogServiceImpl implements MedicineStockLogService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<MedicineStockLogResponseDto> getAllLogs(
             Authentication authentication) {
 
@@ -57,6 +60,7 @@ public class MedicineStockLogServiceImpl implements MedicineStockLogService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<MedicineStockLogResponseDto> getMedicineLogs(
             String medicineId,
             Authentication authentication) {
@@ -67,5 +71,4 @@ public class MedicineStockLogServiceImpl implements MedicineStockLogService {
                 .map(medicineStockLogMapper::toResponseDto)
                 .toList();
     }
-
 }

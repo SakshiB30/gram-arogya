@@ -1,6 +1,11 @@
 package com.gramarogya.gramarogya_backend.service.medicine;
 
-import com.gramarogya.gramarogya_backend.dto.medicine.*;
+import com.gramarogya.gramarogya_backend.dto.medicine.CreateMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.MedicineStatus;
+import com.gramarogya.gramarogya_backend.dto.medicine.ReceiveMedicineRequestDto;
+import com.gramarogya.gramarogya_backend.dto.medicine.StockAction;
+import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.medicine.Medicine;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
@@ -24,11 +29,7 @@ public class MedicineServiceImpl implements MedicineService {
     private final MedicineRepository medicineRepository;
     private final MedicineMapper medicineMapper;
     private final MedicineStockLogService medicineStockLogService;
-
-    // Activity logging
     private final ActivityService activityService;
-
-    // User repository to get the currently logged-in user
     private final UserRepository userRepository;
 
 
@@ -42,19 +43,18 @@ public class MedicineServiceImpl implements MedicineService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found"
-                        )
+                        new ResourceNotFoundException("User not found")
                 );
     }
 
 
     // =====================================================
-    // View Inventory
+    // VIEW INVENTORY
+    // ADMIN ONLY
     // =====================================================
 
     @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ASHA','ANM')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<MedicineResponseDto> getAllMedicines(
             Authentication authentication) {
 
@@ -66,7 +66,7 @@ public class MedicineServiceImpl implements MedicineService {
 
 
     @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ASHA','ANM')")
+    @PreAuthorize("hasRole('ADMIN')")
     public MedicineResponseDto getMedicineById(
             String id,
             Authentication authentication) {
@@ -78,30 +78,28 @@ public class MedicineServiceImpl implements MedicineService {
 
 
     // =====================================================
-    // Add Medicine
+    // ADD MEDICINE
+    // ADMIN ONLY
     // =====================================================
 
     @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ANM')")
+    @PreAuthorize("hasRole('ADMIN')")
     public MedicineResponseDto addMedicine(
             CreateMedicineRequestDto request,
             Authentication authentication) {
 
-        User currentUser =
-                getCurrentUser(authentication);
+        User currentUser = getCurrentUser(authentication);
 
         validateBatch(request.getBatch());
 
-        Medicine medicine =
-                medicineMapper.toEntity(request);
+        Medicine medicine = medicineMapper.toEntity(request);
 
-        medicine.setCreatedAt(
-                LocalDateTime.now()
-        );
+        if (medicine.getStock() == null) {
+            medicine.setStock(0);
+        }
 
-        medicine.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        medicine.setCreatedAt(LocalDateTime.now());
+        medicine.setUpdatedAt(LocalDateTime.now());
 
         updateMedicineStatus(medicine);
 
@@ -110,7 +108,7 @@ public class MedicineServiceImpl implements MedicineService {
 
 
         // =================================================
-        // STOCK LOG
+        // STOCK HISTORY
         // =================================================
 
         medicineStockLogService.logMedicineAction(
@@ -139,32 +137,30 @@ public class MedicineServiceImpl implements MedicineService {
                 "Medicine"
         );
 
-
-        return medicineMapper.toResponseDto(
-                savedMedicine
-        );
+        return medicineMapper.toResponseDto(savedMedicine);
     }
 
 
     // =====================================================
-    // Update Medicine
+    // UPDATE MEDICINE
+    // ADMIN ONLY
     // =====================================================
 
     @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ANM')")
+    @PreAuthorize("hasRole('ADMIN')")
     public MedicineResponseDto updateMedicine(
             String id,
             UpdateMedicineRequestDto request,
             Authentication authentication) {
 
-        User currentUser =
-                getCurrentUser(authentication);
+        User currentUser = getCurrentUser(authentication);
 
-        Medicine medicine =
-                findMedicine(id);
+        Medicine medicine = findMedicine(id);
 
         Integer previousStock =
-                medicine.getStock();
+                medicine.getStock() == null
+                        ? 0
+                        : medicine.getStock();
 
         validateBatchForUpdate(
                 medicine,
@@ -176,9 +172,11 @@ public class MedicineServiceImpl implements MedicineService {
                 medicine
         );
 
-        medicine.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        if (medicine.getStock() == null) {
+            medicine.setStock(0);
+        }
+
+        medicine.setUpdatedAt(LocalDateTime.now());
 
         updateMedicineStatus(medicine);
 
@@ -187,15 +185,21 @@ public class MedicineServiceImpl implements MedicineService {
 
 
         // =================================================
-        // STOCK LOG
+        // STOCK HISTORY
         // =================================================
+
+        Integer updatedStock =
+                updatedMedicine.getStock();
+
+        Integer quantityChanged =
+                updatedStock - previousStock;
 
         medicineStockLogService.logMedicineAction(
                 updatedMedicine,
                 StockAction.UPDATE,
                 previousStock,
-                updatedMedicine.getStock(),
-                updatedMedicine.getStock() - previousStock,
+                updatedStock,
+                quantityChanged,
                 authentication.getName()
         );
 
@@ -216,50 +220,44 @@ public class MedicineServiceImpl implements MedicineService {
                 "Medicine"
         );
 
-
-        return medicineMapper.toResponseDto(
-                updatedMedicine
-        );
+        return medicineMapper.toResponseDto(updatedMedicine);
     }
 
 
     // =====================================================
-    // Receive Stock
+    // RECEIVE STOCK
+    // ADMIN ONLY
     // =====================================================
 
     @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ANM')")
+    @PreAuthorize("hasRole('ADMIN')")
     public MedicineResponseDto receiveMedicine(
             String id,
             ReceiveMedicineRequestDto request,
             Authentication authentication) {
 
-        User currentUser =
-                getCurrentUser(authentication);
+        User currentUser = getCurrentUser(authentication);
 
-        Medicine medicine =
-                findMedicine(id);
-
+        Medicine medicine = findMedicine(id);
 
         if (request.getQuantity() == null
                 || request.getQuantity() <= 0) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Quantity must be greater than zero."
             );
         }
 
-
         Integer previousStock =
-                medicine.getStock();
+                medicine.getStock() == null
+                        ? 0
+                        : medicine.getStock();
 
         medicine.setStock(
                 previousStock + request.getQuantity()
         );
 
-        medicine.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        medicine.setUpdatedAt(LocalDateTime.now());
 
         updateMedicineStatus(medicine);
 
@@ -268,7 +266,7 @@ public class MedicineServiceImpl implements MedicineService {
 
 
         // =================================================
-        // STOCK LOG
+        // STOCK HISTORY
         // =================================================
 
         medicineStockLogService.logMedicineAction(
@@ -299,15 +297,13 @@ public class MedicineServiceImpl implements MedicineService {
                 "Medicine"
         );
 
-
-        return medicineMapper.toResponseDto(
-                updatedMedicine
-        );
+        return medicineMapper.toResponseDto(updatedMedicine);
     }
 
 
     // =====================================================
-    // Delete Medicine
+    // DELETE MEDICINE
+    // ADMIN ONLY
     // =====================================================
 
     @Override
@@ -316,23 +312,26 @@ public class MedicineServiceImpl implements MedicineService {
             String id,
             Authentication authentication) {
 
-        User currentUser =
-                getCurrentUser(authentication);
+        User currentUser = getCurrentUser(authentication);
 
-        Medicine medicine =
-                findMedicine(id);
+        Medicine medicine = findMedicine(id);
+
+        Integer previousStock =
+                medicine.getStock() == null
+                        ? 0
+                        : medicine.getStock();
 
 
         // =================================================
-        // STOCK LOG
+        // STOCK HISTORY
         // =================================================
 
         medicineStockLogService.logMedicineAction(
                 medicine,
                 StockAction.DELETE,
-                medicine.getStock(),
+                previousStock,
                 0,
-                medicine.getStock(),
+                previousStock,
                 authentication.getName()
         );
 
@@ -353,123 +352,40 @@ public class MedicineServiceImpl implements MedicineService {
                 "Medicine"
         );
 
-
-        // Delete after activity has been recorded
         medicineRepository.delete(medicine);
     }
 
 
     // =====================================================
-    // Issue Medicine
-    // =====================================================
-
-    @Override
-    @PreAuthorize("hasAnyRole('ADMIN','ANM')")
-    public MedicineResponseDto issueMedicine(
-            String id,
-            IssueMedicineRequestDto request,
-            Authentication authentication) {
-
-        User currentUser =
-                getCurrentUser(authentication);
-
-        Medicine medicine =
-                findMedicine(id);
-
-        Integer previousStock =
-                medicine.getStock();
-
-
-        if (request.getQuantity() == null
-                || request.getQuantity() <= 0) {
-
-            throw new RuntimeException(
-                    "Issue quantity must be greater than zero."
-            );
-        }
-
-
-        if (previousStock < request.getQuantity()) {
-
-            throw new RuntimeException(
-                    "Insufficient stock available."
-            );
-        }
-
-
-        medicine.setStock(
-                previousStock - request.getQuantity()
-        );
-
-        medicine.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        updateMedicineStatus(medicine);
-
-        Medicine updatedMedicine =
-                medicineRepository.save(medicine);
-
-
-        // =================================================
-        // STOCK LOG
-        // =================================================
-
-        medicineStockLogService.logMedicineAction(
-                updatedMedicine,
-                StockAction.ISSUE,
-                previousStock,
-                updatedMedicine.getStock(),
-                request.getQuantity(),
-                authentication.getName()
-        );
-
-
-        // =================================================
-        // ACTIVITY LOG
-        // =================================================
-
-        activityService.log(
-                currentUser,
-                "UPDATE",
-                "Medicine Stock Issued",
-                updatedMedicine.getName()
-                        + " • -"
-                        + request.getQuantity()
-                        + " units • Stock: "
-                        + updatedMedicine.getStock(),
-                "MEDICINE",
-                updatedMedicine.getId(),
-                "Medicine"
-        );
-
-
-        return medicineMapper.toResponseDto(
-                updatedMedicine
-        );
-    }
-
-
-    // =====================================================
-    // Helper Methods
+    // FIND MEDICINE
     // =====================================================
 
     private Medicine findMedicine(String id) {
 
         return medicineRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Medicine not found."
                         )
                 );
     }
 
 
+    // =====================================================
+    // VALIDATE BATCH
+    // =====================================================
+
     private void validateBatch(String batch) {
+
+        if (batch == null || batch.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Batch is required."
+            );
+        }
 
         if (medicineRepository.existsByBatch(batch)) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Batch already exists."
             );
         }
@@ -480,19 +396,26 @@ public class MedicineServiceImpl implements MedicineService {
             Medicine medicine,
             String batch) {
 
-        if (!medicine.getBatch().equals(batch)
+        if (batch == null || batch.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Batch is required."
+            );
+        }
+
+        if (!batch.equals(medicine.getBatch())
                 && medicineRepository.existsByBatch(batch)) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Batch already exists."
             );
         }
     }
 
 
-    /**
-     * Automatically determines medicine status.
-     */
+    // =====================================================
+    // UPDATE MEDICINE STATUS
+    // =====================================================
+
     private void updateMedicineStatus(
             Medicine medicine) {
 
@@ -507,18 +430,15 @@ public class MedicineServiceImpl implements MedicineService {
             return;
         }
 
-
         Integer stock =
                 medicine.getStock() == null
                         ? 0
                         : medicine.getStock();
 
-
         Integer minimumStock =
                 medicine.getMinimumStock() == null
                         ? 50
                         : medicine.getMinimumStock();
-
 
         if (stock == 0) {
 

@@ -6,11 +6,11 @@ import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.dto.medicine.InventoryReportDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.MedicineStatus;
 import com.gramarogya.gramarogya_backend.dto.report.ReportSummaryDto;
-import com.gramarogya.gramarogya_backend.dto.visit.VisitReportDto;
+import com.gramarogya.gramarogya_backend.dto.report.VisitReportDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
+import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
-import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.medicine.Medicine;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
@@ -18,6 +18,7 @@ import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import com.gramarogya.gramarogya_backend.repository.medicine.MedicineRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -55,11 +56,30 @@ public class ReportServiceImpl implements ReportService {
 
 
     // =====================================================
+    // ADMIN CHECK
+    // Medicine inventory is ADMIN-only
+    // =====================================================
+
+    private void requireAdmin(Authentication authentication) {
+
+        User currentUser = getCurrentUser(authentication);
+
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new RuntimeException(
+                    "Access denied. Only ADMIN can access medicine inventory reports."
+            );
+        }
+    }
+
+
+    // =====================================================
     // SUMMARY
     // =====================================================
 
     @Override
-    public ReportSummaryDto getSummary(Authentication authentication) {
+    public ReportSummaryDto getSummary(
+            Authentication authentication
+    ) {
 
         User currentUser = getCurrentUser(authentication);
 
@@ -69,7 +89,7 @@ public class ReportServiceImpl implements ReportService {
 
         /*
          * ADMIN and ANM can see all data.
-         * ASHA sees only data created by them.
+         * ASHA sees only their own assigned data.
          */
 
         if (currentUser.getRole() == Role.ASHA) {
@@ -96,7 +116,7 @@ public class ReportServiceImpl implements ReportService {
                     : healthRecordRepository
                     .findByBeneficiaryIdIn(
                             beneficiaryIds,
-                            org.springframework.data.domain.Pageable.unpaged()
+                            Pageable.unpaged()
                     )
                     .getTotalElements();
 
@@ -108,23 +128,29 @@ public class ReportServiceImpl implements ReportService {
         }
 
 
-        /*
-         * Medicine inventory is currently global.
-         * Therefore all roles receive the same inventory
-         * statistics.
-         */
+        // =================================================
+        // MEDICINE INVENTORY
+        // ADMIN ONLY
+        // =================================================
 
-        long medicines = medicineRepository.count();
+        long medicines = 0;
+        long lowStock = 0;
+        long outOfStock = 0;
 
-        long lowStock =
-                medicineRepository
-                        .findByStatus(MedicineStatus.LOW_STOCK)
-                        .size();
+        if (currentUser.getRole() == Role.ADMIN) {
 
-        long outOfStock =
-                medicineRepository
-                        .findByStatus(MedicineStatus.OUT_OF_STOCK)
-                        .size();
+            medicines = medicineRepository.count();
+
+            lowStock =
+                    medicineRepository
+                            .findByStatus(MedicineStatus.LOW_STOCK)
+                            .size();
+
+            outOfStock =
+                    medicineRepository
+                            .findByStatus(MedicineStatus.OUT_OF_STOCK)
+                            .size();
+        }
 
 
         return ReportSummaryDto.builder()
@@ -151,6 +177,11 @@ public class ReportServiceImpl implements ReportService {
 
         List<Beneficiary> beneficiaries;
 
+        /*
+         * ASHA sees only their beneficiaries.
+         * ADMIN and ANM see all beneficiaries.
+         */
+
         if (currentUser.getRole() == Role.ASHA) {
 
             beneficiaries =
@@ -160,9 +191,6 @@ public class ReportServiceImpl implements ReportService {
 
         } else {
 
-            /*
-             * ADMIN and ANM
-             */
             beneficiaries =
                     beneficiaryRepository.findAll();
         }
@@ -203,6 +231,11 @@ public class ReportServiceImpl implements ReportService {
 
         List<Visit> visits;
 
+        /*
+         * ASHA sees only their visits.
+         * ADMIN and ANM see all visits.
+         */
+
         if (currentUser.getRole() == Role.ASHA) {
 
             visits =
@@ -222,7 +255,9 @@ public class ReportServiceImpl implements ReportService {
     }
 
 
-    private VisitReportDto mapVisit(Visit visit) {
+    private VisitReportDto mapVisit(
+            Visit visit
+    ) {
 
         String beneficiaryName =
                 beneficiaryRepository
@@ -234,7 +269,7 @@ public class ReportServiceImpl implements ReportService {
         String ashaWorker = visit.getUserId();
 
         /*
-         * Try to display worker name instead of ID.
+         * Display ASHA name instead of user ID.
          */
 
         if (visit.getUserId() != null) {
@@ -249,14 +284,13 @@ public class ReportServiceImpl implements ReportService {
 
         return VisitReportDto.builder()
                 .id(visit.getId())
+                .beneficiaryId(visit.getBeneficiaryId())
                 .beneficiaryName(beneficiaryName)
+                .visitDate(visit.getVisitDate())
                 .visitType(visit.getVisitType())
-                .visitDate(
-                        visit.getVisitDate() == null
-                                ? ""
-                                : visit.getVisitDate().toString()
-                )
                 .status(visit.getStatus())
+                .notes(visit.getNotes())
+                .nextVisitDate(visit.getNextVisitDate())
                 .ashaWorker(ashaWorker)
                 .build();
     }
@@ -264,6 +298,7 @@ public class ReportServiceImpl implements ReportService {
 
     // =====================================================
     // INVENTORY REPORT
+    // ADMIN ONLY
     // =====================================================
 
     @Override
@@ -271,7 +306,7 @@ public class ReportServiceImpl implements ReportService {
             Authentication authentication
     ) {
 
-        getCurrentUser(authentication);
+        requireAdmin(authentication);
 
         return medicineRepository.findAll()
                 .stream()
@@ -280,7 +315,9 @@ public class ReportServiceImpl implements ReportService {
     }
 
 
-    private InventoryReportDto mapMedicine(Medicine medicine) {
+    private InventoryReportDto mapMedicine(
+            Medicine medicine
+    ) {
 
         return InventoryReportDto.builder()
                 .id(medicine.getId())
@@ -311,6 +348,11 @@ public class ReportServiceImpl implements ReportService {
 
         List<HealthRecord> records;
 
+        /*
+         * ASHA sees health records of their beneficiaries.
+         * ADMIN and ANM see all health records.
+         */
+
         if (currentUser.getRole() == Role.ASHA) {
 
             List<String> beneficiaryIds =
@@ -328,7 +370,7 @@ public class ReportServiceImpl implements ReportService {
                     healthRecordRepository
                             .findByBeneficiaryIdIn(
                                     beneficiaryIds,
-                                    org.springframework.data.domain.Pageable.unpaged()
+                                    Pageable.unpaged()
                             )
                             .getContent();
 
@@ -375,7 +417,8 @@ public class ReportServiceImpl implements ReportService {
 
 
     // =====================================================
-    // LOW STOCK
+    // LOW STOCK REPORT
+    // ADMIN ONLY
     // =====================================================
 
     @Override
@@ -383,7 +426,7 @@ public class ReportServiceImpl implements ReportService {
             Authentication authentication
     ) {
 
-        getCurrentUser(authentication);
+        requireAdmin(authentication);
 
         return medicineRepository
                 .findByStatus(MedicineStatus.LOW_STOCK)
@@ -394,7 +437,8 @@ public class ReportServiceImpl implements ReportService {
 
 
     // =====================================================
-    // OUT OF STOCK
+    // OUT OF STOCK REPORT
+    // ADMIN ONLY
     // =====================================================
 
     @Override
@@ -402,7 +446,7 @@ public class ReportServiceImpl implements ReportService {
             Authentication authentication
     ) {
 
-        getCurrentUser(authentication);
+        requireAdmin(authentication);
 
         return medicineRepository
                 .findByStatus(MedicineStatus.OUT_OF_STOCK)

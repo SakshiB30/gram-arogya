@@ -28,4 +28,6 @@ public class VisitReportDto {
     private String notes;
 
     private LocalDate nextVisitDate;
+
+    private String ashaWorker;
 }
