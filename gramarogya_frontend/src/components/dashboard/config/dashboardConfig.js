@@ -136,13 +136,13 @@ export const dashboardConfig = {
         bg: "bg-violet-100",
         color: "text-violet-600",
       },
-      {
-        title: "ASHA Performance",
-        path: "/app/reports",
-        icon: Activity,
-        bg: "bg-orange-100",
-        color: "text-orange-600",
-      },
+      // {
+      //   title: "ASHA Performance",
+      //   path: "/app/reports",
+      //   icon: Activity,
+      //   bg: "bg-orange-100",
+      //   color: "text-orange-600",
+      // },
     ],
   },
 

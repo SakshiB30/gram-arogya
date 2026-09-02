@@ -61,7 +61,7 @@ export default function AnmDashboard() {
 
       <StatsCards stats={stats} />
 
-      <QuickActions />
+      <QuickActions className="grid grid-cols-3 gap-3"/>
 
       <div className="grid gap-6 lg:grid-cols-2">
 

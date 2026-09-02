@@ -131,9 +131,37 @@ public class DashboardServiceImpl implements DashboardService {
 
                         .userName(currentUser.getName())
 
+                        // -----------------------------------------
+                        // BENEFICIARIES
+                        // -----------------------------------------
+
                         .totalBeneficiaries(
                                 beneficiaries.size()
                         )
+
+                        // -----------------------------------------
+                        // HEALTH PROGRAMS
+                        // -----------------------------------------
+
+                        .pregnantWomen(
+                                pregnantWomen
+                        )
+
+                        .children(
+                                children
+                        )
+
+                        .tbPatients(
+                                tbPatients
+                        )
+
+                        .elderly(
+                                elderly
+                        )
+
+                        // -----------------------------------------
+                        // VISITS
+                        // -----------------------------------------
 
                         .totalVisits(
                                 visitRepository
@@ -162,7 +190,9 @@ public class DashboardServiceImpl implements DashboardService {
                                         .countByUserIdAndNextVisitDateAfter(
                                                 userId,
                                                 today
-                                        )).build();
+                                        ))
+
+                        .build();
 
 
         return DashboardResponseDto.builder()
