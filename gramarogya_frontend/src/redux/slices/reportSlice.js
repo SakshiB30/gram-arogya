@@ -1,18 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import reportService from "../../services/reportService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // =====================================================
 // HELPER
 // =====================================================
 
-const getErrorMessage = (error) => {
-  return (
-    error.response?.data?.message ||
-    error.response?.data ||
-    error.message ||
-    "Something went wrong"
-  );
-};
+const getReportError = (error) =>
+  normalizeApiError(error, "Failed to load reports.");
 
 
 // =====================================================
@@ -25,7 +20,7 @@ export const fetchSummary = createAsyncThunk(
     try {
       return await reportService.fetchSummary();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -41,7 +36,7 @@ export const fetchBeneficiaryReport = createAsyncThunk(
     try {
       return await reportService.fetchBeneficiaryReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -57,7 +52,7 @@ export const fetchVisitReport = createAsyncThunk(
     try {
       return await reportService.fetchVisitReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -73,7 +68,7 @@ export const fetchInventoryReport = createAsyncThunk(
     try {
       return await reportService.fetchInventoryReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -89,7 +84,7 @@ export const fetchHealthRecordReport = createAsyncThunk(
     try {
       return await reportService.fetchHealthRecordReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -105,7 +100,7 @@ export const fetchLowStockReport = createAsyncThunk(
     try {
       return await reportService.fetchLowStockReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );
@@ -121,7 +116,7 @@ export const fetchOutOfStockReport = createAsyncThunk(
     try {
       return await reportService.fetchOutOfStockReport();
     } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error));
+      return thunkAPI.rejectWithValue(getReportError(error));
     }
   }
 );

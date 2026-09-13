@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import notificationService from "../../services/notificationService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ===========================
 // GET ALL NOTIFICATIONS
@@ -11,7 +12,7 @@ export const fetchNotifications = createAsyncThunk(
       return await notificationService.getNotifications();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to fetch notifications"
+        normalizeApiError(error, "Failed to fetch notifications.")
       );
     }
   }
@@ -28,7 +29,7 @@ export const markNotificationAsRead = createAsyncThunk(
       return id;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to update notification"
+        normalizeApiError(error, "Failed to update notification.")
       );
     }
   }
@@ -45,7 +46,7 @@ export const markAllNotificationsAsRead = createAsyncThunk(
       return true;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Failed to update notifications"
+        normalizeApiError(error, "Failed to update notifications.")
       );
     }
   }

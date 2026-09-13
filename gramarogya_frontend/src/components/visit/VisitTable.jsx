@@ -6,6 +6,8 @@ deleteVisit,
 fetchVisits
 }
 from "../../redux/slices/visitSlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 
 
@@ -18,6 +20,7 @@ error
 
 const dispatch = useDispatch();
 const navigate = useNavigate();
+const { showToast } = useToast();
 
 const getStatusColor=(status)=>{
 
@@ -57,6 +60,11 @@ await dispatch(
 deleteVisit(id)
 ).unwrap();
 
+showToast({
+type: "success",
+title: "Visit Deleted",
+message: "The visit has been deleted successfully.",
+});
 
 dispatch(fetchVisits());
 
@@ -64,7 +72,11 @@ dispatch(fetchVisits());
 }
 catch(err){
 
-alert(err);
+showToast({
+type: "error",
+title: "Delete Failed",
+message: getErrorMessage(err, "Failed to delete visit."),
+});
 
 }
 
@@ -105,7 +117,7 @@ p-5
 rounded-xl
 ">
 
-{error}
+{getErrorMessage(error)}
 
 </div>
 

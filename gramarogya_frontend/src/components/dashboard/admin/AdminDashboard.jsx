@@ -10,6 +10,7 @@ import AdminStatsCards from "./AdminStatsCards";
 import AdminRecentActivities from "./AdminRecentActivities";
 import AdminAlerts from "./AdminAlerts";
 import PendingVerifications from "./PendingVerifications";
+import { getErrorMessage } from "../../../utils/apiError";
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
@@ -42,7 +43,7 @@ const {
   if (error) {
     return (
       <div className="rounded-xl bg-red-100 p-5 text-red-600">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
   }

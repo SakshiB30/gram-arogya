@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -8,7 +7,6 @@ import {
   Users,
   Archive,
   Stethoscope,
-  LifeBuoy,
 } from "lucide-react";
 
 const adminNavItems = [
@@ -45,24 +43,14 @@ const Sidebar = () => {
     navigate(path);
   };
 
-  let navItems = [];
-
-  switch (user?.role) {
-    case "ADMIN":
-      navItems = adminNavItems;
-      break;
-
-    case "ANM":
-      navItems = anmNavItems;
-      break;
-
-    case "ASHA":
-      navItems = ashaNavItems;
-      break;
-
-    default:
-      navItems = [];
-  }
+  const navItems =
+    user?.role === "ADMIN"
+      ? adminNavItems
+      : user?.role === "ANM"
+        ? anmNavItems
+        : user?.role === "ASHA"
+          ? ashaNavItems
+          : [];
 
   return (
     <div className="flex h-screen w-72 flex-col justify-between border-r border-slate-200 bg-white">

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import dashboardService from "../../services/dashboardService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // =====================================================
 // FETCH DASHBOARD
@@ -20,9 +21,7 @@ export const fetchDashboard = createAsyncThunk(
     } catch (error) {
 
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load dashboard"
+        normalizeApiError(error, "Failed to load dashboard.")
       );
     }
   }
@@ -218,7 +217,7 @@ const dashboardSlice = createSlice({
 
           state.error =
             action.payload ||
-            "Failed to load dashboard";
+            normalizeApiError(null, "Failed to load dashboard.");
         }
       );
   },

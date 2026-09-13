@@ -47,7 +47,8 @@ const EditHealthRecord = () => {
 
   useEffect(() => {
     if (selectedHealthRecord) {
-      setFormData({
+      const timeoutId = window.setTimeout(() => {
+        setFormData({
         beneficiaryId: selectedHealthRecord.beneficiaryId || "",
         visitId: selectedHealthRecord.visitId || "",
         bloodPressure: selectedHealthRecord.bloodPressure || "",
@@ -57,7 +58,10 @@ const EditHealthRecord = () => {
         diagnosis: selectedHealthRecord.diagnosis || "",
         prescription: selectedHealthRecord.prescription || "",
         notes: selectedHealthRecord.notes || "",
-      });
+        });
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [selectedHealthRecord]);
 

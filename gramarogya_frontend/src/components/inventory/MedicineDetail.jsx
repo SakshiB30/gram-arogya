@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, PackagePlus } from "lucide-react";
 
 import { getMedicineById } from "../../redux/slices/inventorySlice";
+import { getErrorMessage } from "../../utils/apiError";
 
 const STATUS_STYLES = {
   Available: "bg-green-100 text-green-700",
@@ -38,7 +39,7 @@ useEffect(() => {
   if (error) {
     return (
       <div className="rounded-xl bg-red-100 p-6 text-red-700">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
   }

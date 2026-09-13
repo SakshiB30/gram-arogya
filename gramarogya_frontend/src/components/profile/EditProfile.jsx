@@ -32,7 +32,8 @@ const EditProfile = ({ profile, onCancel, onSuccess }) => {
 
     if(profile){
 
-      setFormData({
+      const timeoutId = window.setTimeout(() => {
+        setFormData({
 
         name: profile.name || "",
 
@@ -48,7 +49,10 @@ const EditProfile = ({ profile, onCancel, onSuccess }) => {
 
         profileImage: profile.profileImage || ""
 
-      });
+        });
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
 
     }
 

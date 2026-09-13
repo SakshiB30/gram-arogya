@@ -1,4 +1,3 @@
-import React from "react";
 import InventoryTableRow from "./InventoryTableRow";
 
 export default function InventoryTable({

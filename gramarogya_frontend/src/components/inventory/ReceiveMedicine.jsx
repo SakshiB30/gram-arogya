@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { PackagePlus, ArrowLeft } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,12 +7,15 @@ import {
   getMedicineById,
   receiveMedicine,
 } from "../../redux/slices/inventorySlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 export default function ReceiveMedicine() {
   const { id } = useParams();
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   const { medicine, loading, error } = useSelector(
     (state) => state.inventory
@@ -30,18 +33,36 @@ export default function ReceiveMedicine() {
     e.preventDefault();
 
     if (!quantity || Number(quantity) <= 0) {
+      showToast({
+        type: "warning",
+        title: "Invalid Quantity",
+        message: "Please enter a valid quantity greater than zero.",
+      });
       return;
     }
 
-    const result = await dispatch(
-      receiveMedicine({
-        id,
-        quantity: Number(quantity),
-      })
-    );
+    try {
+      await dispatch(
+        receiveMedicine({
+          id,
+          quantity: Number(quantity),
+        })
+      ).unwrap();
 
-    if (receiveMedicine.fulfilled.match(result)) {
+      showToast({
+        type: "success",
+        title: "Stock Updated",
+        message:
+          "The received medicine quantity has been added to inventory successfully.",
+      });
+
       navigate("/app/inventory");
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: "Restock Failed",
+        message: getErrorMessage(error, "Failed to restock medicine."),
+      });
     }
   };
 
@@ -100,7 +121,7 @@ export default function ReceiveMedicine() {
       {/* Error */}
       {error && (
         <div className="mb-6 rounded-lg bg-red-100 p-4 text-red-700">
-          {error}
+          {getErrorMessage(error)}
         </div>
       )}
 

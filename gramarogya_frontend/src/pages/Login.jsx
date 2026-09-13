@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser, clearError } from "../redux/slices/authSlice";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  getErrorMessage,
+  getErrorTitle,
+} from "../utils/apiError";
 
 import {
   Eye,
@@ -66,19 +70,6 @@ const Login = () => {
     dispatch(loginUser(formData));
   };
 
-  const getErrorMessage = () => {
-    switch (error) {
-      case "Your account is pending verification.":
-        return "Your registration is pending ANM approval.";
-      case "Your registration has been rejected.":
-        return "Your registration has been rejected. Please contact your ANM.";
-      case "Your account has been blocked. Please contact your administrator.":
-        return "Your account has been blocked by your ANM.";
-      default:
-        return error;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex flex-col">
       {/* Header */}
@@ -137,7 +128,14 @@ const Login = () => {
               {error && (
                 <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
                   <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                  <span>{getErrorMessage()}</span>
+                  <div>
+                    <p className="font-semibold">
+                      {getErrorTitle(error)}
+                    </p>
+                    <p className="mt-1">
+                      {getErrorMessage(error)}
+                    </p>
+                  </div>
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import ashaService from "../../services/ashaService";
+import { normalizeApiError } from "../../utils/apiError";
 
 export const registerAsha = createAsyncThunk(
   "asha/register",
@@ -8,9 +9,7 @@ export const registerAsha = createAsyncThunk(
       return await ashaService.register(userData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Registration Failed"
+        normalizeApiError(error, "Registration failed.")
       );
     }
   }

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import profileService from "../../services/profileService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ===========================
 // GET PROFILE
@@ -10,12 +11,9 @@ export const fetchProfile = createAsyncThunk(
     try {
       return await profileService.getProfile();
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch profile";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch profile.")
+      );
     }
   }
 );
@@ -29,12 +27,9 @@ export const updateProfile = createAsyncThunk(
     try {
       return await profileService.updateProfile(profileData);
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to update profile";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to update profile.")
+      );
     }
   }
 );

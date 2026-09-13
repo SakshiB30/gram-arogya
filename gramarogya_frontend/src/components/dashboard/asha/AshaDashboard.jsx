@@ -17,6 +17,7 @@ import HealthPrograms from "../HealthPrograms";
 import TodaySchedule from "../../visit/TodaySchedule";
 import { fetchDashboard } from "../../../redux/slices/dashboardSlice";
 import { fetchTodayVisits } from "../../../redux/slices/visitSlice";
+import { getErrorMessage } from "../../../utils/apiError";
 
 // =====================================================
 // PRESENTATIONAL COMPONENTS
@@ -80,7 +81,7 @@ const ErrorState = ({ message }) => (
       <AlertTriangle className="h-5 w-5 text-red-600" />
     </div>
     <div className="flex-1">
-      <p className="font-semibold text-red-800">Something went wrong</p>
+      <p className="font-semibold text-red-800">Request Failed</p>
       <p className="mt-0.5 text-sm text-red-600/90">{message}</p>
     </div>
   </div>
@@ -179,7 +180,7 @@ export default function AshaDashboard() {
 
   // Error state
   if (error) {
-    const message = typeof error === "string" ? error : "Failed to load dashboard.";
+    const message = getErrorMessage(error, "Failed to load dashboard.");
     return <ErrorState message={message} />;
   }
 

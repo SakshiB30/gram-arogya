@@ -3,6 +3,8 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.NotificationResponseDto;
 import com.gramarogya.gramarogya_backend.entity.Notification;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
+import com.gramarogya.gramarogya_backend.exception.UnauthorizedException;
 import com.gramarogya.gramarogya_backend.mapper.NotificationMapper;
 import com.gramarogya.gramarogya_backend.repository.NotificationRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -25,7 +27,7 @@ public class NotificationServiceImpl implements NotificationService {
     // ==========================
     private User getLoggedInUser(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
     }
 
     // ==========================
@@ -94,10 +96,10 @@ public class NotificationServiceImpl implements NotificationService {
         User user = getLoggedInUser(email);
 
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         if (!notification.getUserId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new UnauthorizedException("You don't have permission to access this notification.");
         }
 
         notification.setRead(true);
@@ -136,10 +138,10 @@ public class NotificationServiceImpl implements NotificationService {
         User user = getLoggedInUser(email);
 
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         if (!notification.getUserId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new UnauthorizedException("You don't have permission to delete this notification.");
         }
 
         notificationRepository.delete(notification);

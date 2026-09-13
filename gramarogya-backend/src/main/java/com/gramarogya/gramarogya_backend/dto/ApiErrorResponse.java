@@ -14,6 +14,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class ApiErrorResponse {
 
+    private boolean success;
+
     private LocalDateTime timestamp;
 
     private int status;

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { normalizeApiError } from "../utils/apiError";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -30,6 +31,8 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     }
+
+    error.apiError = normalizeApiError(error);
 
     return Promise.reject(error);
   }

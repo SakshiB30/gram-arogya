@@ -4,6 +4,7 @@ import {
   fetchPendingAnms,
   approveAnm,
 } from "../redux/slices/adminSlice";
+import { getErrorMessage } from "../utils/apiError";
 
 const AdminPage = () => {
   const dispatch = useDispatch();
@@ -41,7 +42,7 @@ const AdminPage = () => {
 
       {error && (
         <p className="text-red-600">
-          {error}
+          {getErrorMessage(error)}
         </p>
       )}
 

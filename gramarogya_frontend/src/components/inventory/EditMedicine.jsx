@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -6,6 +6,8 @@ import {
   getMedicineById,
   updateMedicine,
 } from "../../redux/slices/inventorySlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const initialState = {
   name: "",
@@ -18,10 +20,10 @@ const initialState = {
 
 export default function EditMedicine() {
   const { id } = useParams();
-  console.log("ID:", id);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const { medicine, loading } = useSelector(
     (state) => state.inventory
@@ -30,20 +32,23 @@ export default function EditMedicine() {
   const [formData, setFormData] = useState(initialState);
 
   useEffect(() => {
-  dispatch(getMedicineById(id)).then((res) => {
-    console.log("Thunk result:", res);
-  });
-}, [dispatch, id]);
+    dispatch(getMedicineById(id));
+  }, [dispatch, id]);
 
   useEffect(() => {
     if (medicine) {
-      setFormData({
+      const timeoutId = window.setTimeout(() => {
+        setFormData({
         name: medicine.name || "",
         type: medicine.type || "",
         batch: medicine.batch || "",
         stock: medicine.stock || "",
         expiryDate: medicine.expiryDate || "",
-      });
+          minimumStock: medicine.minimumStock || "",
+        });
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [medicine]);
 
@@ -57,23 +62,37 @@ export default function EditMedicine() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const medicineData = {
-    ...formData,
-    stock: Number(formData.stock),
-    minimumStock: Number(formData.minimumStock),
+    const medicineData = {
+      ...formData,
+      stock: Number(formData.stock),
+      minimumStock: Number(formData.minimumStock),
+    };
+
+    try {
+      await dispatch(
+        updateMedicine({
+          id,
+          medicineData,
+        })
+      ).unwrap();
+
+      showToast({
+        type: "success",
+        title: "Medicine Updated",
+        message: "The medicine information has been updated successfully.",
+      });
+
+      navigate("/app/inventory");
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: "Update Failed",
+        message: getErrorMessage(error, "Failed to update medicine."),
+      });
+    }
   };
-
-  await dispatch(
-    updateMedicine({
-      id,
-      medicineData,
-    })
-  );
-
-  navigate("/app/inventory");
-};
 
   return (
     <div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow">

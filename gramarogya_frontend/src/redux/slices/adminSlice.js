@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import adminService from "../../services/adminService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ================= FETCH PENDING ANMS =================
 
@@ -10,9 +11,7 @@ export const fetchPendingAnms = createAsyncThunk(
       return await adminService.getPendingAnms();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to load pending ANMs"
+        normalizeApiError(error, "Failed to load pending ANMs.")
       );
     }
   }
@@ -31,9 +30,7 @@ export const fetchAllUsers = createAsyncThunk(
     } catch (error) {
 
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load users"
+        normalizeApiError(error, "Failed to load users.")
       );
 
     }
@@ -51,9 +48,7 @@ export const approveAnm = createAsyncThunk(
       return await adminService.approveAnm(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to approve ANM"
+        normalizeApiError(error, "Failed to approve ANM.")
       );
     }
   }
@@ -68,9 +63,7 @@ export const rejectAnm = createAsyncThunk(
       return await adminService.rejectAnm(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to reject ANM"
+        normalizeApiError(error, "Failed to reject ANM.")
       );
     }
   }
@@ -85,9 +78,7 @@ export const blockAnm = createAsyncThunk(
       return await adminService.blockAnm(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to block ANM"
+        normalizeApiError(error, "Failed to block ANM.")
       );
     }
   }
@@ -103,9 +94,7 @@ export const blockAsha = createAsyncThunk(
       return await adminService.blockAsha(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to block ASHA"
+        normalizeApiError(error, "Failed to block ASHA.")
       );
     }
   }
@@ -120,9 +109,7 @@ export const unblockAsha = createAsyncThunk(
       return await adminService.unblockAsha(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to unblock ASHA"
+        normalizeApiError(error, "Failed to unblock ASHA.")
       );
     }
   }
@@ -137,9 +124,7 @@ export const unblockAnm = createAsyncThunk(
       return await adminService.unblockAnm(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to unblock ANM"
+        normalizeApiError(error, "Failed to unblock ANM.")
       );
     }
   }

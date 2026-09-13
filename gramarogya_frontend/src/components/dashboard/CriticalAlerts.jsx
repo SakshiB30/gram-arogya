@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { 
   AlertTriangle, 
   ChevronRight, 
@@ -8,16 +8,8 @@ import {
   CalendarClock,
   Heart,
   User,
-  Clock,
   FileText,
   X,
-  Bell,
-  BellOff,
-  ExternalLink,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  MoreVertical,
   Eye,
   EyeOff,
   ArrowUpRight,

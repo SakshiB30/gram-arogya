@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { History } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { getStockLogs } from "../../redux/slices/inventorySlice";
+import { getErrorMessage } from "../../utils/apiError";
 
 export default function MedicineStockHistory() {
   const dispatch = useDispatch();
@@ -71,7 +72,7 @@ export default function MedicineStockHistory() {
       {/* Error */}
       {error && (
         <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-          {error}
+          {getErrorMessage(error)}
         </div>
       )}
 

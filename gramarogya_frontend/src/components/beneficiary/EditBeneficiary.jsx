@@ -7,11 +7,14 @@ import {
   fetchAvailableAshas,
   updateBeneficiary,
 } from "../../redux/slices/beneficiarySlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 export default function EditBeneficiary() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
+  const { showToast } = useToast();
 
   const { selectedBeneficiary, loading, error, availableAshas } = useSelector(
     (state) => state.beneficiaries
@@ -49,7 +52,8 @@ export default function EditBeneficiary() {
   // Fill form when beneficiary data arrives
   useEffect(() => {
     if (selectedBeneficiary) {
-      setForm({
+      const timeoutId = window.setTimeout(() => {
+        setForm({
         name: selectedBeneficiary.name || "",
         age: selectedBeneficiary.age || "",
         gender: selectedBeneficiary.gender || "",
@@ -60,7 +64,10 @@ export default function EditBeneficiary() {
         category: selectedBeneficiary.category || "",
         disease: selectedBeneficiary.disease || "",
         status: selectedBeneficiary.status || "Active",
-      });
+        });
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [selectedBeneficiary]);
 
@@ -82,6 +89,11 @@ export default function EditBeneficiary() {
     );
 
     if (updateBeneficiary.fulfilled.match(result)) {
+      showToast({
+        type: "success",
+        title: "Beneficiary Updated",
+        message: "The beneficiary information has been updated successfully.",
+      });
       navigate("/app/beneficiaries");
     }
   };
@@ -94,7 +106,7 @@ export default function EditBeneficiary() {
 
       {error && (
         <p className="text-red-500 mb-4">
-          {error}
+          {getErrorMessage(error)}
         </p>
       )}
 

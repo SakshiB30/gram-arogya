@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import InventoryHeader from "../components/inventory/InventoryHeader";
@@ -7,9 +7,12 @@ import InventoryFilter from "../components/inventory/InventoryFilter";
 import InventoryTable from "../components/inventory/InventoryTable";
 
 import { getInventory, deleteMedicine } from "../redux/slices/inventorySlice";
+import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../components/common/toastContext";
 
 export default function InventoryPage() {
   const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   const {
     medicines = [],
@@ -42,8 +45,21 @@ export default function InventoryPage() {
 const handleDelete = async (id) => {
   if (!window.confirm("Delete this medicine?")) return;
 
-  await dispatch(deleteMedicine(id));
-  dispatch(getInventory());
+  try {
+    await dispatch(deleteMedicine(id)).unwrap();
+    showToast({
+      type: "success",
+      title: "Medicine Deleted",
+      message: "The medicine has been removed from inventory.",
+    });
+    dispatch(getInventory());
+  } catch (error) {
+    showToast({
+      type: "error",
+      title: "Delete Failed",
+      message: getErrorMessage(error, "Failed to delete medicine."),
+    });
+  }
 };
 
 
@@ -64,7 +80,7 @@ const handleDelete = async (id) => {
 
       {error && (
         <div className="rounded-lg bg-red-100 p-4 text-red-700">
-          {error}
+          {getErrorMessage(error)}
         </div>
       )}
 

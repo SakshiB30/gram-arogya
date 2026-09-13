@@ -1,6 +1,7 @@
 package com.gramarogya.gramarogya_backend.dto.visit;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ public class CreateVisitRequestDto {
     @NotBlank(message = "Status is required")
     private String status;
 
+    @NotNull(message = "Scheduled date is required")
     private LocalDate scheduledDate;
 
     private String notes;

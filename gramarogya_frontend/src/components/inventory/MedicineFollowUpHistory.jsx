@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getFollowUpsByBeneficiary,
 } from "../../redux/slices/medicineFollowUpSlice";
+import { getErrorMessage } from "../../utils/apiError";
 
 const MedicineFollowUpHistory = ({ beneficiaryId }) => {
   const dispatch = useDispatch();
@@ -114,7 +115,7 @@ const MedicineFollowUpHistory = ({ beneficiaryId }) => {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-6 mt-6">
         <p className="text-red-500">
-          {error}
+          {getErrorMessage(error)}
         </p>
       </div>
     );

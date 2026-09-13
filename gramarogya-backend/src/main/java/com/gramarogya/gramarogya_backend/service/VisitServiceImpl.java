@@ -7,6 +7,8 @@ import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
+import com.gramarogya.gramarogya_backend.exception.UnauthorizedException;
 import com.gramarogya.gramarogya_backend.mapper.VisitMapper;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -39,7 +41,7 @@ public class VisitServiceImpl implements VisitService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(
-                        () -> new RuntimeException("User not found")
+                        () -> new ResourceNotFoundException("User not found.")
                 );
     }
 
@@ -62,8 +64,8 @@ public class VisitServiceImpl implements VisitService {
         Beneficiary beneficiary =
                 beneficiaryRepository.findById(dto.getBeneficiaryId())
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Beneficiary not found"
+                                () -> new ResourceNotFoundException(
+                                        "Beneficiary not found."
                                 )
                         );
 
@@ -76,8 +78,8 @@ public class VisitServiceImpl implements VisitService {
                 currentUser,
                 beneficiary)) {
 
-            throw new RuntimeException(
-                    "You are not authorized to create a visit for this beneficiary"
+            throw new UnauthorizedException(
+                    "You cannot create a visit for a beneficiary who is not assigned to you."
             );
         }
 
@@ -151,8 +153,8 @@ public class VisitServiceImpl implements VisitService {
         Visit visit =
                 visitRepository.findById(id)
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Visit not found"
+                                () -> new ResourceNotFoundException(
+                                        "Visit not found."
                                 )
                         );
 
@@ -163,8 +165,8 @@ public class VisitServiceImpl implements VisitService {
 
         if (!canAccessVisit(currentUser, visit)) {
 
-            throw new RuntimeException(
-                    "Unauthorized"
+            throw new UnauthorizedException(
+                    "You don't have permission to access this visit."
             );
         }
 
@@ -188,8 +190,8 @@ public class VisitServiceImpl implements VisitService {
         Visit visit =
                 visitRepository.findById(id)
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Visit not found"
+                                () -> new ResourceNotFoundException(
+                                        "Visit not found."
                                 )
                         );
 
@@ -200,8 +202,8 @@ public class VisitServiceImpl implements VisitService {
 
         if (!canAccessVisit(currentUser, visit)) {
 
-            throw new RuntimeException(
-                    "Unauthorized"
+            throw new UnauthorizedException(
+                    "You don't have permission to update this visit."
             );
         }
 
@@ -275,8 +277,8 @@ public class VisitServiceImpl implements VisitService {
         Visit visit =
                 visitRepository.findById(id)
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Visit not found"
+                                () -> new ResourceNotFoundException(
+                                        "Visit not found."
                                 )
                         );
 
@@ -287,8 +289,8 @@ public class VisitServiceImpl implements VisitService {
 
         if (!canAccessVisit(currentUser, visit)) {
 
-            throw new RuntimeException(
-                    "Unauthorized"
+            throw new UnauthorizedException(
+                    "You don't have permission to delete this visit."
             );
         }
 
@@ -520,8 +522,8 @@ public class VisitServiceImpl implements VisitService {
                 beneficiaryRepository
                         .findById(visit.getBeneficiaryId())
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Beneficiary not found"
+                                () -> new ResourceNotFoundException(
+                                        "Beneficiary not found."
                                 )
                         );
 

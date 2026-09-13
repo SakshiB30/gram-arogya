@@ -6,10 +6,13 @@ import {
   fetchAvailableAshas,
 } from "../../redux/slices/beneficiarySlice";
 import { ArrowLeft, Save } from "lucide-react";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 export default function AddBeneficiary() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const { loading, error, availableAshas } = useSelector(
     (state) => state.beneficiaries
@@ -54,6 +57,11 @@ export default function AddBeneficiary() {
     const result = await dispatch(createBeneficiary(form));
 
     if (createBeneficiary.fulfilled.match(result)) {
+      showToast({
+        type: "success",
+        title: "Beneficiary Added",
+        message: "The beneficiary has been added successfully.",
+      });
       navigate("/app/beneficiaries");
     }
   };
@@ -287,7 +295,7 @@ export default function AddBeneficiary() {
         {/* Error */}
         {error && (
           <div className="mt-5 rounded-lg bg-red-100 border border-red-300 p-3 text-red-700">
-            {error}
+            {getErrorMessage(error)}
           </div>
         )}
 

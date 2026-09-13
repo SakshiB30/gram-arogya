@@ -6,6 +6,7 @@ import PersonalInfo from "../components/profile/PersonalInfo";
 import EditProfile from "../components/profile/EditProfile";
 
 import { fetchProfile } from "../redux/slices/profileSlice";
+import { getErrorMessage } from "../utils/apiError";
 
 export default function Profile() {
 
@@ -32,7 +33,7 @@ export default function Profile() {
   if (error) {
     return (
       <div className="rounded-xl bg-red-100 p-5 text-red-700">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
   }

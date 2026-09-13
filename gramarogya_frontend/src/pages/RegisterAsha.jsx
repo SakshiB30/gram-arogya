@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerAsha, clearError } from "../redux/slices/authSlice";
 import { Link, useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../utils/apiError";
 import {
   Eye,
   EyeOff,
@@ -122,7 +123,7 @@ const [formData, setFormData] = useState({
               {error && (
                 <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
                   <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getErrorMessage(error)}</span>
                 </div>
               )}
 

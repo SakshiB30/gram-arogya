@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import inventoryService from "../../services/inventoryService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ===========================
 // GET ALL MEDICINES
@@ -10,12 +11,9 @@ export const getInventory = createAsyncThunk(
     try {
       return await inventoryService.getInventory();
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch inventory";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch inventory.")
+      );
     }
   }
 );
@@ -29,12 +27,9 @@ export const getMedicineById = createAsyncThunk(
     try {
       return await inventoryService.getMedicineById(id);
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch medicine";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch medicine.")
+      );
     }
   }
 );
@@ -48,12 +43,9 @@ export const addMedicine = createAsyncThunk(
     try {
       return await inventoryService.addMedicine(medicineData);
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to add medicine";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to add medicine.")
+      );
     }
   }
 );
@@ -70,12 +62,9 @@ export const updateMedicine = createAsyncThunk(
         medicineData
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to update medicine";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to update medicine.")
+      );
     }
   }
 );
@@ -92,12 +81,9 @@ export const receiveMedicine = createAsyncThunk(
         quantity
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to restock medicine";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to restock medicine.")
+      );
     }
   }
 );
@@ -116,12 +102,9 @@ export const deleteMedicine = createAsyncThunk(
       // from medicines array
       return id;
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to delete medicine";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to delete medicine.")
+      );
     }
   }
 );
@@ -135,12 +118,9 @@ export const getStockLogs = createAsyncThunk(
     try {
       return await inventoryService.getStockLogs();
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch stock logs";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch stock logs.")
+      );
     }
   }
 );
@@ -154,12 +134,9 @@ export const getMedicineLogs = createAsyncThunk(
     try {
       return await inventoryService.getMedicineLogs(id);
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch medicine logs";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch medicine logs.")
+      );
     }
   }
 );
@@ -176,12 +153,9 @@ export const getBeneficiaryMedicineHistory = createAsyncThunk(
         beneficiaryId
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch beneficiary medicine history";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch beneficiary medicine history.")
+      );
     }
   }
 );

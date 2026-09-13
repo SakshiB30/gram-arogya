@@ -1,9 +1,5 @@
 import {
   Users,
-  ClipboardList,
-  CalendarCheck,
-  CalendarClock,
-  Baby,
   HeartPulse,
   UserRound,
   Activity,

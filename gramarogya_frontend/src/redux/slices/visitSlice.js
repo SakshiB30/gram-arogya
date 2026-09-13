@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import visitService from "../../services/visitService";
+import { normalizeApiError } from "../../utils/apiError";
 
 /* =========================================================
    GET ALL VISITS
@@ -12,9 +13,7 @@ export const fetchVisits = createAsyncThunk(
       return await visitService.getAllVisits();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch visits"
+        normalizeApiError(error, "Failed to fetch visits.")
       );
     }
   }
@@ -32,9 +31,7 @@ export const fetchVisitById = createAsyncThunk(
       return await visitService.getVisitById(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch visit"
+        normalizeApiError(error, "Failed to fetch visit.")
       );
     }
   }
@@ -52,9 +49,7 @@ export const createVisit = createAsyncThunk(
       return await visitService.createVisit(visitData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create visit"
+        normalizeApiError(error, "Failed to create visit.")
       );
     }
   }
@@ -75,9 +70,7 @@ export const updateVisit = createAsyncThunk(
       );
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to update visit"
+        normalizeApiError(error, "Failed to update visit.")
       );
     }
   }
@@ -97,9 +90,7 @@ export const deleteVisit = createAsyncThunk(
       return id;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to delete visit"
+        normalizeApiError(error, "Failed to delete visit.")
       );
     }
   }
@@ -118,9 +109,7 @@ export const fetchTodayVisits = createAsyncThunk(
       return await visitService.getTodayVisits();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch today's visits"
+        normalizeApiError(error, "Failed to fetch today's visits.")
       );
     }
   }
@@ -191,7 +180,8 @@ const visitSlice = createSlice({
         state.loading = false;
 
         state.error =
-          action.payload || "Failed to fetch visits";
+          action.payload ||
+          normalizeApiError(null, "Failed to fetch visits.");
       });
 
 
@@ -216,7 +206,8 @@ const visitSlice = createSlice({
         state.loading = false;
 
         state.error =
-          action.payload || "Failed to fetch visit";
+          action.payload ||
+          normalizeApiError(null, "Failed to fetch visit.");
       });
 
 
@@ -253,7 +244,8 @@ const visitSlice = createSlice({
         state.loading = false;
 
         state.error =
-          action.payload || "Failed to create visit";
+          action.payload ||
+          normalizeApiError(null, "Failed to create visit.");
       });
 
 
@@ -353,7 +345,8 @@ const visitSlice = createSlice({
         state.loading = false;
 
         state.error =
-          action.payload || "Failed to update visit";
+          action.payload ||
+          normalizeApiError(null, "Failed to update visit.");
       });
 
 
@@ -403,7 +396,8 @@ const visitSlice = createSlice({
         state.loading = false;
 
         state.error =
-          action.payload || "Failed to delete visit";
+          action.payload ||
+          normalizeApiError(null, "Failed to delete visit.");
       });
 
 
@@ -432,7 +426,7 @@ const visitSlice = createSlice({
 
         state.error =
           action.payload ||
-          "Failed to fetch today's visits";
+          normalizeApiError(null, "Failed to fetch today's visits.");
       });
 
   },

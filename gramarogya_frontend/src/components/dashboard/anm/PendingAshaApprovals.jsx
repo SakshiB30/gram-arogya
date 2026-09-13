@@ -7,10 +7,13 @@ import {
   approveAsha,
   rejectAsha,
 } from "../../../redux/slices/anmSlice";
+import { getErrorMessage } from "../../../utils/apiError";
+import { useToast } from "../../common/toastContext";
 
 export default function PendingAshaApprovals() {
 
   const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   const {
     pendingAshas,
@@ -26,8 +29,18 @@ export default function PendingAshaApprovals() {
   const handleApprove = async (id) => {
     try {
       await dispatch(approveAsha(id)).unwrap();
+      showToast({
+        type: "success",
+        title: "ASHA Approved",
+        message:
+          "The ASHA has been successfully verified and can now log in.",
+      });
     } catch (error) {
-      alert(error || "Failed to approve ASHA");
+      showToast({
+        type: "error",
+        title: "Approval Failed",
+        message: getErrorMessage(error, "Failed to approve ASHA."),
+      });
     }
   };
 
@@ -41,8 +54,18 @@ export default function PendingAshaApprovals() {
 
     try {
       await dispatch(rejectAsha(id)).unwrap();
+      showToast({
+        type: "success",
+        title: "ASHA Rejected",
+        message:
+          "The ASHA registration has been rejected successfully.",
+      });
     } catch (error) {
-      alert(error || "Failed to reject ASHA");
+      showToast({
+        type: "error",
+        title: "Rejection Failed",
+        message: getErrorMessage(error, "Failed to reject ASHA."),
+      });
     }
   };
 
@@ -77,7 +100,7 @@ export default function PendingAshaApprovals() {
 
       {error && (
         <div className="bg-red-50 text-red-600 rounded-xl p-4">
-          {error}
+          {getErrorMessage(error)}
         </div>
       )}
 
@@ -90,11 +113,11 @@ export default function PendingAshaApprovals() {
           />
 
           <p className="font-medium">
-            No pending ASHA registrations
+            You're all caught up.
           </p>
 
           <p className="text-sm mt-1">
-            You're all caught up.
+            There are currently no ASHA registrations waiting for verification.
           </p>
 
         </div>

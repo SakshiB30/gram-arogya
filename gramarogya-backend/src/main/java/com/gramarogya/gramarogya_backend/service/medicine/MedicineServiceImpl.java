@@ -8,6 +8,8 @@ import com.gramarogya.gramarogya_backend.dto.medicine.StockAction;
 import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.medicine.Medicine;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
+import com.gramarogya.gramarogya_backend.exception.ConflictException;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.mapper.medicine.MedicineMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -243,8 +245,8 @@ public class MedicineServiceImpl implements MedicineService {
         if (request.getQuantity() == null
                 || request.getQuantity() <= 0) {
 
-            throw new IllegalArgumentException(
-                    "Quantity must be greater than zero."
+            throw new BusinessValidationException(
+                    "Please enter a valid quantity greater than zero."
             );
         }
 
@@ -378,15 +380,15 @@ public class MedicineServiceImpl implements MedicineService {
     private void validateBatch(String batch) {
 
         if (batch == null || batch.isBlank()) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                     "Batch is required."
             );
         }
 
         if (medicineRepository.existsByBatch(batch)) {
 
-            throw new IllegalArgumentException(
-                    "Batch already exists."
+            throw new ConflictException(
+                    "A medicine with this batch number already exists."
             );
         }
     }
@@ -397,7 +399,7 @@ public class MedicineServiceImpl implements MedicineService {
             String batch) {
 
         if (batch == null || batch.isBlank()) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                     "Batch is required."
             );
         }
@@ -405,8 +407,8 @@ public class MedicineServiceImpl implements MedicineService {
         if (!batch.equals(medicine.getBatch())
                 && medicineRepository.existsByBatch(batch)) {
 
-            throw new IllegalArgumentException(
-                    "Batch already exists."
+            throw new ConflictException(
+                    "A medicine with this batch number already exists."
             );
         }
     }

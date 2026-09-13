@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import healthRecordService from "../../services/healthRecordService";
+import { normalizeApiError } from "../../utils/apiError";
 
 
 // =====================================================
@@ -13,8 +14,7 @@ export const fetchHealthRecords = createAsyncThunk(
       return await healthRecordService.getAllHealthRecords();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to fetch health records"
+        normalizeApiError(error, "Failed to fetch health records.")
       );
     }
   }
@@ -32,8 +32,7 @@ export const fetchHealthRecordById = createAsyncThunk(
       return await healthRecordService.getHealthRecordById(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to fetch health record"
+        normalizeApiError(error, "Failed to fetch health record.")
       );
     }
   }
@@ -53,8 +52,7 @@ export const fetchHealthRecordsByBeneficiary = createAsyncThunk(
       );
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to fetch beneficiary health records"
+        normalizeApiError(error, "Failed to fetch beneficiary health records.")
       );
     }
   }
@@ -74,8 +72,7 @@ export const fetchHealthRecordsByVisit = createAsyncThunk(
       );
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to fetch visit health records"
+        normalizeApiError(error, "Failed to fetch visit health records.")
       );
     }
   }
@@ -95,17 +92,8 @@ export const createHealthRecord = createAsyncThunk(
       );
     } catch (error) {
 
-      console.error("========== BACKEND ERROR ==========");
-      console.error("Status:", error.response?.status);
-      console.error("Response:", error.response?.data);
-      console.error("Message:", error.response?.data?.message);
-      console.error("Errors:", error.response?.data?.errors);
-      console.error("===================================");
-
       return thunkAPI.rejectWithValue(
-        error.response?.data || {
-          message: "Failed to create health record"
-        }
+        normalizeApiError(error, "Failed to create health record.")
       );
     }
   }
@@ -126,8 +114,7 @@ export const updateHealthRecord = createAsyncThunk(
       );
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to update health record"
+        normalizeApiError(error, "Failed to update health record.")
       );
     }
   }
@@ -147,8 +134,7 @@ export const deleteHealthRecord = createAsyncThunk(
       return id;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        "Failed to delete health record"
+        normalizeApiError(error, "Failed to delete health record.")
       );
     }
   }

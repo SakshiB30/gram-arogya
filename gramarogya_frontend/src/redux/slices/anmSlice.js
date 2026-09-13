@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import anmService from "../../services/anmService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ================================
 // FETCH PENDING ASHAS
@@ -12,9 +13,7 @@ export const fetchPendingAshas = createAsyncThunk(
       return await anmService.getPendingAshas();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load pending ASHAs"
+        normalizeApiError(error, "Failed to load pending ASHAs.")
       );
     }
   }
@@ -31,9 +30,7 @@ export const approveAsha = createAsyncThunk(
       return await anmService.approveAsha(ashaId);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to approve ASHA"
+        normalizeApiError(error, "Failed to approve ASHA.")
       );
     }
   }
@@ -50,9 +47,7 @@ export const rejectAsha = createAsyncThunk(
       return await anmService.rejectAsha(ashaId);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to reject ASHA"
+        normalizeApiError(error, "Failed to reject ASHA.")
       );
     }
   }

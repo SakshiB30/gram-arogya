@@ -6,6 +6,8 @@ import {
   createMedicineFollowUp,
   getFollowUpsByBeneficiary,
 } from "../../redux/slices/medicineFollowUpSlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const MedicineFollowUpForm = ({
   beneficiaryId,
@@ -14,6 +16,15 @@ const MedicineFollowUpForm = ({
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const showValidationToast = (message) => {
+    showToast({
+      type: "warning",
+      title: "Required Field",
+      message,
+    });
+  };
 
   const [formData, setFormData] = useState({
     medicineTaken: "",
@@ -74,17 +85,17 @@ const MedicineFollowUpForm = ({
     // -------------------------------
 
     if (!formData.medicineTaken) {
-      alert("Please select medicine adherence");
+      showValidationToast("Please select medicine adherence.");
       return;
     }
 
     if (!formData.symptomStatus) {
-      alert("Please select symptom status");
+      showValidationToast("Please select symptom status.");
       return;
     }
 
     if (!formData.sideEffects) {
-      alert("Please select side effect status");
+      showValidationToast("Please select side effect status.");
       return;
     }
 
@@ -92,7 +103,7 @@ const MedicineFollowUpForm = ({
       formData.needsDoctorVisit &&
       !formData.referralReason.trim()
     ) {
-      alert("Please enter referral reason");
+      showValidationToast("Please enter referral reason.");
       return;
     }
 
@@ -134,9 +145,11 @@ const MedicineFollowUpForm = ({
       ).unwrap();
 
 
-      alert(
-        "Medicine follow-up recorded successfully"
-      );
+      showToast({
+        type: "success",
+        title: "Follow-Up Recorded",
+        message: "The medicine follow-up has been recorded successfully.",
+      });
 
 
       // ==================================================
@@ -166,16 +179,14 @@ const MedicineFollowUpForm = ({
 
     } catch (error) {
 
-      console.error(
-        "Medicine follow-up error:",
-        error
-      );
-
-      alert(
-        typeof error === "string"
-          ? error
-          : "Failed to record medicine follow-up"
-      );
+      showToast({
+        type: "error",
+        title: "Follow-Up Not Recorded",
+        message: getErrorMessage(
+          error,
+          "Failed to record medicine follow-up."
+        ),
+      });
 
     } finally {
 

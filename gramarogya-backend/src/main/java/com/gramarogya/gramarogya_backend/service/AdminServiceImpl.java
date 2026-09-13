@@ -5,10 +5,12 @@ import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.dto.VerificationStatus;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
+import com.gramarogya.gramarogya_backend.exception.ConflictException;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -59,10 +61,14 @@ public class AdminServiceImpl implements AdminService {
 
         User anm = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
 
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("User is not an ANM");
+            throw new BusinessValidationException("Selected user is not an ANM.");
+        }
+
+        if (anm.getVerificationStatus() == VerificationStatus.APPROVED) {
+            throw new ConflictException("This ANM is already verified.");
         }
 
         anm.setVerificationStatus(VerificationStatus.APPROVED);
@@ -83,10 +89,14 @@ public class AdminServiceImpl implements AdminService {
 
         User anm = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
 
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("User is not an ANM");
+            throw new BusinessValidationException("Selected user is not an ANM.");
+        }
+
+        if (anm.getVerificationStatus() == VerificationStatus.REJECTED) {
+            throw new ConflictException("This ANM registration is already rejected.");
         }
 
         anm.setVerificationStatus(VerificationStatus.REJECTED);
@@ -103,10 +113,14 @@ public class AdminServiceImpl implements AdminService {
 
         User anm = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
 
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("User is not an ANM");
+            throw new BusinessValidationException("Selected user is not an ANM.");
+        }
+
+        if (anm.getAccountStatus() == AccountStatus.BLOCKED) {
+            throw new ConflictException("This ANM account is already blocked.");
         }
 
         anm.setAccountStatus(AccountStatus.BLOCKED);
@@ -121,16 +135,20 @@ public class AdminServiceImpl implements AdminService {
 
         User anm = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
 
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("User is not an ANM");
+            throw new BusinessValidationException("Selected user is not an ANM.");
         }
 
         if (anm.getVerificationStatus() != VerificationStatus.APPROVED) {
-            throw new RuntimeException(
-                    "ANM must be approved before activation."
+            throw new BusinessValidationException(
+                    "The ANM must be approved before the account can be activated."
             );
+        }
+
+        if (anm.getAccountStatus() == AccountStatus.ACTIVE) {
+            throw new ConflictException("This ANM account is already active.");
         }
 
         anm.setAccountStatus(AccountStatus.ACTIVE);
@@ -166,10 +184,14 @@ public class AdminServiceImpl implements AdminService {
 
         User asha = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
 
         if (asha.getRole() != Role.ASHA) {
-            throw new RuntimeException("User is not an ASHA");
+            throw new BusinessValidationException("Selected user is not an ASHA.");
+        }
+
+        if (asha.getAccountStatus() == AccountStatus.BLOCKED) {
+            throw new ConflictException("This ASHA account is already blocked.");
         }
 
         asha.setAccountStatus(AccountStatus.BLOCKED);
@@ -185,17 +207,21 @@ public class AdminServiceImpl implements AdminService {
 
         User asha = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
 
         if (asha.getRole() != Role.ASHA) {
-            throw new RuntimeException("User is not an ASHA");
+            throw new BusinessValidationException("Selected user is not an ASHA.");
         }
 
         // ASHA must be verified by ANM before activation
         if (asha.getVerificationStatus() != VerificationStatus.APPROVED) {
-            throw new RuntimeException(
-                    "ASHA must be approved by ANM before activation."
+            throw new BusinessValidationException(
+                    "The ASHA must be approved by an ANM before the account can be activated."
             );
+        }
+
+        if (asha.getAccountStatus() == AccountStatus.ACTIVE) {
+            throw new ConflictException("This ASHA account is already active.");
         }
 
         asha.setAccountStatus(AccountStatus.ACTIVE);

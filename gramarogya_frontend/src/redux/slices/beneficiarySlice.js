@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import beneficiaryService from "../../services/beneficiaryService";
+import { normalizeApiError } from "../../utils/apiError";
 
 /* ===========================
    GET ALL PATIENTS
@@ -11,9 +12,7 @@ export const fetchBeneficiaries = createAsyncThunk(
       return await beneficiaryService.getAllBeneficiaries();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch beneficiaries"
+        normalizeApiError(error, "Failed to fetch beneficiaries.")
       );
     }
   }
@@ -30,9 +29,7 @@ export const fetchAvailableAshas = createAsyncThunk(
       return await beneficiaryService.getAvailableAshas();
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch available ASHAs"
+        normalizeApiError(error, "Failed to fetch available ASHAs.")
       );
     }
   }
@@ -48,9 +45,7 @@ export const fetchBeneficiaryById = createAsyncThunk(
       return await beneficiaryService.getBeneficiaryById(id);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to fetch beneficiary"
+        normalizeApiError(error, "Failed to fetch beneficiary.")
       );
     }
   }
@@ -66,9 +61,7 @@ export const createBeneficiary = createAsyncThunk(
       return await beneficiaryService.createBeneficiary(beneficiaryData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to create beneficiary"
+        normalizeApiError(error, "Failed to create beneficiary.")
       );
     }
   }
@@ -88,9 +81,7 @@ export const updateBeneficiary = createAsyncThunk(
       );
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to update beneficiary"
+        normalizeApiError(error, "Failed to update beneficiary.")
       );
     }
   }
@@ -108,9 +99,7 @@ export const deleteBeneficiary = createAsyncThunk(
       return id;
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to delete beneficiary"
+        normalizeApiError(error, "Failed to delete beneficiary.")
       );
     }
   }

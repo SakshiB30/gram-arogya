@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import searchService from "../../services/searchService";
+import { normalizeApiError } from "../../utils/apiError";
 
 
 // =======================
@@ -19,8 +20,7 @@ export const searchAll = createAsyncThunk(
     } catch (error) {
 
       return rejectWithValue(
-        error.response?.data?.message ||
-        "Search failed"
+        normalizeApiError(error, "Search failed.")
       );
 
     }

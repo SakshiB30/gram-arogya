@@ -12,12 +12,15 @@ import {
   fetchBeneficiaries,
   deleteBeneficiary,
 } from "../redux/slices/beneficiarySlice";
+import { getErrorMessage } from "../utils/apiError";
+import { useToast } from "../components/common/toastContext";
 
 
 const BeneficiaryPage = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const {
   beneficiaries,
@@ -72,13 +75,22 @@ const role = user?.role;
         deleteBeneficiary(id)
       ).unwrap();
 
+      showToast({
+        type: "success",
+        title: "Beneficiary Deleted",
+        message: "The beneficiary has been removed successfully.",
+      });
 
       dispatch(fetchBeneficiaries());
 
     }
     catch(err){
 
-      alert(err);
+      showToast({
+        type: "error",
+        title: "Delete Failed",
+        message: getErrorMessage(err, "Failed to delete beneficiary."),
+      });
 
     }
 
@@ -98,15 +110,6 @@ const pregnantWomen = beneficiaries.filter((b) =>
 const children = beneficiaries.filter((b) =>
   normalize(b.category) === "child"
 ).length;
-
-const tbPatients = beneficiaries.filter((b) =>
-  normalize(b.category) === "tb patient"
-).length;
-
-const elderly = beneficiaries.filter((b) =>
-  normalize(b.category) === "elderly"
-).length;
-
 
   const stats = [
 
@@ -317,7 +320,7 @@ const elderly = beneficiaries.filter((b) =>
             rounded-lg
             ">
 
-              {error}
+              {getErrorMessage(error)}
 
             </div>
 

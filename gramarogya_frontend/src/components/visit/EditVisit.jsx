@@ -4,6 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import axiosClient from "../../api/axiosClient";
 import { updateVisit } from "../../redux/slices/visitSlice";
+import { getErrorMessage, normalizeApiError } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const EditVisit = () => {
 
@@ -11,6 +13,7 @@ const EditVisit = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,36 +28,57 @@ const EditVisit = () => {
   });
 
   useEffect(() => {
+    let isActive = true;
+
+    const fetchVisit = async () => {
+
+      try {
+
+        const res = await axiosClient.get(`/visits/${id}`);
+
+        if (!isActive) {
+          return;
+        }
+
+        setBeneficiaryName(
+          res.data.beneficiaryName || "-"
+        );
+
+        setFormData({
+          beneficiaryId: res.data.beneficiaryId,
+          visitType: res.data.visitType,
+          status: res.data.status,
+          notes: res.data.notes || ""
+        });
+
+      } catch (err) {
+
+        if (!isActive) {
+          return;
+        }
+
+        showToast({
+          type: "error",
+          title: "Visit Not Loaded",
+          message: getErrorMessage(
+            normalizeApiError(err, "Failed to load visit.")
+          ),
+        });
+
+      } finally {
+
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchVisit();
-  }, [id]);
 
-  const fetchVisit = async () => {
-
-    try {
-
-      const res = await axiosClient.get(`/visits/${id}`);
-
-      setBeneficiaryName(
-        res.data.beneficiaryName || "-"
-      );
-
-      setFormData({
-        beneficiaryId: res.data.beneficiaryId,
-        visitType: res.data.visitType,
-        status: res.data.status,
-        notes: res.data.notes || ""
-      });
-
-    } catch (err) {
-
-      alert("Failed to load visit");
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
+    return () => {
+      isActive = false;
+    };
+  }, [id, showToast]);
 
   const handleChange = (e) => {
 
@@ -79,13 +103,21 @@ const EditVisit = () => {
         })
       ).unwrap();
 
+      showToast({
+        type: "success",
+        title: "Visit Updated",
+        message: "The visit details have been updated successfully.",
+      });
+
       navigate("/app/visit");
 
     } catch (err) {
 
-      alert(
-        err || "Failed to update visit"
-      );
+      showToast({
+        type: "error",
+        title: "Update Failed",
+        message: getErrorMessage(err, "Failed to update visit."),
+      });
 
     } finally {
 

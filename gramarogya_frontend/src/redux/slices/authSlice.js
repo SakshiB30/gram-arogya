@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../services/authService";
+import { normalizeApiError } from "../../utils/apiError";
 
 
 export const loginUser = createAsyncThunk(
@@ -24,9 +25,7 @@ export const loginUser = createAsyncThunk(
       };
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Invalid email or password"
+        normalizeApiError(error, "Invalid email or password.")
       );
     }
   }
@@ -40,9 +39,7 @@ export const registerAnm = createAsyncThunk(
       return await authService.registerAnm(userData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Registration failed"
+        normalizeApiError(error, "Registration failed.")
       );
     }
   }
@@ -55,9 +52,7 @@ export const registerAsha = createAsyncThunk(
       return await authService.registerAsha(userData);
     } catch (error) {
       return thunkAPI.rejectWithValue(
-        error.response?.data?.message ||
-          error.message ||
-          "Registration failed"
+        normalizeApiError(error, "Registration failed.")
       );
     }
   }

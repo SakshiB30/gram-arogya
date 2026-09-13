@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { createHealthRecord } from "../../redux/slices/healthRecordSlice";
 import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
 import { fetchVisits } from "../../redux/slices/visitSlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const toLocalDateTimeString = (date) => {
   const pad = (value) => String(value).padStart(2, "0");
@@ -23,6 +25,15 @@ const toLocalDateTimeString = (date) => {
 const AddHealthRecord = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const showValidationToast = (message) => {
+    showToast({
+      type: "warning",
+      title: "Required Field",
+      message,
+    });
+  };
 
   // =====================================================
   // REDUX STATE
@@ -104,37 +115,37 @@ const AddHealthRecord = () => {
 
     // Basic frontend validation
     if (!formData.beneficiaryId) {
-      alert("Please select a beneficiary.");
+      showValidationToast("Please select a beneficiary.");
       return;
     }
 
     if (!formData.visitId) {
-      alert("Please select a visit.");
+      showValidationToast("Please select a visit.");
       return;
     }
 
     if (!formData.bloodPressure.trim()) {
-      alert("Please enter blood pressure.");
+      showValidationToast("Please enter blood pressure.");
       return;
     }
 
     if (formData.weight === "") {
-      alert("Please enter weight.");
+      showValidationToast("Please enter weight.");
       return;
     }
 
     if (formData.temperature === "") {
-      alert("Please enter temperature.");
+      showValidationToast("Please enter temperature.");
       return;
     }
 
     if (formData.hemoglobin === "") {
-      alert("Please enter hemoglobin.");
+      showValidationToast("Please enter hemoglobin.");
       return;
     }
 
     if (!formData.diagnosis.trim()) {
-      alert("Please enter diagnosis.");
+      showValidationToast("Please enter diagnosis.");
       return;
     }
 
@@ -174,20 +185,21 @@ const AddHealthRecord = () => {
         createHealthRecord(healthRecord)
       ).unwrap();
 
+      showToast({
+        type: "success",
+        title: "Health Record Added",
+        message: "The health record has been saved successfully.",
+      });
+
       navigate("/app/health-records");
 
     } catch (error) {
 
-      // Display backend message if available
-      if (typeof error === "string") {
-        alert(error);
-      } else if (error?.message) {
-        alert(error.message);
-      } else {
-        alert(
-          "Failed to create health record."
-        );
-      }
+      showToast({
+        type: "error",
+        title: "Health Record Not Saved",
+        message: getErrorMessage(error, "Failed to create health record."),
+      });
     }
   };
 

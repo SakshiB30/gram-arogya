@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchAllUsers } from "../../../redux/slices/adminSlice";
 import UserTable from "../UserTable";
+import { getErrorMessage } from "../../../utils/apiError";
 
 export default function ManageUsers() {
 
@@ -57,7 +58,7 @@ export default function ManageUsers() {
 
     return (
       <div className="rounded-xl bg-red-100 p-5 text-red-600">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
 

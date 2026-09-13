@@ -5,6 +5,7 @@ import com.gramarogya.gramarogya_backend.dto.medicine.MedicineResponseDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.ReceiveMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.dto.medicine.UpdateMedicineRequestDto;
 import com.gramarogya.gramarogya_backend.service.medicine.MedicineService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class MedicineController {
     // Add medicine
     @PostMapping
     public ResponseEntity<MedicineResponseDto> addMedicine(
-            @RequestBody CreateMedicineRequestDto request,
+            @Valid @RequestBody CreateMedicineRequestDto request,
             Authentication authentication) {
 
         return new ResponseEntity<>(
@@ -57,7 +58,7 @@ public class MedicineController {
     @PutMapping("/{id}")
     public ResponseEntity<MedicineResponseDto> updateMedicine(
             @PathVariable String id,
-            @RequestBody UpdateMedicineRequestDto request,
+            @Valid @RequestBody UpdateMedicineRequestDto request,
             Authentication authentication) {
 
         return ResponseEntity.ok(
@@ -69,7 +70,7 @@ public class MedicineController {
     @PatchMapping("/{id}/receive")
     public ResponseEntity<MedicineResponseDto> receiveMedicine(
             @PathVariable String id,
-            @RequestBody ReceiveMedicineRequestDto request,
+            @Valid @RequestBody ReceiveMedicineRequestDto request,
             Authentication authentication) {
 
         return ResponseEntity.ok(

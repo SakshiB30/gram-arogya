@@ -1,5 +1,5 @@
 import Container from "./Container";
-import { Target, Eye, HeartHandshake, Users, ShieldCheck } from "lucide-react";
+import { Target, HeartHandshake, Users } from "lucide-react";
 
 export default function AboutSection() {
   return (

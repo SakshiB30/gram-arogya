@@ -17,6 +17,7 @@ import {
   fetchLowStockReport,
   fetchOutOfStockReport,
 } from "../redux/slices/reportSlice";
+import { getErrorMessage } from "../utils/apiError";
 
 export default function ReportsPage() {
   const dispatch = useDispatch();
@@ -42,6 +43,12 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState("beneficiary");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const activeReportType =
+    user?.role !== "ADMIN" &&
+    ["inventory", "low-stock", "out-of-stock"].includes(reportType)
+      ? "beneficiary"
+      : reportType;
+
   // =====================================================
   // FETCH SUMMARY
   // =====================================================
@@ -55,16 +62,7 @@ export default function ReportsPage() {
   // =====================================================
 
   useEffect(() => {
-  // Inventory reports are ADMIN only
-  if (
-    user?.role !== "ADMIN" &&
-    ["inventory", "low-stock", "out-of-stock"].includes(reportType)
-  ) {
-    setReportType("beneficiary");
-    return;
-  }
-
-  switch (reportType) {
+  switch (activeReportType) {
     case "beneficiary":
       dispatch(fetchBeneficiaryReport());
       break;
@@ -92,14 +90,14 @@ export default function ReportsPage() {
     default:
       dispatch(fetchBeneficiaryReport());
   }
-}, [dispatch, reportType, user?.role]);
+}, [activeReportType, dispatch]);
 
   // =====================================================
   // GET CURRENT REPORT DATA
   // =====================================================
 
   const currentReports = useMemo(() => {
-    switch (reportType) {
+    switch (activeReportType) {
       case "beneficiary":
         return beneficiaryReport;
 
@@ -122,7 +120,7 @@ export default function ReportsPage() {
         return [];
     }
   }, [
-    reportType,
+    activeReportType,
     beneficiaryReport,
     visitReport,
     healthRecordReport,
@@ -219,7 +217,7 @@ export default function ReportsPage() {
             </label>
 
             <select
-              value={reportType}
+              value={activeReportType}
               onChange={(e) => {
                 setReportType(e.target.value);
                 setSearchTerm("");
@@ -280,9 +278,7 @@ export default function ReportsPage() {
       {error && (
 
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600">
-          {typeof error === "string"
-            ? error
-            : "Failed to load report."}
+          {getErrorMessage(error, "Failed to load report.")}
         </div>
 
       )}
@@ -295,7 +291,7 @@ export default function ReportsPage() {
       {!loading && filteredReports.length === 0 ? (
 
         <EmptyReports
-          reportType={reportType}
+          reportType={activeReportType}
         />
 
       ) : (
@@ -303,8 +299,8 @@ export default function ReportsPage() {
         <ReportTable
           reports={filteredReports}
           loading={loading}
-          reportType={reportType}
-          title={reportTitle[reportType]}
+          reportType={activeReportType}
+          title={reportTitle[activeReportType]}
         />
 
       )}

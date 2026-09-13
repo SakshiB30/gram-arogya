@@ -2,6 +2,10 @@ package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.AccessDeniedException;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
+import com.gramarogya.gramarogya_backend.exception.ConflictException;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +25,7 @@ public class AnmServiceImpl implements AnmService {
 
         return userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
     }
 
     @Override
@@ -50,16 +54,20 @@ public class AnmServiceImpl implements AnmService {
         // Find ASHA
         User asha = userRepository.findById(ashaId)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new BusinessValidationException("Selected user is not an ASHA.");
+        }
 
         // Ensure this ASHA belongs to this ANM
         if (!anm.getId().equals(asha.getSupervisorId()))  {
-            throw new RuntimeException("You are not authorized to approve this ASHA.");
+            throw new AccessDeniedException("You can only approve ASHAs assigned to you.");
         }
 
         // Already approved?
         if (asha.getVerificationStatus() == VerificationStatus.APPROVED) {
-            throw new RuntimeException("ASHA is already approved.");
+            throw new ConflictException("This ASHA is already verified.");
         }
 
         // Approve account
@@ -81,17 +89,21 @@ public class AnmServiceImpl implements AnmService {
         // Find ASHA
         User asha = userRepository.findById(ashaId)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new BusinessValidationException("Selected user is not an ASHA.");
+        }
 
         // Ensure this ASHA belongs to this ANM
         if (!anm.getId().equals(asha.getSupervisorId())) {
-            throw new RuntimeException(
-                    "You are not authorized to reject this ASHA.");
+            throw new AccessDeniedException(
+                    "You can only reject ASHAs assigned to you.");
         }
 
         // Already rejected?
         if (asha.getVerificationStatus() == VerificationStatus.REJECTED) {
-            throw new RuntimeException("ASHA is already rejected.");
+            throw new ConflictException("This ASHA registration is already rejected.");
         }
 
         // Reject account
@@ -164,15 +176,19 @@ public class AnmServiceImpl implements AnmService {
 
         User asha = userRepository.findById(ashaId)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new BusinessValidationException("Selected user is not an ASHA.");
+        }
 
         if (!anm.getId().equals(asha.getSupervisorId())) {
-            throw new RuntimeException(
-                    "You are not authorized to block this ASHA.");
+            throw new AccessDeniedException(
+                    "You can only block ASHAs assigned to you.");
         }
 
         if (asha.getAccountStatus() == AccountStatus.BLOCKED) {
-            throw new RuntimeException("ASHA is already blocked.");
+            throw new ConflictException("This ASHA account is already blocked.");
         }
 
         asha.setAccountStatus(AccountStatus.BLOCKED);
@@ -193,18 +209,22 @@ public class AnmServiceImpl implements AnmService {
         // Find ASHA
         User asha = userRepository.findById(ashaId)
                 .orElseThrow(() ->
-                        new RuntimeException("ASHA not found"));
+                        new ResourceNotFoundException("ASHA not found."));
+
+        if (asha.getRole() != Role.ASHA) {
+            throw new BusinessValidationException("Selected user is not an ASHA.");
+        }
 
         // Check ownership
         if (!anm.getId().equals(asha.getSupervisorId())) {
-            throw new RuntimeException(
-                    "You are not authorized to unblock this ASHA.");
+            throw new AccessDeniedException(
+                    "You can only unblock ASHAs assigned to you.");
         }
 
         // Already Active?
         if (asha.getAccountStatus() == AccountStatus.ACTIVE) {
-            throw new RuntimeException(
-                    "ASHA is already active.");
+            throw new ConflictException(
+                    "This ASHA account is already active.");
         }
 
         // Activate account
@@ -223,7 +243,7 @@ public class AnmServiceImpl implements AnmService {
         User anm = userRepository
                 .findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new RuntimeException("ANM not found"));
+                        new ResourceNotFoundException("ANM not found."));
 
         return userRepository
                 .findByRoleAndSupervisorId(

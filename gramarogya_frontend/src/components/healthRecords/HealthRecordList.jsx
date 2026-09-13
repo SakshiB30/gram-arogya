@@ -10,12 +10,15 @@ import {
 import HealthRecordHeader from "./HealthRecordHeader";
 import HealthRecordSearch from "./HealthRecordSearch";
 import HealthRecordTable from "./HealthRecordTable";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 
 const HealthRecordList = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
 
   const {
@@ -57,7 +60,11 @@ const HealthRecordList = () => {
 
     if (deleteHealthRecord.fulfilled.match(result)) {
 
-      alert("Health record deleted successfully");
+      showToast({
+        type: "success",
+        title: "Health Record Deleted",
+        message: "The health record has been deleted successfully.",
+      });
 
 
       // refresh list
@@ -66,10 +73,11 @@ const HealthRecordList = () => {
     } 
     else {
 
-      alert(
-        result.payload || 
-        "Delete failed"
-      );
+      showToast({
+        type: "error",
+        title: "Delete Failed",
+        message: getErrorMessage(result.payload, "Delete failed."),
+      });
 
     }
 
@@ -143,7 +151,7 @@ const HealthRecordList = () => {
 
           <div className="alert alert-danger mt-3">
 
-            {error}
+            {getErrorMessage(error)}
 
           </div>
 

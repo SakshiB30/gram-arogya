@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.exception.UnauthorizedException;
 import com.gramarogya.gramarogya_backend.mapper.BeneficiaryMapper;
@@ -64,8 +65,8 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
     ) {
 
         if (ashaId == null || ashaId.isBlank()) {
-            throw new UnauthorizedException(
-                    "ASHA assignment is required"
+            throw new BusinessValidationException(
+                    "ASHA assignment is required."
             );
         }
 
@@ -78,14 +79,14 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         // Must actually be an ASHA
         if (asha.getRole() != Role.ASHA) {
             throw new UnauthorizedException(
-                    "Selected user is not an ASHA"
+                    "Selected user is not an ASHA."
             );
         }
 
         // ASHA must belong to this ANM
         if (!anm.getId().equals(asha.getSupervisorId())) {
             throw new UnauthorizedException(
-                    "You can only assign beneficiaries to ASHAs under you"
+                    "You can only assign beneficiaries to ASHAs under your supervision."
             );
         }
     }
@@ -130,7 +131,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
             )) {
 
                 throw new UnauthorizedException(
-                        "Unauthorized"
+                        "This beneficiary is not assigned to you."
                 );
             }
 
@@ -152,7 +153,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
             )) {
 
                 throw new UnauthorizedException(
-                        "Unauthorized"
+                        "This beneficiary is not assigned to an ASHA under your supervision."
                 );
             }
 
@@ -161,7 +162,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
 
         throw new UnauthorizedException(
-                "Unauthorized"
+                "You don't have permission to access this beneficiary."
         );
     }
 
@@ -243,7 +244,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         else {
             throw new UnauthorizedException(
-                    "Only ANM or ASHA can create beneficiaries"
+                    "Only ANM or ASHA users can create beneficiaries."
             );
         }
 
@@ -341,7 +342,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         else {
             throw new UnauthorizedException(
-                    "Unauthorized"
+                    "You don't have permission to view beneficiaries."
             );
         }
 
@@ -509,7 +510,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
         if (currentUser.getRole() != Role.ANM) {
             throw new UnauthorizedException(
-                    "Only ANM can view available ASHAs"
+                    "Only ANM users can view available ASHAs."
             );
         }
 

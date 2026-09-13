@@ -4,10 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import { createVisit } from "../../redux/slices/visitSlice";
 import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const AddVisit = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const { beneficiaries = [] } = useSelector(
     (state) => state.beneficiaries
@@ -48,17 +51,29 @@ const AddVisit = () => {
     // =========================
 
     if (!formData.beneficiaryId) {
-      alert("Please select a beneficiary");
+      showToast({
+        type: "warning",
+        title: "Beneficiary Required",
+        message: "Please select a beneficiary.",
+      });
       return;
     }
 
     if (!formData.visitType) {
-      alert("Please select visit type");
+      showToast({
+        type: "warning",
+        title: "Visit Type Required",
+        message: "Please select visit type.",
+      });
       return;
     }
 
     if (!formData.scheduledDate) {
-      alert("Please select scheduled date");
+      showToast({
+        type: "warning",
+        title: "Scheduled Date Required",
+        message: "Please select scheduled date.",
+      });
       return;
     }
 
@@ -69,18 +84,21 @@ const AddVisit = () => {
         createVisit(formData)
       ).unwrap();
 
-      alert("Visit scheduled successfully");
+      showToast({
+        type: "success",
+        title: "Visit Scheduled",
+        message:
+          "The visit has been successfully scheduled for the beneficiary.",
+      });
 
       navigate("/app/visit");
 
     } catch (err) {
-      console.error("Create visit error:", err);
-
-      alert(
-        typeof err === "string"
-          ? err
-          : err?.message || "Failed to schedule visit"
-      );
+      showToast({
+        type: "error",
+        title: "Visit Not Scheduled",
+        message: getErrorMessage(err, "Failed to schedule visit."),
+      });
 
     } finally {
       setLoading(false);

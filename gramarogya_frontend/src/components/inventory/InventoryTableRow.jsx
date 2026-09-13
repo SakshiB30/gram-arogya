@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, PackagePlus, Trash2 } from "lucide-react";
 

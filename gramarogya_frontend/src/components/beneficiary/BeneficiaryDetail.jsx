@@ -14,6 +14,7 @@ import {
   fetchBeneficiaryById,
   clearSelectedBeneficiary,
 } from "../../redux/slices/beneficiarySlice";
+import { getErrorMessage } from "../../utils/apiError";
 
 export default function BeneficiaryDetail() {
   const { id } = useParams();
@@ -46,7 +47,7 @@ export default function BeneficiaryDetail() {
   if (error) {
     return (
       <div className="p-6 text-center text-red-600">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
   }

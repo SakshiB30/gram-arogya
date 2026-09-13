@@ -1,15 +1,21 @@
 import { Download } from "lucide-react";
+import { useToast } from "../common/toastContext";
 
 export default function ExportButton({
   data = [],
   reportType = "beneficiary",
 }) {
+  const { showToast } = useToast();
 
   const exportCSV = () => {
 
     if (data.length === 0) {
 
-      alert("No data available to export.");
+      showToast({
+        type: "info",
+        title: "No Data to Export",
+        message: "There is no report data available to export.",
+      });
 
       return;
     }

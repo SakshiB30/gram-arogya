@@ -2,6 +2,9 @@ package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
+import com.gramarogya.gramarogya_backend.exception.ConflictException;
+import com.gramarogya.gramarogya_backend.exception.ErrorCodes;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,26 +24,34 @@ public class AshaServiceImpl implements AshaService {
 
         // Email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException(
+                    ErrorCodes.DUPLICATE_EMAIL,
+                    "This email is already registered."
+            );
         }
 
         // Find assigned ANM
         User anm = userRepository
                 .findByEmployeeId(request.getAnmEmployeeId())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid ANM Employee ID"));
+                        new BusinessValidationException(
+                                "Please enter a valid ANM Employee ID."
+                        ));
 
         // Ensure Employee ID belongs to ANM
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("Invalid ANM Employee ID");
+            throw new BusinessValidationException(
+                    "Please enter a valid ANM Employee ID."
+            );
         }
 
         // Ensure ANM is active
         if (anm.getVerificationStatus() != VerificationStatus.APPROVED ||
                 anm.getAccountStatus() != AccountStatus.ACTIVE) {
 
-            throw new RuntimeException(
-                    "Assigned ANM is not active.");
+            throw new BusinessValidationException(
+                    "The assigned ANM is not active."
+            );
         }
 
         User user = User.builder()

@@ -1,0 +1,20 @@
+package com.gramarogya.gramarogya_backend.exception;
+
+public final class ErrorCodes {
+
+    public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
+    public static final String BAD_REQUEST = "BAD_REQUEST";
+    public static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
+    public static final String AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED";
+    public static final String ACCESS_DENIED = "ACCESS_DENIED";
+    public static final String RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND";
+    public static final String CONFLICT = "CONFLICT";
+    public static final String DUPLICATE_EMAIL = "DUPLICATE_EMAIL";
+    public static final String VERIFICATION_PENDING = "VERIFICATION_PENDING";
+    public static final String REGISTRATION_REJECTED = "REGISTRATION_REJECTED";
+    public static final String ACCOUNT_BLOCKED = "ACCOUNT_BLOCKED";
+    public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
+
+    private ErrorCodes() {
+    }
+}

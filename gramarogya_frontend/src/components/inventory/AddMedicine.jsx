@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { addMedicine } from "../../redux/slices/inventorySlice";
+import { getErrorMessage } from "../../utils/apiError";
+import { useToast } from "../common/toastContext";
 
 const initialState = {
   name: "",
@@ -15,6 +17,7 @@ const initialState = {
 export default function AddMedicine() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const { loading } = useSelector((state) => state.inventory);
 
@@ -32,14 +35,29 @@ export default function AddMedicine() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await dispatch(
-      addMedicine({
-        ...formData,
-        stock: Number(formData.stock),
-      })
-    );
+    try {
+      await dispatch(
+        addMedicine({
+          ...formData,
+          stock: Number(formData.stock),
+        })
+      ).unwrap();
 
-    navigate("/app/inventory");
+      showToast({
+        type: "success",
+        title: "Medicine Added",
+        message:
+          "The medicine has been added to the inventory successfully.",
+      });
+
+      navigate("/app/inventory");
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: "Medicine Not Added",
+        message: getErrorMessage(error, "Failed to add medicine."),
+      });
+    }
   };
 
   return (

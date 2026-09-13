@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import DashboardHeader from "../DashboardHeader";
 import StatsCards from "../StatsCards";
@@ -14,10 +13,10 @@ import { dashboardConfig } from "../config/dashboardConfig";
 import {
   fetchDashboard,
 } from "../../../redux/slices/dashboardSlice";
+import { getErrorMessage } from "../../../utils/apiError";
 
 export default function AnmDashboard() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const { user } = useSelector((state) => state.auth);
 
@@ -46,7 +45,7 @@ export default function AnmDashboard() {
   if (error) {
     return (
       <div className="rounded-xl bg-red-100 p-5 text-red-600">
-        {error}
+        {getErrorMessage(error)}
       </div>
     );
   }

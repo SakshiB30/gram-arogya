@@ -2,6 +2,11 @@ package com.gramarogya.gramarogya_backend.service;
 
 import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.AccountStateException;
+import com.gramarogya.gramarogya_backend.exception.AuthenticationFailedException;
+import com.gramarogya.gramarogya_backend.exception.BusinessValidationException;
+import com.gramarogya.gramarogya_backend.exception.ConflictException;
+import com.gramarogya.gramarogya_backend.exception.ErrorCodes;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.security.JwtService;
@@ -23,7 +28,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException(
+                    ErrorCodes.DUPLICATE_EMAIL,
+                    "This email is already registered."
+            );
         }
 
         User user = User.builder()
@@ -59,28 +67,39 @@ public class AuthServiceImpl implements AuthService {
 
         // Email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException(
+                    ErrorCodes.DUPLICATE_EMAIL,
+                    "This email is already registered."
+            );
         }
 
         // Find ANM using Employee ID
         User anm = userRepository
                 .findByEmployeeId(request.getAnmEmployeeId())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid ANM Employee ID"));
+                        new BusinessValidationException(
+                                "Please enter a valid ANM Employee ID."
+                        ));
 
         // Ensure the supervisor is actually an ANM
         if (anm.getRole() != Role.ANM) {
-            throw new RuntimeException("Invalid ANM Employee ID");
+            throw new BusinessValidationException(
+                    "Please enter a valid ANM Employee ID."
+            );
         }
 
         // ANM must be approved
         if (anm.getVerificationStatus() != VerificationStatus.APPROVED) {
-            throw new RuntimeException("Assigned ANM is not approved.");
+            throw new BusinessValidationException(
+                    "The assigned ANM is not approved yet."
+            );
         }
 
         // ANM must be active
         if (anm.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw new RuntimeException("Assigned ANM is blocked.");
+            throw new BusinessValidationException(
+                    "The assigned ANM account is currently blocked."
+            );
         }
 
         User user = User.builder()
@@ -119,14 +138,18 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email"));
+                        new AuthenticationFailedException(
+                                "Invalid email or password."
+                        ));
 
         // Check password
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
 
-            throw new RuntimeException("Invalid password");
+            throw new AuthenticationFailedException(
+                    "Invalid email or password."
+            );
         }
 
         // Verification Check
@@ -135,23 +158,27 @@ public class AuthServiceImpl implements AuthService {
             switch (user.getVerificationStatus()) {
 
                 case PENDING:
-                    throw new RuntimeException(
-                            "Your account is pending verification.");
+                    throw new AccountStateException(
+                            ErrorCodes.VERIFICATION_PENDING,
+                            getPendingVerificationMessage(user));
 
                 case REJECTED:
-                    throw new RuntimeException(
-                            "Your registration has been rejected.");
+                    throw new AccountStateException(
+                            ErrorCodes.REGISTRATION_REJECTED,
+                            "Your registration has been rejected. Please contact your supervisor or administrator for more information.");
 
                 default:
-                    throw new RuntimeException(
+                    throw new AccountStateException(
+                            ErrorCodes.ACCESS_DENIED,
                             "Your account is not verified.");
             }
         }
 
         // Account Status Check
         if (user.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw new RuntimeException(
-                    "Your account has been blocked. Please contact your administrator.");
+            throw new AccountStateException(
+                    ErrorCodes.ACCOUNT_BLOCKED,
+                    "Your account has been blocked. Please contact the administrator for assistance.");
         }
 
         // Generate JWT Token
@@ -164,5 +191,18 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    private String getPendingVerificationMessage(User user) {
+
+        if (user.getRole() == Role.ASHA) {
+            return "Your registration is waiting for ANM verification. You will be able to log in after your ANM approves your account.";
+        }
+
+        if (user.getRole() == Role.ANM) {
+            return "Your registration is waiting for Admin verification. You will be able to log in after your account is approved.";
+        }
+
+        return "Your registration is waiting for verification. You will be able to log in after your account is approved.";
     }
 }

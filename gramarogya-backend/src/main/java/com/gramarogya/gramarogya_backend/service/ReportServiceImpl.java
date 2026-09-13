@@ -12,6 +12,9 @@ import com.gramarogya.gramarogya_backend.entity.HealthRecord;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.entity.medicine.Medicine;
+import com.gramarogya.gramarogya_backend.exception.AuthenticationRequiredException;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
+import com.gramarogya.gramarogya_backend.exception.UnauthorizedException;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -43,14 +46,14 @@ public class ReportServiceImpl implements ReportService {
     private User getCurrentUser(Authentication authentication) {
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User is not authenticated");
+            throw new AuthenticationRequiredException("Please sign in to continue.");
         }
 
         String email = authentication.getName();
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found.")
                 );
     }
 
@@ -65,8 +68,8 @@ public class ReportServiceImpl implements ReportService {
         User currentUser = getCurrentUser(authentication);
 
         if (currentUser.getRole() != Role.ADMIN) {
-            throw new RuntimeException(
-                    "Access denied. Only ADMIN can access medicine inventory reports."
+            throw new UnauthorizedException(
+                    "Medicine inventory reports are available only to administrators."
             );
         }
     }

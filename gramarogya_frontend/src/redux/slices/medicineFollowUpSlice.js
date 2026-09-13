@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import medicineFollowUpService from "../../services/medicineFollowUpService";
+import { normalizeApiError } from "../../utils/apiError";
 
 // ==================================================
 // CREATE MEDICINE FOLLOW-UP
@@ -12,12 +13,9 @@ export const createMedicineFollowUp = createAsyncThunk(
         followUpData
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create medicine follow-up";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to create medicine follow-up.")
+      );
     }
   }
 );
@@ -33,12 +31,9 @@ export const getFollowUpsByBeneficiary = createAsyncThunk(
         beneficiaryId
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch medicine follow-ups";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch medicine follow-ups.")
+      );
     }
   }
 );
@@ -54,12 +49,9 @@ export const getFollowUpsByVisit = createAsyncThunk(
         visitId
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch visit follow-ups";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch visit follow-ups.")
+      );
     }
   }
 );
@@ -75,12 +67,9 @@ export const getFollowUpById = createAsyncThunk(
         id
       );
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to fetch medicine follow-up";
-
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(
+        normalizeApiError(error, "Failed to fetch medicine follow-up.")
+      );
     }
   }
 );

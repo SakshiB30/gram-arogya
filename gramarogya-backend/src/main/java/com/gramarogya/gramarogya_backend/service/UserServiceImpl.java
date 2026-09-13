@@ -4,6 +4,7 @@ import com.gramarogya.gramarogya_backend.dto.UpdateProfileRequestDto;
 import com.gramarogya.gramarogya_backend.dto.UserProfileDto;
 import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ public class UserServiceImpl implements UserService {
 
     private User getUserByEmail(String email) {
         return repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
     }
 
     @Override
@@ -61,6 +62,6 @@ public class UserServiceImpl implements UserService {
     private User getAuthenticatedUser(Authentication authentication) {
 
         return repository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
     }
 }

@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.SearchResultDto;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
 import com.gramarogya.gramarogya_backend.repository.HealthRecordRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
@@ -36,7 +37,7 @@ public class SearchServiceImpl implements SearchService {
         return userRepository
                 .findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found.")
                 );
     }
 

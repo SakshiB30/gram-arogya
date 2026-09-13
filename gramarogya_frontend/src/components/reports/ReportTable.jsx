@@ -1,4 +1,3 @@
-import React from "react";
 
 import BeneficiaryReportTable from "./BeneficiaryReportTable";
 import VisitReportTable from "./VisitReportTable";

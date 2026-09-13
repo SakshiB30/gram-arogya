@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   ChevronDown,
@@ -23,7 +23,6 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { profile } = useSelector((state) => state.profile);
   const { user } = useSelector((state) => state.auth);
 
 //   const greeting = {
