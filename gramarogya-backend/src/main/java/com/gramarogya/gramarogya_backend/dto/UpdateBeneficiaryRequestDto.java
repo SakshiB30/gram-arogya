@@ -19,6 +19,8 @@ public class UpdateBeneficiaryRequestDto {
 
     private String village;
 
+    private String ashaId;
+
     private String address;
 
     private String category;

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   fetchBeneficiaryById,
+  fetchAvailableAshas,
   updateBeneficiary,
 } from "../../redux/slices/beneficiarySlice";
 
@@ -12,9 +13,13 @@ export default function EditBeneficiary() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const { selectedBeneficiary, loading, error } = useSelector(
+  const { selectedBeneficiary, loading, error, availableAshas } = useSelector(
     (state) => state.beneficiaries
   );
+
+  const user = useSelector((state) => state.auth.user);
+
+  const isANM = user?.role === "ANM";
 
   const [form, setForm] = useState({
     name: "",
@@ -22,6 +27,7 @@ export default function EditBeneficiary() {
     gender: "",
     phone: "",
     village: "",
+    ashaId: "",
     address: "",
     category: "",
     disease: "",
@@ -33,7 +39,14 @@ export default function EditBeneficiary() {
     dispatch(fetchBeneficiaryById(id));
   }, [dispatch, id]);
 
-  // Fill form when data arrives
+  // Fetch ASHAs supervised by the logged-in ANM
+  useEffect(() => {
+    if (isANM) {
+      dispatch(fetchAvailableAshas());
+    }
+  }, [dispatch, isANM]);
+
+  // Fill form when beneficiary data arrives
   useEffect(() => {
     if (selectedBeneficiary) {
       setForm({
@@ -42,6 +55,7 @@ export default function EditBeneficiary() {
         gender: selectedBeneficiary.gender || "",
         phone: selectedBeneficiary.phone || "",
         village: selectedBeneficiary.village || "",
+        ashaId: selectedBeneficiary.ashaId || "",
         address: selectedBeneficiary.address || "",
         category: selectedBeneficiary.category || "",
         disease: selectedBeneficiary.disease || "",
@@ -79,11 +93,14 @@ export default function EditBeneficiary() {
       </h1>
 
       {error && (
-        <p className="text-red-500 mb-4">{error}</p>
+        <p className="text-red-500 mb-4">
+          {error}
+        </p>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
+        {/* Name */}
         <input
           className="border p-2 w-full"
           name="name"
@@ -92,6 +109,7 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Age */}
         <input
           className="border p-2 w-full"
           name="age"
@@ -100,6 +118,7 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Gender */}
         <select
           className="border p-2 w-full"
           name="gender"
@@ -111,6 +130,7 @@ export default function EditBeneficiary() {
           <option value="Female">Female</option>
         </select>
 
+        {/* Phone */}
         <input
           className="border p-2 w-full"
           name="phone"
@@ -119,6 +139,7 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Village */}
         <input
           className="border p-2 w-full"
           name="village"
@@ -127,6 +148,41 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Assign ASHA - ANM only */}
+        {isANM && (
+          <div>
+            <label className="block mb-1 font-medium">
+              Assign ASHA
+            </label>
+
+            <select
+              name="ashaId"
+              value={form.ashaId}
+              onChange={handleChange}
+              className="border p-2 w-full"
+              required
+            >
+              <option value="">Select ASHA</option>
+
+              {availableAshas?.map((asha) => (
+                <option key={asha.id} value={asha.id}>
+                  {asha.name}
+                  {asha.employeeId
+                    ? ` (${asha.employeeId})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+
+            {availableAshas?.length === 0 && (
+              <p className="text-sm text-red-500 mt-1">
+                No ASHA workers are currently assigned to you.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Address */}
         <input
           className="border p-2 w-full"
           name="address"
@@ -135,25 +191,35 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Category */}
         <select
-    name="category"
-    value={form.category}
-    onChange={handleChange}
-    className="
-        w-full
-        border
-        rounded-lg
-        px-3
-        py-2
-    "
->
-    <option value="">Select Category</option>
-    <option value="Pregnant Woman">Pregnant Woman</option>
-    <option value="Child">Child</option>
-    <option value="TB Patient">TB Patient</option>
-    <option value="Elderly">Elderly</option>
-</select>
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className="
+            w-full
+            border
+            rounded-lg
+            px-3
+            py-2
+          "
+        >
+          <option value="">Select Category</option>
+          <option value="Pregnant Woman">
+            Pregnant Woman
+          </option>
+          <option value="Child">
+            Child
+          </option>
+          <option value="TB Patient">
+            TB Patient
+          </option>
+          <option value="Elderly">
+            Elderly
+          </option>
+        </select>
 
+        {/* Disease */}
         <input
           className="border p-2 w-full"
           name="disease"
@@ -162,6 +228,7 @@ export default function EditBeneficiary() {
           onChange={handleChange}
         />
 
+        {/* Status */}
         <select
           className="border p-2 w-full"
           name="status"
@@ -172,12 +239,18 @@ export default function EditBeneficiary() {
           <option value="Inactive">Inactive</option>
         </select>
 
+        {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-5 py-2 rounded"
+          disabled={
+            loading ||
+            (isANM && availableAshas?.length === 0)
+          }
+          className="bg-blue-600 text-white px-5 py-2 rounded disabled:opacity-50"
         >
-          {loading ? "Updating..." : "Update Beneficiary"}
+          {loading
+            ? "Updating..."
+            : "Update Beneficiary"}
         </button>
 
       </form>

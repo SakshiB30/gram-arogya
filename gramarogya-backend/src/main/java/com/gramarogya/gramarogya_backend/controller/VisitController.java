@@ -3,13 +3,11 @@ package com.gramarogya.gramarogya_backend.controller;
 import com.gramarogya.gramarogya_backend.dto.visit.CreateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
-
 import com.gramarogya.gramarogya_backend.service.VisitService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 
@@ -30,11 +28,19 @@ public class VisitController {
         return visitService.create(authentication, dto);
     }
 
-    // Get All Visits of Logged-in ASHA
+    // Get All Accessible Visits
     @GetMapping
     public List<VisitResponseDto> getAll(Authentication authentication) {
 
         return visitService.getAll(authentication);
+    }
+
+    // Get Today's Scheduled Visits
+    @GetMapping("/today")
+    public List<VisitResponseDto> getTodayVisits(
+            Authentication authentication) {
+
+        return visitService.getTodayVisits(authentication);
     }
 
     // Get Visit By Id
@@ -63,12 +69,5 @@ public class VisitController {
             @PathVariable String id) {
 
         visitService.delete(authentication, id);
-    }
-
-    @GetMapping("/today")
-    public List<VisitResponseDto> getTodayVisits(
-            Authentication authentication) {
-
-        return visitService.getTodayVisits(authentication);
     }
 }

@@ -18,7 +18,7 @@ public class BeneficiaryController {
 
     private final BeneficiaryService beneficiaryService;
 
-    @PreAuthorize("hasRole('ASHA')")
+    @PreAuthorize("hasAnyRole('ASHA', 'ANM')")
     @PostMapping
     public ResponseEntity<BeneficiaryResponseDto> create(
             Authentication authentication,
@@ -48,7 +48,7 @@ public class BeneficiaryController {
         );
     }
 
-    @PreAuthorize("hasRole('ASHA')")
+    @PreAuthorize("hasAnyRole('ASHA','ANM')")
     @PutMapping("/{id}")
     public ResponseEntity<BeneficiaryResponseDto> update(
             Authentication authentication,
@@ -60,7 +60,7 @@ public class BeneficiaryController {
         );
     }
 
-    @PreAuthorize("hasRole('ASHA')")
+    @PreAuthorize("hasAnyRole('ASHA', 'ANM')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             Authentication authentication,
@@ -68,5 +68,15 @@ public class BeneficiaryController {
     ) {
         beneficiaryService.delete(authentication, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/available-ashas")
+    @PreAuthorize("hasAnyRole('ANM')")
+    public ResponseEntity<List<UserResponseDto>> getAvailableAshas(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                beneficiaryService.getAvailableAshas(authentication)
+        );
     }
 }

@@ -7,6 +7,7 @@ import StatsCards from "../StatsCards";
 import QuickActions from "../QuickActions";
 import RecentActivity from "../RecentActivity";
 import CriticalAlerts from "../CriticalAlerts";
+import PendingAshaApprovals from "./PendingAshaApprovals";
 
 import { dashboardConfig } from "../config/dashboardConfig";
 
@@ -61,7 +62,11 @@ export default function AnmDashboard() {
 
       <StatsCards stats={stats} />
 
+      <PendingAshaApprovals />
+
+
       <QuickActions className="grid grid-cols-3 gap-3"/>
+
 
       <div className="grid gap-6 lg:grid-cols-2">
 

@@ -19,6 +19,25 @@ export const fetchBeneficiaries = createAsyncThunk(
   }
 );
 
+
+/* ===========================
+   GET AVAILABLE ASHAS FOR ANM
+=========================== */
+export const fetchAvailableAshas = createAsyncThunk(
+  "beneficiaries/fetchAvailableAshas",
+  async (_, thunkAPI) => {
+    try {
+      return await beneficiaryService.getAvailableAshas();
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch available ASHAs"
+      );
+    }
+  }
+);
+
 /* ===========================
    GET BENEFICIARY  BY ID
 =========================== */
@@ -97,6 +116,8 @@ export const deleteBeneficiary = createAsyncThunk(
   }
 );
 
+
+
 /* ===========================
    INITIAL STATE
 =========================== */
@@ -104,6 +125,7 @@ export const deleteBeneficiary = createAsyncThunk(
 const initialState = {
   beneficiaries: [],
   selectedBeneficiary: null,
+  availableAshas: [],
   loading: false,
   error: null,
 };
@@ -149,6 +171,25 @@ const beneficiarySlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      /* ===========================
+   FETCH AVAILABLE ASHAS
+=========================== */
+
+.addCase(fetchAvailableAshas.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+
+.addCase(fetchAvailableAshas.fulfilled, (state, action) => {
+  state.loading = false;
+  state.availableAshas = action.payload;
+})
+
+.addCase(fetchAvailableAshas.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload;
+})
 
       /* ===========================
          FETCH BY ID

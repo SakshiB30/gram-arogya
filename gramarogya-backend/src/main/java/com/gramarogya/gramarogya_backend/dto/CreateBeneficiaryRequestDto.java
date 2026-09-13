@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -35,4 +34,6 @@ public class CreateBeneficiaryRequestDto {
     private String disease;
 
     private String status;
+
+    private String ashaId;
 }

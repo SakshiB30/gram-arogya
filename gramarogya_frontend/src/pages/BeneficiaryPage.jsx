@@ -162,7 +162,7 @@ const elderly = beneficiaries.filter((b) =>
 
 
 
-        {role === "ASHA" && (
+        {(role === "ASHA" || role === "ANM") && (
   <button
     onClick={() =>
       navigate("/app/beneficiaries/add")
@@ -352,7 +352,7 @@ const elderly = beneficiaries.filter((b) =>
             </h2>
 
 
-            {role === "ASHA" ? (
+            {role === "ASHA" || role === "ANM"? (
   <>
     <p className="text-gray-500 mt-2">
       Add your first beneficiary
@@ -437,8 +437,8 @@ const elderly = beneficiaries.filter((b) =>
           </th>
 
 
-          <th className="px-6 py-4 text-center">
-    {role === "ASHA" ? "Actions" : "View"}
+         <th className="px-6 py-4 text-center">
+  {role === "ASHA" || role === "ANM" ? "Actions" : "View"}
 </th>
 
 
@@ -575,7 +575,7 @@ const elderly = beneficiaries.filter((b) =>
 
 
 
-              {role === "ASHA" && (
+              {(role === "ASHA" || role === "ANM") && (
   <button
     onClick={() =>
       navigate(`/app/beneficiaries/edit/${beneficiary.id}`)

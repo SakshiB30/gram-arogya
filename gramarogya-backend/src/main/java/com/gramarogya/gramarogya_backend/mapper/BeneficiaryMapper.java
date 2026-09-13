@@ -17,6 +17,7 @@ public class BeneficiaryMapper {
                 .gender(dto.getGender())
                 .phone(dto.getPhone())
                 .village(dto.getVillage())
+                .ashaId(dto.getAshaId())
                 .address(dto.getAddress())
                 .category(dto.getCategory())
                 .disease(dto.getDisease())
@@ -33,6 +34,7 @@ public class BeneficiaryMapper {
                 .gender(beneficiary.getGender())
                 .phone(beneficiary.getPhone())
                 .village(beneficiary.getVillage())
+                .ashaId(beneficiary.getAshaId())
                 .address(beneficiary.getAddress())
                 .category(beneficiary.getCategory())
                 .disease(beneficiary.getDisease())
@@ -43,14 +45,20 @@ public class BeneficiaryMapper {
                 .build();
     }
 
-    public void updateEntity(UpdateBeneficiaryRequestDto dto,
-                             Beneficiary beneficiary) {
+    public void updateEntity(
+            UpdateBeneficiaryRequestDto dto,
+            Beneficiary beneficiary
+    ) {
 
         beneficiary.setName(dto.getName());
         beneficiary.setAge(dto.getAge());
         beneficiary.setGender(dto.getGender());
         beneficiary.setPhone(dto.getPhone());
         beneficiary.setVillage(dto.getVillage());
+
+        // DO NOT update ashaId here.
+        // ASHA assignment is handled securely in BeneficiaryServiceImpl.
+
         beneficiary.setAddress(dto.getAddress());
         beneficiary.setCategory(dto.getCategory());
         beneficiary.setDisease(dto.getDisease());

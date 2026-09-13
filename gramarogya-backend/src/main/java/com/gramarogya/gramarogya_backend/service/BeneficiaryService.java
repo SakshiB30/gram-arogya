@@ -3,6 +3,7 @@ package com.gramarogya.gramarogya_backend.service;
 import com.gramarogya.gramarogya_backend.dto.BeneficiaryResponseDto;
 import com.gramarogya.gramarogya_backend.dto.CreateBeneficiaryRequestDto;
 import com.gramarogya.gramarogya_backend.dto.UpdateBeneficiaryRequestDto;
+import com.gramarogya.gramarogya_backend.dto.UserResponseDto;
 import org.springframework.security.core.Authentication;
 
 
@@ -23,4 +24,6 @@ public interface BeneficiaryService {
 
     void delete(Authentication authentication,
                 String id);
+
+    List<UserResponseDto> getAvailableAshas(Authentication authentication);
 }

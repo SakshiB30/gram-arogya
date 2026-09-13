@@ -25,7 +25,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -576,8 +575,7 @@ public class HealthRecordServiceImpl implements HealthRecordService {
             String beneficiaryId) {
 
         Beneficiary beneficiary =
-                beneficiaryRepository
-                        .findById(beneficiaryId)
+                beneficiaryRepository.findById(beneficiaryId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Beneficiary not found with id: "
@@ -585,30 +583,58 @@ public class HealthRecordServiceImpl implements HealthRecordService {
                                 )
                         );
 
+        // ==========================================
+        // ADMIN → ALL BENEFICIARIES
+        // ==========================================
 
         if (currentUser.getRole() == Role.ADMIN) {
             return;
         }
 
-        if (currentUser.getRole() == Role.ASHA &&
-                currentUser.getId().equals(beneficiary.getUserId())) {
-            return;
-        }
 
-        if (currentUser.getRole() == Role.ANM) {
+        // ==========================================
+        // ASHA → ONLY HER ASSIGNED BENEFICIARIES
+        // ==========================================
 
-            boolean supervisedBeneficiary =
-                    userRepository
-                            .findBySupervisorId(currentUser.getId())
-                            .stream()
-                            .map(User::getId)
-                            .anyMatch(beneficiary.getUserId()::equals);
+        if (currentUser.getRole() == Role.ASHA) {
 
-            if (supervisedBeneficiary ||
-                    currentUser.getId().equals(beneficiary.getUserId())) {
+            if (currentUser.getId().equals(
+                    beneficiary.getAshaId())) {
+
                 return;
             }
         }
+
+
+        // ==========================================
+        // ANM → BENEFICIARIES ASSIGNED TO
+        // SUPERVISED ASHAs
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            boolean supervisedAsha =
+                    userRepository
+                            .findByRoleAndSupervisorId(
+                                    Role.ASHA,
+                                    currentUser.getId()
+                            )
+                            .stream()
+                            .anyMatch(
+                                    asha -> asha.getId().equals(
+                                            beneficiary.getAshaId()
+                                    )
+                            );
+
+            if (supervisedAsha) {
+                return;
+            }
+        }
+
+
+        // ==========================================
+        // ACCESS DENIED
+        // ==========================================
 
         throw new AccessDeniedException(
                 "You do not have access to this beneficiary's health records."
@@ -619,28 +645,55 @@ public class HealthRecordServiceImpl implements HealthRecordService {
     private List<Beneficiary> getAccessibleBeneficiaries(
             User currentUser) {
 
+        // ==========================================
+        // ADMIN → ALL BENEFICIARIES
+        // ==========================================
+
         if (currentUser.getRole() == Role.ADMIN) {
+
             return beneficiaryRepository.findAll();
         }
 
+
+        // ==========================================
+        // ASHA → HER ASSIGNED BENEFICIARIES
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            return beneficiaryRepository.findByAshaId(
+                    currentUser.getId()
+            );
+        }
+
+
+        // ==========================================
+        // ANM → BENEFICIARIES OF SUPERVISED ASHAs
+        // ==========================================
+
         if (currentUser.getRole() == Role.ANM) {
 
-            List<String> userIds =
+            List<String> ashaIds =
                     userRepository
-                            .findBySupervisorId(currentUser.getId())
+                            .findByRoleAndSupervisorId(
+                                    Role.ASHA,
+                                    currentUser.getId()
+                            )
                             .stream()
                             .map(User::getId)
                             .toList();
 
-            List<String> accessibleUserIds =
-                    new ArrayList<>(userIds);
+            if (ashaIds.isEmpty()) {
+                return List.of();
+            }
 
-            accessibleUserIds.add(currentUser.getId());
-
-            return beneficiaryRepository.findByUserIdIn(accessibleUserIds);
+            return beneficiaryRepository.findByAshaIdIn(
+                    ashaIds
+            );
         }
 
-        return beneficiaryRepository.findByUserId(currentUser.getId());
+
+        return List.of();
     }
 
 

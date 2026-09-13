@@ -1,9 +1,6 @@
 package com.gramarogya.gramarogya_backend.service;
 
-import com.gramarogya.gramarogya_backend.dto.BeneficiaryResponseDto;
-import com.gramarogya.gramarogya_backend.dto.CreateBeneficiaryRequestDto;
-import com.gramarogya.gramarogya_backend.dto.Role;
-import com.gramarogya.gramarogya_backend.dto.UpdateBeneficiaryRequestDto;
+import com.gramarogya.gramarogya_backend.dto.*;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
 import com.gramarogya.gramarogya_backend.entity.User;
 import com.gramarogya.gramarogya_backend.exception.ResourceNotFoundException;
@@ -43,6 +40,58 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
 
 
     // =========================================================
+    // GET ASHAs SUPERVISED BY ANM
+    // =========================================================
+
+    private List<String> getSupervisedAshaIds(User anm) {
+
+        return userRepository
+                .findBySupervisorId(anm.getId())
+                .stream()
+                .filter(user -> user.getRole() == Role.ASHA)
+                .map(User::getId)
+                .toList();
+    }
+
+
+    // =========================================================
+    // VALIDATE ASHA ASSIGNMENT
+    // =========================================================
+
+    private void validateAshaAssignment(
+            User anm,
+            String ashaId
+    ) {
+
+        if (ashaId == null || ashaId.isBlank()) {
+            throw new UnauthorizedException(
+                    "ASHA assignment is required"
+            );
+        }
+
+        User asha = userRepository.findById(ashaId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "ASHA not found"
+                        ));
+
+        // Must actually be an ASHA
+        if (asha.getRole() != Role.ASHA) {
+            throw new UnauthorizedException(
+                    "Selected user is not an ASHA"
+            );
+        }
+
+        // ASHA must belong to this ANM
+        if (!anm.getId().equals(asha.getSupervisorId())) {
+            throw new UnauthorizedException(
+                    "You can only assign beneficiaries to ASHAs under you"
+            );
+        }
+    }
+
+
+    // =========================================================
     // GET BENEFICIARY WITH ROLE-BASED ACCESS
     // =========================================================
 
@@ -61,18 +110,24 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                                 ));
 
 
-        // ADMIN can access all beneficiaries
-        if (currentUser.getRole() == Role.ADMIN) {
+        // -----------------------------------------------------
+        // ADMIN
+        // -----------------------------------------------------
 
+        if (currentUser.getRole() == Role.ADMIN) {
             return beneficiary;
         }
 
 
-        // ASHA can access only own beneficiaries
+        // -----------------------------------------------------
+        // ASHA
+        // -----------------------------------------------------
+
         if (currentUser.getRole() == Role.ASHA) {
 
-            if (!beneficiary.getUserId()
-                    .equals(currentUser.getId())) {
+            if (!currentUser.getId().equals(
+                    beneficiary.getAshaId()
+            )) {
 
                 throw new UnauthorizedException(
                         "Unauthorized"
@@ -83,20 +138,17 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         }
 
 
-        // ANM can access beneficiaries
-        // belonging to ASHAs under them
+        // -----------------------------------------------------
+        // ANM
+        // -----------------------------------------------------
+
         if (currentUser.getRole() == Role.ANM) {
 
             List<String> ashaIds =
-                    userRepository
-                            .findBySupervisorId(currentUser.getId())
-                            .stream()
-                            .map(User::getId)
-                            .toList();
-
+                    getSupervisedAshaIds(currentUser);
 
             if (!ashaIds.contains(
-                    beneficiary.getUserId()
+                    beneficiary.getAshaId()
             )) {
 
                 throw new UnauthorizedException(
@@ -113,6 +165,25 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         );
     }
 
+    private BeneficiaryResponseDto toResponseDto(Beneficiary beneficiary) {
+
+        BeneficiaryResponseDto dto =
+                beneficiaryMapper.toResponseDto(beneficiary);
+
+        if (beneficiary.getAshaId() != null) {
+
+            userRepository.findById(beneficiary.getAshaId())
+                    .ifPresent(asha -> {
+
+                        dto.setAshaName(asha.getName());
+                        dto.setAshaEmployeeId(asha.getEmployeeId());
+
+                    });
+        }
+
+        return dto;
+    }
+
 
     // =========================================================
     // CREATE BENEFICIARY
@@ -127,14 +198,54 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         User currentUser =
                 getCurrentUser(authentication);
 
-
         Beneficiary beneficiary =
                 beneficiaryMapper.toEntity(dto);
 
 
-        beneficiary.setUserId(
-                currentUser.getId()
-        );
+        // -----------------------------------------------------
+        // ASHA CREATES BENEFICIARY
+        // Automatically assign to herself
+        // -----------------------------------------------------
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            beneficiary.setUserId(
+                    currentUser.getId()
+            );
+
+            beneficiary.setAshaId(
+                    currentUser.getId()
+            );
+        }
+
+
+        // -----------------------------------------------------
+        // ANM CREATES BENEFICIARY
+        // Must explicitly select ASHA
+        // -----------------------------------------------------
+
+        else if (currentUser.getRole() == Role.ANM) {
+
+            validateAshaAssignment(
+                    currentUser,
+                    dto.getAshaId()
+            );
+
+            beneficiary.setUserId(
+                    currentUser.getId()
+            );
+
+            beneficiary.setAshaId(
+                    dto.getAshaId()
+            );
+        }
+
+
+        else {
+            throw new UnauthorizedException(
+                    "Only ANM or ASHA can create beneficiaries"
+            );
+        }
 
 
         beneficiary.setDateAdded(
@@ -148,7 +259,10 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                 );
 
 
-        // CREATE ACTIVITY
+        // -----------------------------------------------------
+        // ACTIVITY
+        // -----------------------------------------------------
+
         activityService.log(
                 currentUser,
                 "CREATE",
@@ -180,11 +294,13 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         User currentUser =
                 getCurrentUser(authentication);
 
-
         List<Beneficiary> beneficiaries;
 
 
+        // -----------------------------------------------------
         // ADMIN
+        // -----------------------------------------------------
+
         if (currentUser.getRole() == Role.ADMIN) {
 
             beneficiaries =
@@ -192,40 +308,46 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         }
 
 
+        // -----------------------------------------------------
         // ANM
+        // Only beneficiaries assigned to supervised ASHAs
+        // -----------------------------------------------------
+
         else if (currentUser.getRole() == Role.ANM) {
 
             List<String> ashaIds =
-                    userRepository
-                            .findBySupervisorId(
-                                    currentUser.getId()
-                            )
-                            .stream()
-                            .map(User::getId)
-                            .toList();
-
+                    getSupervisedAshaIds(currentUser);
 
             beneficiaries =
-                    beneficiaryRepository
-                            .findByUserIdIn(ashaIds);
+                    beneficiaryRepository.findByAshaIdIn(
+                            ashaIds
+                    );
         }
 
 
+        // -----------------------------------------------------
         // ASHA
-        else {
+        // Only assigned beneficiaries
+        // -----------------------------------------------------
+
+        else if (currentUser.getRole() == Role.ASHA) {
 
             beneficiaries =
-                    beneficiaryRepository
-                            .findByUserId(
-                                    currentUser.getId()
-                            );
+                    beneficiaryRepository.findByAshaId(
+                            currentUser.getId()
+                    );
+        }
+
+
+        else {
+            throw new UnauthorizedException(
+                    "Unauthorized"
+            );
         }
 
 
         return beneficiaries.stream()
-                .map(
-                        beneficiaryMapper::toResponseDto
-                )
+                .map(beneficiaryMapper::toResponseDto)
                 .toList();
     }
 
@@ -246,10 +368,7 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                         id
                 );
 
-
-        return beneficiaryMapper.toResponseDto(
-                beneficiary
-        );
+        return toResponseDto(beneficiary);
     }
 
 
@@ -267,12 +386,43 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         User currentUser =
                 getCurrentUser(authentication);
 
-
         Beneficiary beneficiary =
                 getBeneficiaryForCurrentUser(
                         authentication,
                         id
                 );
+
+
+        // -----------------------------------------------------
+        // ANM
+        // Can change ASHA assignment
+        // -----------------------------------------------------
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            validateAshaAssignment(
+                    currentUser,
+                    dto.getAshaId()
+            );
+
+            beneficiary.setAshaId(
+                    dto.getAshaId()
+            );
+        }
+
+
+        // -----------------------------------------------------
+        // ASHA
+        // Cannot change ASHA assignment
+        // -----------------------------------------------------
+
+        else if (currentUser.getRole() == Role.ASHA) {
+
+            // Keep existing assignment
+            beneficiary.setAshaId(
+                    currentUser.getId()
+            );
+        }
 
 
         beneficiaryMapper.updateEntity(
@@ -287,7 +437,10 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                 );
 
 
-        // CREATE ACTIVITY
+        // -----------------------------------------------------
+        // ACTIVITY
+        // -----------------------------------------------------
+
         activityService.log(
                 currentUser,
                 "UPDATE",
@@ -320,7 +473,6 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         User currentUser =
                 getCurrentUser(authentication);
 
-
         Beneficiary beneficiary =
                 getBeneficiaryForCurrentUser(
                         authentication,
@@ -328,15 +480,10 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
                 );
 
 
-        String beneficiaryName =
-                beneficiary.getName();
+        // -----------------------------------------------------
+        // ACTIVITY BEFORE DELETE
+        // -----------------------------------------------------
 
-
-        String beneficiaryId =
-                beneficiary.getId();
-
-
-        // CREATE ACTIVITY BEFORE DELETE
         activityService.log(
                 currentUser,
                 "DELETE",
@@ -351,5 +498,44 @@ public class BeneficiaryServiceImpl implements BeneficiaryService {
         beneficiaryRepository.delete(
                 beneficiary
         );
+    }
+
+    @Override
+    public List<UserResponseDto> getAvailableAshas(
+            Authentication authentication
+    ) {
+
+        User currentUser = getCurrentUser(authentication);
+
+        if (currentUser.getRole() != Role.ANM) {
+            throw new UnauthorizedException(
+                    "Only ANM can view available ASHAs"
+            );
+        }
+
+        return userRepository
+                .findByRoleAndSupervisorId(
+                        Role.ASHA,
+                        currentUser.getId()
+                )
+                .stream()
+                .map(user -> UserResponseDto.builder()
+                        .id(user.getId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .verificationStatus(user.getVerificationStatus())
+                        .accountStatus(user.getAccountStatus())
+                        .employeeId(user.getEmployeeId())
+                        .supervisorId(user.getSupervisorId())
+                        .phone(user.getPhone())
+                        .village(user.getVillage())
+                        .taluka(user.getTaluka())
+                        .district(user.getDistrict())
+                        .state(user.getState())
+                        .profileImage(user.getProfileImage())
+                        .build()
+                )
+                .toList();
     }
 }

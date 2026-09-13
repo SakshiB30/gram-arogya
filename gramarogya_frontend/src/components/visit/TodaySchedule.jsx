@@ -282,3 +282,4 @@ const TodaySchedule = ({ visits = [], loading = false }) => {
 };
 
 export default TodaySchedule;
+

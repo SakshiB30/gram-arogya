@@ -19,8 +19,11 @@ public class Beneficiary {
     @Id
     private String id;
 
-    // ASHA who created this beneficiary
+    // User who created this beneficiary
     private String userId;
+
+    // ASHA currently assigned to this beneficiary
+    private String ashaId;
 
     private String name;
 

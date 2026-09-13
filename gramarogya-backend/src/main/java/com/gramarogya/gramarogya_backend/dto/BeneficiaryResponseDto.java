@@ -21,6 +21,12 @@ public class BeneficiaryResponseDto {
 
     private String village;
 
+    private String ashaId;
+
+    private String ashaName;
+
+    private String ashaEmployeeId;
+
     private String address;
 
     private String category;

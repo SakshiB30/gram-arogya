@@ -1,24 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { createBeneficiary } from "../../redux/slices/beneficiarySlice";
+import {
+  createBeneficiary,
+  fetchAvailableAshas,
+} from "../../redux/slices/beneficiarySlice";
 import { ArrowLeft, Save } from "lucide-react";
-
 
 export default function AddBeneficiary() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading, error } = useSelector(
+  const { loading, error, availableAshas } = useSelector(
     (state) => state.beneficiaries
   );
 
-  const BENEFICIARY_CATEGORIES = [
-  "Pregnant Woman",
-  "Child",
-  "TB Patient",
-  "Elderly",
-];
+  const { user } = useSelector((state) => state.auth);
+
+  const isANM = user?.role === "ANM";
 
   const [form, setForm] = useState({
     name: "",
@@ -30,7 +29,17 @@ export default function AddBeneficiary() {
     category: "",
     disease: "",
     status: "Active",
+    ashaId: "",
   });
+
+  /*
+   * Fetch ASHAs only when logged-in user is ANM
+   */
+  useEffect(() => {
+    if (isANM) {
+      dispatch(fetchAvailableAshas());
+    }
+  }, [dispatch, isANM]);
 
   const handleChange = (e) => {
     setForm({
@@ -78,7 +87,6 @@ export default function AddBeneficiary() {
         onSubmit={handleSubmit}
         className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8"
       >
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* Name */}
@@ -160,6 +168,39 @@ export default function AddBeneficiary() {
             />
           </div>
 
+          {/* ASHA Assignment - ANM ONLY */}
+          {isANM && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Assign ASHA
+              </label>
+
+              <select
+                name="ashaId"
+                value={form.ashaId}
+                onChange={handleChange}
+                required
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">
+                  Select ASHA
+                </option>
+
+                {availableAshas?.map((asha) => (
+                  <option key={asha.id} value={asha.id}>
+                    {asha.name} {asha.employeeId ? `(${asha.employeeId})` : ""}
+                  </option>
+                ))}
+              </select>
+
+              {availableAshas?.length === 0 && (
+                <p className="text-sm text-red-500 mt-2">
+                  No ASHA workers are currently assigned to you.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Category */}
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -167,40 +208,32 @@ export default function AddBeneficiary() {
             </label>
 
             <select
-    name="category"
-    value={form.category}
-    onChange={handleChange}
-    className="
-        w-full
-        border
-        rounded-lg
-        px-3
-        py-2
-        focus:outline-none
-        focus:ring-2
-        focus:ring-blue-500
-    "
->
-    <option value="">
-        Select Category
-    </option>
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">
+                Select Category
+              </option>
 
-    <option value="Pregnant Woman">
-        Pregnant Woman
-    </option>
+              <option value="Pregnant Woman">
+                Pregnant Woman
+              </option>
 
-    <option value="Child">
-        Child
-    </option>
+              <option value="Child">
+                Child
+              </option>
 
-    <option value="TB Patient">
-        TB Patient
-    </option>
+              <option value="TB Patient">
+                TB Patient
+              </option>
 
-    <option value="Elderly">
-        Elderly
-    </option>
-</select>
+              <option value="Elderly">
+                Elderly
+              </option>
+            </select>
           </div>
 
           {/* Disease */}
@@ -234,7 +267,6 @@ export default function AddBeneficiary() {
               <option>Inactive</option>
             </select>
           </div>
-
         </div>
 
         {/* Address */}
@@ -272,16 +304,14 @@ export default function AddBeneficiary() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (isANM && availableAshas?.length === 0)}
             className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-white hover:bg-blue-700 disabled:opacity-60"
           >
             <Save size={18} />
 
             {loading ? "Saving..." : "Save Beneficiary"}
           </button>
-
         </div>
-
       </form>
     </div>
   );

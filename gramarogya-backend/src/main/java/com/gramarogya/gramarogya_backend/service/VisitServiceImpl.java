@@ -1,21 +1,20 @@
 package com.gramarogya.gramarogya_backend.service;
 
+import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.dto.visit.CreateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.UpdateVisitRequestDto;
 import com.gramarogya.gramarogya_backend.dto.visit.VisitResponseDto;
-import com.gramarogya.gramarogya_backend.dto.Role;
 import com.gramarogya.gramarogya_backend.entity.Beneficiary;
-import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.entity.User;
+import com.gramarogya.gramarogya_backend.entity.Visit;
 import com.gramarogya.gramarogya_backend.mapper.VisitMapper;
 import com.gramarogya.gramarogya_backend.repository.BeneficiaryRepository;
-import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
+import com.gramarogya.gramarogya_backend.repository.VisitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -56,8 +55,10 @@ public class VisitServiceImpl implements VisitService {
 
         User currentUser = getCurrentUser(authentication);
 
+        // ==========================================
+        // FIND BENEFICIARY
+        // ==========================================
 
-        // Make sure beneficiary exists
         Beneficiary beneficiary =
                 beneficiaryRepository.findById(dto.getBeneficiaryId())
                         .orElseThrow(
@@ -67,15 +68,34 @@ public class VisitServiceImpl implements VisitService {
                         );
 
 
+        // ==========================================
+        // CHECK BENEFICIARY ACCESS
+        // ==========================================
+
+        if (!canAccessBeneficiaryForVisit(
+                currentUser,
+                beneficiary)) {
+
+            throw new RuntimeException(
+                    "You are not authorized to create a visit for this beneficiary"
+            );
+        }
+
+
+        // ==========================================
+        // CREATE VISIT
+        // ==========================================
+
         Visit visit = visitMapper.toEntity(dto);
 
+        // User who created/recorded the visit
         visit.setUserId(currentUser.getId());
 
         // Actual visit/creation date
         visit.setVisitDate(LocalDate.now());
 
 
-        // Save visit first so that visit.getId() is available
+        // Save visit first so that ID is available
         visit = visitRepository.save(visit);
 
 
@@ -137,8 +157,15 @@ public class VisitServiceImpl implements VisitService {
                         );
 
 
-        if (!visit.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("Unauthorized");
+        // ==========================================
+        // CHECK ACCESS
+        // ==========================================
+
+        if (!canAccessVisit(currentUser, visit)) {
+
+            throw new RuntimeException(
+                    "Unauthorized"
+            );
         }
 
 
@@ -167,10 +194,21 @@ public class VisitServiceImpl implements VisitService {
                         );
 
 
-        if (!visit.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("Unauthorized");
+        // ==========================================
+        // CHECK ACCESS
+        // ==========================================
+
+        if (!canAccessVisit(currentUser, visit)) {
+
+            throw new RuntimeException(
+                    "Unauthorized"
+            );
         }
 
+
+        // ==========================================
+        // UPDATE VISIT
+        // ==========================================
 
         visitMapper.updateEntity(dto, visit);
 
@@ -178,7 +216,7 @@ public class VisitServiceImpl implements VisitService {
 
 
         // ==========================================
-        // UPDATE ACTIVITY
+        // GET BENEFICIARY
         // ==========================================
 
         Beneficiary beneficiary =
@@ -189,6 +227,7 @@ public class VisitServiceImpl implements VisitService {
 
         String description;
 
+
         if (beneficiary != null) {
 
             description =
@@ -198,9 +237,14 @@ public class VisitServiceImpl implements VisitService {
 
         } else {
 
-            description = "Visit details updated";
+            description =
+                    "Visit details updated";
         }
 
+
+        // ==========================================
+        // UPDATE ACTIVITY
+        // ==========================================
 
         activityService.log(
                 currentUser,
@@ -237,12 +281,22 @@ public class VisitServiceImpl implements VisitService {
                         );
 
 
-        if (!visit.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("Unauthorized");
+        // ==========================================
+        // CHECK ACCESS
+        // ==========================================
+
+        if (!canAccessVisit(currentUser, visit)) {
+
+            throw new RuntimeException(
+                    "Unauthorized"
+            );
         }
 
 
-        // Get beneficiary information BEFORE deleting
+        // ==========================================
+        // GET BENEFICIARY BEFORE DELETE
+        // ==========================================
+
         Beneficiary beneficiary =
                 beneficiaryRepository
                         .findById(visit.getBeneficiaryId())
@@ -250,6 +304,7 @@ public class VisitServiceImpl implements VisitService {
 
 
         String description;
+
 
         if (beneficiary != null) {
 
@@ -260,7 +315,8 @@ public class VisitServiceImpl implements VisitService {
 
         } else {
 
-            description = "Visit deleted";
+            description =
+                    "Visit deleted";
         }
 
 
@@ -279,9 +335,17 @@ public class VisitServiceImpl implements VisitService {
         );
 
 
-        // Delete visit AFTER activity is logged
+        // ==========================================
+        // DELETE VISIT
+        // ==========================================
+
         visitRepository.delete(visit);
     }
+
+
+    // ==========================================
+    // GET TODAY'S VISITS
+    // ==========================================
 
     @Override
     public List<VisitResponseDto> getTodayVisits(
@@ -291,14 +355,101 @@ public class VisitServiceImpl implements VisitService {
 
         LocalDate today = LocalDate.now();
 
-        return visitRepository
-                .findByUserIdAndScheduledDate(
-                        currentUser.getId(),
-                        today
-                )
-                .stream()
-                .map(this::buildResponse)
-                .toList();
+
+        // ==========================================
+        // ADMIN
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            return visitRepository
+                    .findByScheduledDate(today)
+                    .stream()
+                    .map(this::buildResponse)
+                    .toList();
+        }
+
+
+        // ==========================================
+        // ASHA
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            List<String> beneficiaryIds =
+                    beneficiaryRepository
+                            .findByAshaId(currentUser.getId())
+                            .stream()
+                            .map(Beneficiary::getId)
+                            .toList();
+
+
+            if (beneficiaryIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            return visitRepository
+                    .findByBeneficiaryIdInAndScheduledDate(
+                            beneficiaryIds,
+                            today
+                    )
+                    .stream()
+                    .map(this::buildResponse)
+                    .toList();
+        }
+
+
+        // ==========================================
+        // ANM
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            List<String> ashaIds =
+                    userRepository
+                            .findByRoleAndSupervisorId(
+                                    Role.ASHA,
+                                    currentUser.getId()
+                            )
+                            .stream()
+                            .map(User::getId)
+                            .toList();
+
+
+            if (ashaIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            List<String> beneficiaryIds =
+                    beneficiaryRepository
+                            .findByAshaIdIn(ashaIds)
+                            .stream()
+                            .map(Beneficiary::getId)
+                            .toList();
+
+
+            if (beneficiaryIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            return visitRepository
+                    .findByBeneficiaryIdInAndScheduledDate(
+                            beneficiaryIds,
+                            today
+                    )
+                    .stream()
+                    .map(this::buildResponse)
+                    .toList();
+        }
+
+
+        return List.of();
     }
 
 
@@ -306,7 +457,8 @@ public class VisitServiceImpl implements VisitService {
     // BUILD RESPONSE
     // ==========================================
 
-    private VisitResponseDto buildResponse(Visit visit) {
+    private VisitResponseDto buildResponse(
+            Visit visit) {
 
         Beneficiary beneficiary =
                 beneficiaryRepository
@@ -342,29 +494,214 @@ public class VisitServiceImpl implements VisitService {
     }
 
 
-    private List<Visit> getAccessibleVisits(User currentUser) {
+    // ==========================================
+    // CHECK VISIT ACCESS
+    // ==========================================
+
+    private boolean canAccessVisit(
+            User currentUser,
+            Visit visit) {
+
+        // ==========================================
+        // ADMIN → EVERYTHING
+        // ==========================================
 
         if (currentUser.getRole() == Role.ADMIN) {
-            return visitRepository.findAll();
+
+            return true;
         }
+
+
+        // ==========================================
+        // FIND BENEFICIARY
+        // ==========================================
+
+        Beneficiary beneficiary =
+                beneficiaryRepository
+                        .findById(visit.getBeneficiaryId())
+                        .orElseThrow(
+                                () -> new RuntimeException(
+                                        "Beneficiary not found"
+                                )
+                        );
+
+
+        // ==========================================
+        // ASHA
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            return currentUser.getId()
+                    .equals(beneficiary.getAshaId());
+        }
+
+
+        // ==========================================
+        // ANM
+        // ==========================================
 
         if (currentUser.getRole() == Role.ANM) {
 
-            List<String> userIds =
+            List<String> supervisedAshaIds =
                     userRepository
-                            .findBySupervisorId(currentUser.getId())
+                            .findByRoleAndSupervisorId(
+                                    Role.ASHA,
+                                    currentUser.getId()
+                            )
                             .stream()
                             .map(User::getId)
                             .toList();
 
-            List<String> accessibleUserIds =
-                    new ArrayList<>(userIds);
 
-            accessibleUserIds.add(currentUser.getId());
-
-            return visitRepository.findByUserIdIn(accessibleUserIds);
+            return supervisedAshaIds.contains(
+                    beneficiary.getAshaId()
+            );
         }
 
-        return visitRepository.findByUserId(currentUser.getId());
+
+        return false;
+    }
+
+
+    // ==========================================
+    // CHECK BENEFICIARY ACCESS FOR CREATE
+    // ==========================================
+
+    private boolean canAccessBeneficiaryForVisit(
+            User currentUser,
+            Beneficiary beneficiary) {
+
+        // ==========================================
+        // ADMIN
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            return true;
+        }
+
+
+        // ==========================================
+        // ASHA
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            return currentUser.getId()
+                    .equals(beneficiary.getAshaId());
+        }
+
+
+        // ==========================================
+        // ANM
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            return userRepository
+                    .findByRoleAndSupervisorId(
+                            Role.ASHA,
+                            currentUser.getId()
+                    )
+                    .stream()
+                    .anyMatch(
+                            asha -> asha.getId()
+                                    .equals(
+                                            beneficiary.getAshaId()
+                                    )
+                    );
+        }
+
+
+        return false;
+    }
+
+
+    // ==========================================
+    // GET ACCESSIBLE VISITS
+    // ==========================================
+
+    private List<Visit> getAccessibleVisits(
+            User currentUser) {
+
+        // ==========================================
+        // ADMIN → ALL VISITS
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            return visitRepository.findAll();
+        }
+
+
+        // ==========================================
+        // ASHA → HER BENEFICIARIES
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ASHA) {
+
+            List<String> beneficiaryIds =
+                    beneficiaryRepository
+                            .findByAshaId(currentUser.getId())
+                            .stream()
+                            .map(Beneficiary::getId)
+                            .toList();
+
+
+            if (beneficiaryIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            return visitRepository
+                    .findByBeneficiaryIdIn(beneficiaryIds);
+        }
+
+
+        // ==========================================
+        // ANM → SUPERVISED ASHA BENEFICIARIES
+        // ==========================================
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            List<String> ashaIds =
+                    userRepository
+                            .findByRoleAndSupervisorId(
+                                    Role.ASHA,
+                                    currentUser.getId()
+                            )
+                            .stream()
+                            .map(User::getId)
+                            .toList();
+
+
+            if (ashaIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            List<String> beneficiaryIds =
+                    beneficiaryRepository
+                            .findByAshaIdIn(ashaIds)
+                            .stream()
+                            .map(Beneficiary::getId)
+                            .toList();
+
+
+            if (beneficiaryIds.isEmpty()) {
+
+                return List.of();
+            }
+
+
+            return visitRepository
+                    .findByBeneficiaryIdIn(beneficiaryIds);
+        }
+
+
+        return List.of();
     }
 }
