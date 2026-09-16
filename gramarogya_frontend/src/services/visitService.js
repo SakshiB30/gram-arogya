@@ -29,7 +29,6 @@ const getVisitById = async (id) => {
 /* =========================================================
    CREATE VISIT
 ========================================================= */
-
 const createVisit = async (visit) => {
   const response = await axiosClient.post(
     BASE_URL,
@@ -38,7 +37,6 @@ const createVisit = async (visit) => {
 
   return response.data;
 };
-
 
 /* =========================================================
    UPDATE VISIT

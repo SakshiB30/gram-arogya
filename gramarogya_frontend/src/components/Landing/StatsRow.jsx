@@ -4,10 +4,10 @@ import { Users, HeartPulse, Pill, Activity } from "lucide-react";
 
 export default function StatsRow() {
   const stats = [
-    { value: "10,000+", label: "Beneficiaries", icon: Users, color: "text-blue-700", bg: "bg-blue-100" },
-    { value: "5,000+", label: "Health Visits", icon: HeartPulse, color: "text-emerald-700", bg: "bg-emerald-100" },
-    { value: "800+", label: "Medicines", icon: Pill, color: "text-purple-700", bg: "bg-purple-100" },
-    { value: "24×7", label: "Monitoring", icon: Activity, color: "text-rose-700", bg: "bg-rose-100" },
+    { value: "3", label: "User Roles", icon: Users, color: "text-blue-700", bg: "bg-blue-100" },
+    { value: "24/7", label: "Offline Access", icon: HeartPulse, color: "text-emerald-700", bg: "bg-emerald-100" },
+    { value: "100%", label: "Digital Records", icon: Pill, color: "text-purple-700", bg: "bg-purple-100" },
+    { value: "Auto", label: "Data Sync", icon: Activity, color: "text-rose-700", bg: "bg-rose-100" },
   ];
 
   return (

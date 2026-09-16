@@ -11,14 +11,14 @@ import searchReducer from "./slices/searchSlice";
 import notificationReducer from "./slices/notificationSlice";
 import adminReducer from "./slices/adminSlice";
 import ashaReducer from "./slices/ashaSlice";
-import medicineFollowUpReducer from "./slices/medicineFollowUpSlice"; // Import the medicineFollowUp reducer
+import medicineFollowUpReducer from "./slices/medicineFollowUpSlice";
 import anmReducer from "./slices/anmSlice"; 
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     beneficiaries: beneficiaryReducer,
-    visit: visitReducer, 
+    visit: visitReducer,
     healthRecords: healthRecordReducer,
     dashboard: dashboardReducer,
     inventory: inventoryReducer, 

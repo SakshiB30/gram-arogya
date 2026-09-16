@@ -2,341 +2,317 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import {
-deleteVisit,
-fetchVisits
-}
-from "../../redux/slices/visitSlice";
+  deleteVisit,
+  fetchVisits,
+} from "../../redux/slices/visitSlice";
+
 import { getErrorMessage } from "../../utils/apiError";
 import { useToast } from "../common/toastContext";
 
-
-
 const VisitTable = ({
-visits,
-loading,
-error
-})=>{
+  visits,
+  loading,
+  error,
+}) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-700";
 
-const dispatch = useDispatch();
-const navigate = useNavigate();
-const { showToast } = useToast();
+      case "pending":
+        return "bg-yellow-100 text-yellow-700";
 
-const getStatusColor=(status)=>{
+      case "cancelled":
+        return "bg-red-100 text-red-700";
 
-switch(status?.toLowerCase()){
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
-case "completed":
-return "bg-green-100 text-green-700";
+  const getSyncStatusColor = (syncStatus) => {
+    switch (syncStatus) {
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
 
+      case "SYNCING":
+        return "bg-blue-100 text-blue-700";
 
-case "pending":
-return "bg-yellow-100 text-yellow-700";
+      case "FAILED":
+        return "bg-red-100 text-red-700";
 
+      case "SYNCED":
+        return "bg-green-100 text-green-700";
 
-case "cancelled":
-return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-500";
+    }
+  };
 
+  const getSyncStatusText = (syncStatus) => {
+    switch (syncStatus) {
+      case "PENDING":
+        return "Pending Sync";
 
-default:
-return "bg-gray-100 text-gray-700";
+      case "SYNCING":
+        return "Syncing...";
 
-}
+      case "FAILED":
+        return "Sync Failed";
 
+      case "SYNCED":
+        return "Synced";
+
+      default:
+        return "Synced";
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this visit?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await dispatch(
+        deleteVisit(id)
+      ).unwrap();
+
+      showToast({
+        type: "success",
+        title: "Visit Deleted",
+        message:
+          "The visit has been deleted successfully.",
+      });
+
+      dispatch(fetchVisits());
+    } catch (err) {
+      showToast({
+        type: "error",
+        title: "Delete Failed",
+        message: getErrorMessage(
+          err,
+          "Failed to delete visit."
+        ),
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-10 text-center">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-100 text-red-700 p-5 rounded-xl">
+        {getErrorMessage(error)}
+      </div>
+    );
+  }
+
+  if (visits.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-10 text-center">
+        <h2 className="text-xl font-semibold">
+          No Visits Found
+        </h2>
+
+        <p className="text-gray-500 mt-2">
+          Create your first visit.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-4 text-left">
+                #
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Beneficiary Details
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Visit Type
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Visit Date
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Status
+              </th>
+
+              {/* New Sync Status Column */}
+              <th className="px-6 py-4 text-left">
+                Sync Status
+              </th>
+
+              <th className="px-6 py-4 text-left">
+                Next Visit
+              </th>
+
+              <th className="px-6 py-4 text-center">
+                Actions
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {visits.map(
+              (visit, index) => (
+                <tr
+                  key={visit.id}
+                  className="hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4">
+                    {index + 1}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="font-semibold text-gray-900">
+                      {visit.beneficiaryName}
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      {visit.category}
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      📍 {visit.village}
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      📞 {visit.phone}
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {visit.visitType}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {visit.visitDate
+                      ? new Date(
+                          visit.visitDate
+                        ).toLocaleDateString()
+                      : "-"}
+                  </td>
+
+                  {/* Visit Status */}
+                  <td className="px-6 py-4">
+                    <span
+                      className={`
+                        px-3
+                        py-1
+                        rounded-full
+                        text-xs
+                        font-semibold
+                        ${getStatusColor(
+                          visit.status
+                        )}
+                      `}
+                    >
+                      {visit.status}
+                    </span>
+                  </td>
+
+                  {/* Sync Status */}
+                  <td className="px-6 py-4">
+                    <span
+                      className={`
+                        px-3
+                        py-1
+                        rounded-full
+                        text-xs
+                        font-semibold
+                        ${getSyncStatusColor(
+                          visit.syncStatus
+                        )}
+                      `}
+                    >
+                      {getSyncStatusText(
+                        visit.syncStatus
+                      )}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {visit.nextVisitDate
+                      ? new Date(
+                          visit.nextVisitDate
+                        ).toLocaleDateString()
+                      : "-"}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
+
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/app/visit/${visit.id}`
+                          )
+                        }
+                        className="px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                      >
+                        View
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/app/visit/edit/${visit.id}`
+                          )
+                        }
+                        className="px-3 py-2 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleDelete(
+                            visit.id
+                          )
+                        }
+                        className="px-3 py-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                      >
+                        Delete
+                      </button>
+
+                    </div>
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+
+        </table>
+      </div>
+    </div>
+  );
 };
-
-const handleDelete = async(id)=>{
-
-if(!window.confirm(
-"Are you sure you want to delete this visit?"
-))
-return;
-
-
-
-try{
-
-await dispatch(
-deleteVisit(id)
-).unwrap();
-
-showToast({
-type: "success",
-title: "Visit Deleted",
-message: "The visit has been deleted successfully.",
-});
-
-dispatch(fetchVisits());
-
-
-}
-catch(err){
-
-showToast({
-type: "error",
-title: "Delete Failed",
-message: getErrorMessage(err, "Failed to delete visit."),
-});
-
-}
-
-
-};
-
-
-
-if(loading){
-
-return (
-
-<div className="
-bg-white
-rounded-2xl
-p-10
-text-center
-">
-
-Loading...
-
-</div>
-
-)
-
-}
-
-
-
-if(error){
-
-return (
-
-<div className="
-bg-red-100
-text-red-700
-p-5
-rounded-xl
-">
-
-{getErrorMessage(error)}
-
-</div>
-
-)
-
-}
-
-
-
-if(visits.length===0){
-
-return (
-
-<div className="
-bg-white
-rounded-2xl
-p-10
-text-center
-">
-
-<h2 className="
-text-xl
-font-semibold
-">
-
-No Visits Found
-
-</h2>
-
-
-<p className="
-text-gray-500
-mt-2
-">
-
-Create your first visit.
-
-</p>
-
-
-</div>
-
-)
-
-}
-
-
-
-return (
-
-<div className="
-bg-white
-rounded-2xl
-shadow
-overflow-hidden
-">
-
-
-<div className="
-overflow-x-auto
-">
-
-
-<table className="
-min-w-full
-divide-y
-divide-gray-200
-">
-
-
-<thead className="bg-gray-50">
-  <tr>
-    <th className="px-6 py-4 text-left">#</th>
-
-    <th className="px-6 py-4 text-left">
-      Beneficiary Details
-    </th>
-
-    <th className="px-6 py-4 text-left">
-      Visit Type
-    </th>
-
-    <th className="px-6 py-4 text-left">
-      Visit Date
-    </th>
-
-    <th className="px-6 py-4 text-left">
-      Status
-    </th>
-
-    <th className="px-6 py-4 text-left">
-      Next Visit
-    </th>
-
-    <th className="px-6 py-4 text-center">
-      Actions
-    </th>
-  </tr>
-</thead>
-
-
-
-<tbody>
-
-
-{
-visits.map(
-(visit,index)=>(
-
-
-<tr
-    key={visit.id}
-    className="hover:bg-gray-50"
->
-    <td className="px-6 py-4">
-        {index + 1}
-    </td>
-
-    <td className="px-6 py-4">
-        <div className="font-semibold text-gray-900">
-            {visit.beneficiaryName}
-        </div>
-
-        <div className="text-sm text-gray-500">
-            {visit.category}
-        </div>
-
-        <div className="text-sm text-gray-500">
-            📍 {visit.village}
-        </div>
-
-        <div className="text-sm text-gray-500">
-            📞 {visit.phone}
-        </div>
-    </td>
-
-    <td className="px-6 py-4">
-        {visit.visitType}
-    </td>
-
-    <td className="px-6 py-4">
-        {visit.visitDate
-            ? new Date(visit.visitDate).toLocaleDateString()
-            : "-"}
-    </td>
-
-    <td className="px-6 py-4">
-        <span
-            className={`
-                px-3
-                py-1
-                rounded-full
-                text-xs
-                font-semibold
-                ${getStatusColor(visit.status)}
-            `}
-        >
-            {visit.status}
-        </span>
-    </td>
-
-    <td className="px-6 py-4">
-        {visit.nextVisitDate
-            ? new Date(visit.nextVisitDate).toLocaleDateString()
-            : "-"}
-    </td>
-
-    <td className="px-6 py-4 text-center">
-        <div className="flex justify-center gap-2">
-
-            <button
-                onClick={() => navigate(`/app/visit/${visit.id}`)}
-                className="px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-            >
-                View
-            </button>
-
-            <button
-                onClick={() => navigate(`/app/visit/edit/${visit.id}`)}
-                className="px-3 py-2 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition"
-            >
-                Edit
-            </button>
-
-            <button
-                onClick={() => handleDelete(visit.id)}
-                className="px-3 py-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
-            >
-                Delete
-            </button>
-
-        </div>
-    </td>
-</tr>
-
-
-)
-
-)
-
-}
-
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
-</div>
-
-);
-
-
-};
-
 
 export default VisitTable;

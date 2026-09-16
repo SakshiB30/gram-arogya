@@ -1,55 +1,33 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Save } from "lucide-react";
 
-import { createHealthRecord } from "../../redux/slices/healthRecordSlice";
+import {
+  createHealthRecord,
+  fetchHealthRecords,
+} from "../../redux/slices/healthRecordSlice";
+
 import { fetchBeneficiaries } from "../../redux/slices/beneficiarySlice";
 import { fetchVisits } from "../../redux/slices/visitSlice";
-import { getErrorMessage } from "../../utils/apiError";
-import { useToast } from "../common/toastContext";
-
-const toLocalDateTimeString = (date) => {
-  const pad = (value) => String(value).padStart(2, "0");
-
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-") + "T" + [
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join(":");
-};
 
 const AddHealthRecord = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { showToast } = useToast();
 
-  const showValidationToast = (message) => {
-    showToast({
-      type: "warning",
-      title: "Required Field",
-      message,
-    });
-  };
+  const {
+    beneficiaries = [],
+  } = useSelector((state) => state.beneficiaries);
 
-  // =====================================================
-  // REDUX STATE
-  // =====================================================
+  const {
+    visits = [],
+  } = useSelector((state) => state.visit);
 
-  const { beneficiaries = [] } = useSelector(
-    (state) => state.beneficiaries
-  );
-
-  const { visits = [] } = useSelector(
-    (state) => state.visit
-  );
-
-  // =====================================================
-  // FORM STATE
-  // =====================================================
+  const {
+    healthRecords = [],
+    actionLoading = false,
+    actionError = null,
+  } = useSelector((state) => state.healthRecords);
 
   const [formData, setFormData] = useState({
     beneficiaryId: "",
@@ -63,479 +41,477 @@ const AddHealthRecord = () => {
     notes: "",
   });
 
-  // =====================================================
-  // FETCH BENEFICIARIES + VISITS
-  // =====================================================
+  const [error, setError] = useState("");
 
+  /*
+   * Load required data when page opens.
+   *
+   * If online:
+   *   Redux fetches data from backend and also stores
+   *   the data locally through the offline services.
+   *
+   * If offline:
+   *   the same Redux actions return data from IndexedDB.
+   */
   useEffect(() => {
     dispatch(fetchBeneficiaries());
     dispatch(fetchVisits());
+    dispatch(fetchHealthRecords());
   }, [dispatch]);
 
-  // =====================================================
-  // FILTER VISITS BY SELECTED BENEFICIARY
-  // =====================================================
-
-  const selectedBeneficiaryVisits = visits.filter(
+  /*
+   * IMPORTANT OFFLINE RULE:
+   *
+   * A visit marked PENDING_DELETE has already been deleted
+   * locally and should NOT be available for creating a
+   * health record.
+   *
+   * We also filter visits by the selected beneficiary.
+   */
+  const allSelectedBeneficiaryVisits = visits.filter(
     (visit) =>
-      visit.beneficiaryId === formData.beneficiaryId
+      visit.beneficiaryId === formData.beneficiaryId &&
+      visit.syncStatus !== "PENDING_DELETE"
   );
 
-  // =====================================================
-  // HANDLE INPUT CHANGE
-  // =====================================================
+  /*
+   * A visit can have only one health record.
+   *
+   * Therefore:
+   * 1. Ignore visits marked PENDING_DELETE.
+   * 2. Ignore visits that already have a health record.
+   */
+  const selectedBeneficiaryVisits =
+    allSelectedBeneficiaryVisits.filter(
+      (visit) =>
+        visit.syncStatus !== "PENDING_DELETE" &&
+        !healthRecords.some(
+          (record) =>
+            record.visitId === visit.id &&
+            record.syncStatus !== "PENDING_DELETE"
+        )
+    );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // When beneficiary changes,
-    // reset the previously selected visit.
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setError("");
+
+    /*
+     * If beneficiary changes, the previously selected
+     * visit may no longer belong to that beneficiary.
+     */
     if (name === "beneficiaryId") {
       setFormData((prev) => ({
         ...prev,
         beneficiaryId: value,
         visitId: "",
       }));
-
-      return;
     }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
-  // =====================================================
-  // SUBMIT HEALTH RECORD
-  // =====================================================
+  const validateForm = () => {
+    if (!formData.beneficiaryId) {
+      return "Please select a beneficiary.";
+    }
+
+    if (!formData.visitId) {
+      return "Please select a visit.";
+    }
+
+    /*
+     * Double protection:
+     *
+     * Even if the UI somehow contains an old visit,
+     * do not allow a health record to be created for
+     * a visit marked for deletion.
+     */
+    const selectedVisit = visits.find(
+      (visit) => visit.id === formData.visitId
+    );
+
+    if (!selectedVisit) {
+      return "Selected visit was not found.";
+    }
+
+    if (selectedVisit.syncStatus === "PENDING_DELETE") {
+      return "This visit has been deleted and cannot have a health record.";
+    }
+
+    /*
+     * Prevent duplicate health record creation.
+     */
+    const existingHealthRecord = healthRecords.some(
+      (record) =>
+        record.visitId === formData.visitId &&
+        record.syncStatus !== "PENDING_DELETE"
+    );
+
+    if (existingHealthRecord) {
+      return "A health record already exists for this visit.";
+    }
+
+    return "";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic frontend validation
-    if (!formData.beneficiaryId) {
-      showValidationToast("Please select a beneficiary.");
+    setError("");
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
-
-    if (!formData.visitId) {
-      showValidationToast("Please select a visit.");
-      return;
-    }
-
-    if (!formData.bloodPressure.trim()) {
-      showValidationToast("Please enter blood pressure.");
-      return;
-    }
-
-    if (formData.weight === "") {
-      showValidationToast("Please enter weight.");
-      return;
-    }
-
-    if (formData.temperature === "") {
-      showValidationToast("Please enter temperature.");
-      return;
-    }
-
-    if (formData.hemoglobin === "") {
-      showValidationToast("Please enter hemoglobin.");
-      return;
-    }
-
-    if (!formData.diagnosis.trim()) {
-      showValidationToast("Please enter diagnosis.");
-      return;
-    }
-
-    // =================================================
-    // CREATE REQUEST OBJECT
-    // =================================================
-
-    const healthRecord = {
-      beneficiaryId: formData.beneficiaryId,
-      visitId: formData.visitId,
-
-      recordedAt: toLocalDateTimeString(new Date()),
-
-      bloodPressure: formData.bloodPressure.trim(),
-
-      weight: Number(formData.weight),
-
-      temperature: Number(formData.temperature),
-
-      hemoglobin: Number(formData.hemoglobin),
-
-      diagnosis: formData.diagnosis.trim(),
-
-      prescription:
-        formData.prescription.trim() || null,
-
-      notes:
-        formData.notes.trim() || null,
-    };
-
-    // =================================================
-    // API CALL
-    // =================================================
 
     try {
+      /*
+       * Convert numeric fields from strings to numbers.
+       *
+       * Empty optional fields remain undefined.
+       */
+      
+const payload = {
+  beneficiaryId: formData.beneficiaryId,
+  visitId: formData.visitId,
+
+  // Backend requires recordedAt.
+  // Remove the trailing "Z" because the backend uses LocalDateTime.
+  recordedAt: new Date()
+    .toISOString()
+    .slice(0, 19),
+
+  bloodPressure:
+    formData.bloodPressure.trim() || null,
+
+  weight:
+    formData.weight === ""
+      ? null
+      : Number(formData.weight),
+
+  temperature:
+    formData.temperature === ""
+      ? null
+      : Number(formData.temperature),
+
+  hemoglobin:
+    formData.hemoglobin === ""
+      ? null
+      : Number(formData.hemoglobin),
+
+  diagnosis:
+    formData.diagnosis.trim() || null,
+
+  prescription:
+    formData.prescription.trim() || null,
+
+  notes:
+    formData.notes.trim() || null,
+};
+
+
+      /*
+       * Redux decides automatically:
+       *
+       * ONLINE  -> POST to Spring Boot
+       *
+       * OFFLINE -> save to IndexedDB
+       *            +
+       *            add CREATE operation to sync queue
+       */
       await dispatch(
-        createHealthRecord(healthRecord)
+        createHealthRecord(payload)
       ).unwrap();
 
-      showToast({
-        type: "success",
-        title: "Health Record Added",
-        message: "The health record has been saved successfully.",
-      });
-
       navigate("/app/health-records");
+    } catch (err) {
+      console.error(
+        "Failed to create health record:",
+        err
+      );
 
-    } catch (error) {
-
-      showToast({
-        type: "error",
-        title: "Health Record Not Saved",
-        message: getErrorMessage(error, "Failed to create health record."),
-      });
+      setError(
+        err?.message ||
+          err ||
+          "Failed to create health record."
+      );
     }
   };
 
-  // =====================================================
-  // UI
-  // =====================================================
-
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          type="button"
+          onClick={() =>
+            navigate("/app/health-records")
+          }
+          className="p-2 rounded-lg hover:bg-gray-100"
+        >
+          <ArrowLeft size={20} />
+        </button>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-        {/* ================================================= */}
-        {/* HEADER */}
-        {/* ================================================= */}
-
-        <div className="border-b border-slate-200 px-8 py-6">
-
-          <h3 className="text-2xl font-bold text-slate-900">
+        <div>
+          <h1 className="text-2xl font-semibold">
             Add Health Record
-          </h3>
+          </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Enter beneficiary health details.
+          <p className="text-gray-500">
+            Record health information for a completed
+            beneficiary visit.
           </p>
-
         </div>
-
-        {/* ================================================= */}
-        {/* BODY */}
-        {/* ================================================= */}
-
-        <div className="p-8">
-
-          <form onSubmit={handleSubmit}>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-              {/* ================================================= */}
-              {/* BENEFICIARY */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Beneficiary
-                </label>
-
-                <select
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  name="beneficiaryId"
-                  value={formData.beneficiaryId}
-                  onChange={handleChange}
-                  required
-                >
-
-                  <option value="">
-                    Select Beneficiary
-                  </option>
-
-                  {beneficiaries.map(
-                    (beneficiary) => (
-                      <option
-                        key={beneficiary.id}
-                        value={beneficiary.id}
-                      >
-                        {beneficiary.name}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ================================================= */}
-              {/* VISIT */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Visit
-                </label>
-
-                <select
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  name="visitId"
-                  value={formData.visitId}
-                  onChange={handleChange}
-                  required
-                  disabled={!formData.beneficiaryId}
-                >
-
-                  <option value="">
-                    {!formData.beneficiaryId
-                      ? "Select Beneficiary First"
-                      : "Select Visit"}
-                  </option>
-
-                  {selectedBeneficiaryVisits.map(
-                    (visit) => (
-                      <option
-                        key={visit.id}
-                        value={visit.id}
-                      >
-                        {visit.visitType}
-                        {visit.visitDate
-                          ? ` - ${visit.visitDate}`
-                          : ""}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-                {formData.beneficiaryId &&
-                  selectedBeneficiaryVisits.length === 0 && (
-                    <p className="mt-1 text-xs text-red-500">
-                      No visits found for this beneficiary.
-                    </p>
-                  )}
-
-              </div>
-
-              {/* ================================================= */}
-              {/* BLOOD PRESSURE */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Blood Pressure
-                </label>
-
-                <input
-                  type="text"
-                  name="bloodPressure"
-                  value={formData.bloodPressure}
-                  onChange={handleChange}
-                  placeholder="e.g. 120/80"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-              </div>
-
-              {/* ================================================= */}
-              {/* WEIGHT */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Weight
-                </label>
-
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="300"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  placeholder="e.g. 44"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Weight in kg
-                </p>
-
-              </div>
-
-              {/* ================================================= */}
-              {/* TEMPERATURE */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Temperature
-                </label>
-
-                <input
-                  type="number"
-                  step="0.1"
-                  min="30"
-                  max="45"
-                  name="temperature"
-                  value={formData.temperature}
-                  onChange={handleChange}
-                  placeholder="e.g. 36.5"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Temperature in °C
-                </p>
-
-              </div>
-
-              {/* ================================================= */}
-              {/* HEMOGLOBIN */}
-              {/* ================================================= */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Hemoglobin
-                </label>
-
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="30"
-                  name="hemoglobin"
-                  value={formData.hemoglobin}
-                  onChange={handleChange}
-                  placeholder="e.g. 12.5"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Hemoglobin in g/dL
-                </p>
-
-              </div>
-
-              {/* ================================================= */}
-              {/* DIAGNOSIS */}
-              {/* ================================================= */}
-
-              <div className="md:col-span-2">
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Diagnosis
-                </label>
-
-                <input
-                  type="text"
-                  name="diagnosis"
-                  value={formData.diagnosis}
-                  onChange={handleChange}
-                  placeholder="Enter diagnosis"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-              </div>
-
-              {/* ================================================= */}
-              {/* PRESCRIPTION */}
-              {/* ================================================= */}
-
-              <div className="md:col-span-2">
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Prescription
-                </label>
-
-                <textarea
-                  rows="3"
-                  name="prescription"
-                  value={formData.prescription}
-                  onChange={handleChange}
-                  placeholder="Enter prescription"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-              </div>
-
-              {/* ================================================= */}
-              {/* NOTES */}
-              {/* ================================================= */}
-
-              <div className="md:col-span-2">
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Notes
-                </label>
-
-                <textarea
-                  rows="3"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  placeholder="Additional notes"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-              </div>
-
-            </div>
-
-            {/* ================================================= */}
-            {/* BUTTONS */}
-            {/* ================================================= */}
-
-            <div className="mt-8 flex justify-end gap-3 border-t border-slate-200 pt-6">
-
-              <button
-                type="button"
-                onClick={() =>
-                  navigate("/app/health-records")
-                }
-                className="rounded-xl border border-slate-300 px-6 py-3 font-medium text-slate-700 transition hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={
-                  !formData.beneficiaryId ||
-                  !formData.visitId ||
-                  selectedBeneficiaryVisits.length === 0
-                }
-                className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                Save
-              </button>
-
-            </div>
-
-          </form>
-
-        </div>
-
       </div>
 
+      {/* Error */}
+      {(error || actionError) && (
+        <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+          {error || actionError}
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl border p-6 space-y-6"
+      >
+        {/* Beneficiary */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Beneficiary
+          </label>
+
+          <select
+            name="beneficiaryId"
+            value={formData.beneficiaryId}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-3 py-2"
+          >
+            <option value="">
+              Select Beneficiary
+            </option>
+
+            {beneficiaries.map((beneficiary) => (
+              <option
+                key={beneficiary.id}
+                value={beneficiary.id}
+              >
+                {beneficiary.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Visit */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Visit
+          </label>
+
+          <select
+            name="visitId"
+            value={formData.visitId}
+            onChange={handleChange}
+            disabled={!formData.beneficiaryId}
+            className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100"
+          >
+            <option value="">
+              {!formData.beneficiaryId
+                ? "Select beneficiary first"
+                : selectedBeneficiaryVisits.length === 0
+                ? "No eligible visits available"
+                : "Select Visit"}
+            </option>
+
+            {selectedBeneficiaryVisits.map(
+              (visit) => (
+                <option
+                  key={visit.id}
+                  value={visit.id}
+                >
+                  {visit.visitType || "Visit"}{" "}
+                  -{" "}
+                  {visit.scheduledDate ||
+                    visit.visitDate ||
+                    "No date"}
+                </option>
+              )
+            )}
+          </select>
+
+          {formData.beneficiaryId &&
+            selectedBeneficiaryVisits.length === 0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                No eligible visits are available for
+                this beneficiary. A visit may already
+                have a health record or may be pending
+                deletion.
+              </p>
+            )}
+        </div>
+
+        {/* Vital Information */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">
+            Vital Information
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Blood Pressure */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Blood Pressure
+              </label>
+
+              <input
+                type="text"
+                name="bloodPressure"
+                value={formData.bloodPressure}
+                onChange={handleChange}
+                placeholder="e.g. 120/80"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+
+            {/* Weight */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Weight (kg)
+              </label>
+
+              <input
+                type="number"
+                name="weight"
+                value={formData.weight}
+                onChange={handleChange}
+                min="1"
+                max="300"
+                step="0.1"
+                placeholder="e.g. 65"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+
+            {/* Temperature */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Temperature (°C)
+              </label>
+
+              <input
+                type="number"
+                name="temperature"
+                value={formData.temperature}
+                onChange={handleChange}
+                min="30"
+                max="45"
+                step="0.1"
+                placeholder="e.g. 36.8"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+
+            {/* Hemoglobin */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Hemoglobin (g/dL)
+              </label>
+
+              <input
+                type="number"
+                name="hemoglobin"
+                value={formData.hemoglobin}
+                onChange={handleChange}
+                min="1"
+                max="30"
+                step="0.1"
+                placeholder="e.g. 13.5"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Diagnosis */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Diagnosis
+          </label>
+
+          <textarea
+            name="diagnosis"
+            value={formData.diagnosis}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Enter diagnosis..."
+            className="w-full border rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* Prescription */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Prescription
+          </label>
+
+          <textarea
+            name="prescription"
+            value={formData.prescription}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Enter prescription..."
+            className="w-full border rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Notes
+          </label>
+
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={4}
+            placeholder="Additional notes..."
+            className="w-full border rounded-lg px-3 py-2"
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/app/health-records")
+            }
+            className="px-5 py-2 border rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={actionLoading}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            <Save size={18} />
+
+            {actionLoading
+              ? "Saving..."
+              : "Save Health Record"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

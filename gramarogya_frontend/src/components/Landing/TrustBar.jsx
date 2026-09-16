@@ -3,11 +3,11 @@ import { Landmark, ShieldCheck, Globe2, Activity, BadgeCheck } from "lucide-reac
 
 export default function TrustBar() {
   const items = [
-    { icon: Landmark, title: "Government Healthcare" },
-    { icon: ShieldCheck, title: "Secure & Reliable" },
-    { icon: Globe2, title: "Digital India" },
-    { icon: Activity, title: "Real-Time Monitoring" },
-    { icon: BadgeCheck, title: "Trusted by PHCs" },
+    { icon: Landmark, title: "Rural Healthcare" },
+    { icon: ShieldCheck, title: "Secure Access" },
+    { icon: Globe2, title: "Offline-First" },
+    { icon: Activity, title: "Field Data Management" },
+    { icon: BadgeCheck, title: "ASHA-Centered" },
   ];
 
   return (

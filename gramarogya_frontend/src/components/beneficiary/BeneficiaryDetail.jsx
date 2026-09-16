@@ -14,7 +14,16 @@ import {
   fetchBeneficiaryById,
   clearSelectedBeneficiary,
 } from "../../redux/slices/beneficiarySlice";
+
+import {
+  fetchVisitsByBeneficiary,
+  clearBeneficiaryVisits,
+} from "../../redux/slices/visitSlice";
+
 import { getErrorMessage } from "../../utils/apiError";
+
+// Offline network status
+import useNetworkStatus from "../../offline/useNetworkStatus";
 
 export default function BeneficiaryDetail() {
   const { id } = useParams();
@@ -22,17 +31,29 @@ export default function BeneficiaryDetail() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Check internet connection
+  const online = useNetworkStatus();
+
   const {
     selectedBeneficiary,
     loading,
     error,
   } = useSelector((state) => state.beneficiaries);
 
+  const {
+    beneficiaryVisits,
+  } = useSelector((state) => state.visits);
+
   useEffect(() => {
+    // Fetch beneficiary
     dispatch(fetchBeneficiaryById(id));
+
+    // Fetch previous visits
+    dispatch(fetchVisitsByBeneficiary(id));
 
     return () => {
       dispatch(clearSelectedBeneficiary());
+      dispatch(clearBeneficiaryVisits());
     };
   }, [dispatch, id]);
 
@@ -77,6 +98,19 @@ export default function BeneficiaryDetail() {
           </p>
         </div>
       </div>
+
+      {/* Offline Mode Indicator */}
+      {!online && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="font-semibold text-red-700">
+            Offline Mode
+          </p>
+
+          <p className="mt-1 text-sm text-red-600">
+            Showing beneficiary and visit information from local storage.
+          </p>
+        </div>
+      )}
 
       {/* Details Card */}
       <div className="rounded-xl border bg-white shadow-sm">
@@ -189,6 +223,171 @@ export default function BeneficiaryDetail() {
         </div>
       </div>
 
+      {/* =====================================================
+          PREVIOUS VISITS
+      ===================================================== */}
+
+      <div className="rounded-xl border bg-white shadow-sm">
+
+  {/* Header */}
+  <div className="border-b px-6 py-4">
+    <div className="flex items-center gap-2">
+      <Calendar size={20} className="text-blue-600" />
+
+      <h2 className="text-xl font-semibold text-slate-900">
+        Previous Visits
+      </h2>
+    </div>
+  </div>
+
+  {/* Content */}
+  <div className="p-6">
+
+    {beneficiaryVisits.length === 0 ? (
+      <p className="py-6 text-center text-slate-500">
+        No previous visits found.
+      </p>
+    ) : (
+      <div className="overflow-x-auto">
+
+        <table className="w-full text-left text-sm">
+
+          {/* Table Header */}
+          <thead>
+            <tr className="border-b bg-slate-50 text-slate-600">
+
+              <th className="px-4 py-3 font-medium">
+                Visit Date
+              </th>
+
+              <th className="px-4 py-3 font-medium">
+                Visit Type
+              </th>
+
+              <th className="px-4 py-3 font-medium">
+                Status
+              </th>
+
+              <th className="px-4 py-3 font-medium">
+                Next Visit
+              </th>
+
+              <th className="px-4 py-3 font-medium">
+                Notes
+              </th>
+
+              <th className="px-4 py-3 font-medium">
+                Sync Status
+              </th>
+
+            </tr>
+          </thead>
+
+          {/* Table Body */}
+          <tbody>
+
+            {beneficiaryVisits.map((visit) => (
+              <tr
+                key={visit.id}
+                className="border-b last:border-b-0 hover:bg-slate-50"
+              >
+
+                {/* Visit Date */}
+                <td className="px-4 py-4 text-slate-800">
+                  {visit.visitDate ||
+                    visit.scheduledDate ||
+                    "-"}
+                </td>
+
+                {/* Visit Type */}
+                <td className="px-4 py-4 text-slate-700">
+                  {visit.visitType || "-"}
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-4">
+                  <span
+                    className={`
+                      inline-flex
+                      rounded-full
+                      px-3
+                      py-1
+                      text-xs
+                      font-medium
+                      ${
+                        visit.status === "Completed"
+                          ? "bg-green-100 text-green-700"
+                          : visit.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : visit.status === "Missed"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-slate-100 text-slate-600"
+                      }
+                    `}
+                  >
+                    {visit.status || "-"}
+                  </span>
+                </td>
+
+                {/* Next Visit */}
+                <td className="px-4 py-4 text-slate-700">
+                  {visit.nextVisitDate || "-"}
+                </td>
+
+                {/* Notes */}
+                <td className="max-w-xs px-4 py-4 text-slate-600">
+                  {visit.notes || "-"}
+                </td>
+
+                {/* Sync Status */}
+                <td className="px-4 py-4">
+
+                  {visit.syncStatus &&
+                  visit.syncStatus !== "SYNCED" ? (
+                    <span
+                      className={`
+                        inline-flex
+                        rounded-full
+                        px-3
+                        py-1
+                        text-xs
+                        font-medium
+                        ${
+                          visit.syncStatus === "FAILED"
+                            ? "bg-red-100 text-red-700"
+                            : visit.syncStatus === "SYNCING"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }
+                      `}
+                    >
+                      {visit.syncStatus === "PENDING"
+                        ? "Pending Sync"
+                        : visit.syncStatus === "SYNCING"
+                        ? "Syncing..."
+                        : "Sync Failed"}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-green-600">
+                      Synced
+                    </span>
+                  )}
+
+                </td>
+
+              </tr>
+            ))}
+
+          </tbody>
+
+        </table>
+
+      </div>
+    )}
+
+  </div>
+</div>
+
       {/* Back Button */}
       <button
         onClick={() => navigate("/app/beneficiaries")}
@@ -236,3 +435,4 @@ function Info({ icon, label, value }) {
     </div>
   );
 }
+

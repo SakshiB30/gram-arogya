@@ -8,19 +8,21 @@ import {
   Plus,
 } from "lucide-react";
 
+
 import {
   fetchBeneficiaries,
   deleteBeneficiary,
 } from "../redux/slices/beneficiarySlice";
 import { getErrorMessage } from "../utils/apiError";
 import { useToast } from "../components/common/toastContext";
-
+import useNetworkStatus from "../offline/useNetworkStatus";
 
 const BeneficiaryPage = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const online = useNetworkStatus();
 
   const {
   beneficiaries,
@@ -189,7 +191,17 @@ const children = beneficiaries.filter((b) =>
       </div>
 
 
+      {!online && (
+  <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+    <p className="font-semibold text-red-700">
+      Offline Mode
+    </p>
 
+    <p className="mt-1 text-sm text-red-600">
+      Showing your assigned beneficiaries from local storage.
+    </p>
+  </div>
+  )}
 
 
 

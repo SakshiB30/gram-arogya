@@ -164,7 +164,7 @@ const HealthRecordList = () => {
 
       <HealthRecordTable
 
-        records={filteredRecords}
+        healthRecords={filteredRecords}
 
         loading={loading}
 

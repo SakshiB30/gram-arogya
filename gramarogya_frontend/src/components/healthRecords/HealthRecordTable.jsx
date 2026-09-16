@@ -1,182 +1,305 @@
-import { Eye, Edit, Trash2 } from "lucide-react";
+import React from "react";
+import {
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 const HealthRecordTable = ({
-  records,
-  loading,
+  healthRecords = [],
   onView,
   onEdit,
   onDelete,
 }) => {
+  const getSyncStatusBadge = (status) => {
+    switch (status) {
+      case "PENDING":
+        return (
+          <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
+            Pending Sync
+          </span>
+        );
 
-  if (loading) {
+      case "SYNCING":
+        return (
+          <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+            Syncing...
+          </span>
+        );
+
+      case "FAILED":
+        return (
+          <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+            Sync Failed
+          </span>
+        );
+
+      case "SYNCED":
+        return (
+          <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+            Synced
+          </span>
+        );
+
+      case "PENDING_DELETE":
+        return (
+          <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700">
+            Pending Delete
+          </span>
+        );
+
+      default:
+        return (
+          <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+            Synced
+          </span>
+        );
+    }
+  };
+
+  const getBeneficiaryName = (record) => {
     return (
-      <div className="flex justify-center items-center mt-10">
-        <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      record.beneficiaryName ||
+      record.beneficiary?.name ||
+      "Unknown Beneficiary"
+    );
+  };
+
+  const getTemperature = (temperature) => {
+    if (
+      temperature === null ||
+      temperature === undefined ||
+      temperature === ""
+    ) {
+      return "-";
+    }
+
+    return `${temperature} °C`;
+  };
+
+  const getValue = (value) => {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "-";
+    }
+
+    return value;
+  };
+
+  /*
+   * Do not show locally deleted health records.
+   *
+   * A PENDING_DELETE record is still kept in IndexedDB
+   * because the sync engine needs it to tell the backend
+   * to delete the server record.
+   *
+   * Therefore:
+   *
+   * IndexedDB -> keep it
+   * UI         -> hide it
+   */
+  const visibleRecords = healthRecords.filter(
+    (record) =>
+      record.syncStatus !== "PENDING_DELETE"
+  );
+
+  if (visibleRecords.length === 0) {
+    return (
+      <div className="rounded-xl border bg-white p-8 text-center">
+        <p className="text-gray-500">
+          No health records found.
+        </p>
       </div>
     );
   }
-
-
-  if (!records || records.length === 0) {
-    return (
-      <div className="text-center mt-10">
-        <h5 className="text-gray-500 text-lg">
-          No Health Records Found
-        </h5>
-      </div>
-    );
-  }
-
 
   return (
-    <div className="overflow-x-auto bg-white rounded-xl shadow">
-
-      <table className="w-full text-sm text-left">
-
-        <thead className="bg-gray-900 text-white">
-
+    <div className="overflow-x-auto rounded-xl border bg-white">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3">#</th>
-            <th className="px-4 py-3">Beneficiary</th>
-            <th className="px-4 py-3">BP</th>
-            <th className="px-4 py-3">Weight</th>
-            <th className="px-4 py-3">Temperature</th>
-            <th className="px-4 py-3">Hemoglobin</th>
-            <th className="px-4 py-3">Diagnosis</th>
-            <th className="px-4 py-3">Prescription</th>
-            <th className="px-4 py-3">Actions</th>
-          </tr>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              #
+            </th>
 
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Beneficiary
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              BP
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Weight
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Temperature
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Hemoglobin
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Diagnosis
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Prescription
+            </th>
+
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Sync Status
+            </th>
+
+            <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Actions
+            </th>
+          </tr>
         </thead>
 
+        <tbody className="divide-y divide-gray-200 bg-white">
+          {visibleRecords.map(
+            (record, index) => (
+              <tr
+                key={record.id}
+                className="hover:bg-gray-50"
+              >
+                {/* Number */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                  {index + 1}
+                </td>
 
-        <tbody>
+                {/* Beneficiary */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900">
+                  {getBeneficiaryName(record)}
+                </td>
 
-          {records.map((record,index)=>(
+                {/* Blood Pressure */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                  {getValue(
+                    record.bloodPressure
+                  )}
+                </td>
 
-            <tr
-              key={record.id}
-              className="border-b hover:bg-gray-50"
-            >
+                {/* Weight */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                  {record.weight !== null &&
+                  record.weight !== undefined &&
+                  record.weight !== ""
+                    ? `${record.weight} kg`
+                    : "-"}
+                </td>
 
-              <td className="px-4 py-3">
-                {index+1}
-              </td>
+                {/* Temperature */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                  {getTemperature(
+                    record.temperature
+                  )}
+                </td>
 
+                {/* Hemoglobin */}
+                <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                  {record.hemoglobin !== null &&
+                  record.hemoglobin !== undefined &&
+                  record.hemoglobin !== ""
+                    ? `${record.hemoglobin} g/dL`
+                    : "-"}
+                </td>
 
-              <td className="px-4 py-3 font-medium">
-                {record.beneficiaryName || "-"}
-              </td>
-
-
-              <td className="px-4 py-3">
-                {record.bloodPressure}
-              </td>
-
-
-              <td className="px-4 py-3">
-                {record.weight} kg
-              </td>
-
-
-              <td className="px-4 py-3">
-                {record.temperature} °F
-              </td>
-
-
-              <td className="px-4 py-3">
-                {record.hemoglobin}
-              </td>
-
-
-              <td className="px-4 py-3">
-
-                <span className="
-                  bg-green-100 
-                  text-green-700 
-                  px-3 
-                  py-1 
-                  rounded-full 
-                  text-xs 
-                  font-medium
-                ">
-                  {record.diagnosis}
-                </span>
-
-              </td>
-
-
-              <td className="px-4 py-3">
-                {record.prescription || "-"}
-              </td>
-
-
-              <td className="px-4 py-3">
-
-                <div className="flex gap-2">
-
-
-                  <button
-                    onClick={()=>onView(record)}
-                    className="
-                    p-2 
-                    rounded-lg
-                    bg-blue-100
-                    text-blue-600
-                    hover:bg-blue-200
-                    "
+                {/* Diagnosis */}
+                <td className="max-w-xs px-4 py-4 text-sm text-gray-700">
+                  <div
+                    className="truncate"
+                    title={
+                      record.diagnosis || "-"
+                    }
                   >
-                    <Eye size={16}/>
-                  </button>
+                    {getValue(
+                      record.diagnosis
+                    )}
+                  </div>
+                </td>
 
-
-
-                  <button
-                    onClick={()=>onEdit(record)}
-                    className="
-                    p-2 
-                    rounded-lg
-                    bg-yellow-100
-                    text-yellow-600
-                    hover:bg-yellow-200
-                    "
+                {/* Prescription */}
+                <td className="max-w-xs px-4 py-4 text-sm text-gray-700">
+                  <div
+                    className="truncate"
+                    title={
+                      record.prescription || "-"
+                    }
                   >
-                    <Edit size={16}/>
-                  </button>
+                    {getValue(
+                      record.prescription
+                    )}
+                  </div>
+                </td>
 
+                {/* Sync Status */}
+                <td className="whitespace-nowrap px-4 py-4">
+                  {getSyncStatusBadge(
+                    record.syncStatus
+                  )}
+                </td>
 
+                {/* Actions */}
+                <td className="whitespace-nowrap px-4 py-4">
+                  <div className="flex items-center justify-center gap-2">
+                    {/* View */}
+                    {onView && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onView(record)
+                        }
+                        className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        title="View"
+                      >
+                        <Eye size={18} />
+                      </button>
+                    )}
 
-                  <button
-                    onClick={()=>onDelete(record)}
-                    className="
-                    p-2 
-                    rounded-lg
-                    bg-red-100
-                    text-red-600
-                    hover:bg-red-200
-                    "
-                  >
-                    <Trash2 size={16}/>
-                  </button>
+                    {/* Edit */}
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onEdit(record)
+                        }
+                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                        title="Edit"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                    )}
 
-
-                </div>
-
-              </td>
-
-
-            </tr>
-
-          ))}
-
+                    {/* Delete */}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onDelete(record)
+                        }
+                        className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            )
+          )}
         </tbody>
-
-
       </table>
-
     </div>
   );
 };
-
 
 export default HealthRecordTable;
