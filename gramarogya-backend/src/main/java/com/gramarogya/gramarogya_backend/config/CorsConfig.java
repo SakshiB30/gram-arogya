@@ -16,24 +16,51 @@ public class CorsConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
+        /*
+         * Frontend development server
+         */
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173",
+                        "http://localhost:4173"
+                )
         );
 
+        /*
+         * HTTP methods allowed from the frontend.
+         */
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "PATCH","DELETE", "OPTIONS")
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
         );
 
+        /*
+         * Allow request headers including
+         * Authorization and Content-Type.
+         */
         configuration.setAllowedHeaders(
                 List.of("*")
         );
 
+        /*
+         * Required because the application
+         * uses authentication credentials/JWT.
+         */
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
 
         return source;
     }

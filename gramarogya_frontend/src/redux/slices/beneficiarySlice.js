@@ -39,35 +39,50 @@ export const fetchBeneficiaries = createAsyncThunk(
 
       if (isOnline()) {
         /*
-         * Fetch ASHA's assigned beneficiaries
-         * from backend.
-         *
-         * Backend already applies role-based
-         * access control.
+         * Fetch beneficiaries from backend.
          */
         const beneficiaries =
           await beneficiaryService.getAllBeneficiaries();
 
         /*
-         * Save a local copy for offline use.
+         * ASHA offline cache.
+         *
+         * Store the logged-in ASHA ID explicitly so
+         * offline queries can enforce ownership.
+         *
+         * Other roles are not added to the ASHA
+         * offline cache.
          */
-        await saveBeneficiariesOffline(
-          beneficiaries
-        );
+        if (user.role === "ASHA") {
+          const offlineBeneficiaries =
+            beneficiaries.map((beneficiary) => ({
+              ...beneficiary,
+              ashaId:
+                beneficiary.ashaId || user.id,
+            }));
+
+          await saveBeneficiariesOffline(
+            offlineBeneficiaries
+          );
+        }
 
         return beneficiaries;
       }
 
       /*
        * Offline mode:
-       * Get beneficiaries from IndexedDB.
+       * Only ASHA uses the offline beneficiary cache.
        */
-      const offlineBeneficiaries =
-        await getOfflineBeneficiaries(
-          user.id
-        );
+      if (user.role === "ASHA") {
+        const offlineBeneficiaries =
+          await getOfflineBeneficiaries(
+            user.id
+          );
 
-      return offlineBeneficiaries;
+        return offlineBeneficiaries;
+      }
+
+      return [];
     } catch (error) {
       return thunkAPI.rejectWithValue(
         normalizeApiError(
@@ -93,6 +108,16 @@ export const fetchBeneficiaryById =
     "beneficiaries/fetchById",
     async (id, thunkAPI) => {
       try {
+        const user = JSON.parse(
+          localStorage.getItem("user")
+        );
+
+        if (!user?.id) {
+          throw new Error(
+            "Logged-in user not found."
+          );
+        }
+
         if (!id) {
           throw new Error(
             "Beneficiary ID is required."
@@ -108,28 +133,46 @@ export const fetchBeneficiaryById =
               .getBeneficiaryById(id);
 
           /*
-           * Keep a local copy.
+           * Cache beneficiary for ASHA offline use.
            */
-          await saveBeneficiariesOffline([
-            beneficiary,
-          ]);
+          if (user.role === "ASHA") {
+            await saveBeneficiariesOffline([
+              {
+                ...beneficiary,
+                ashaId:
+                  beneficiary.ashaId || user.id,
+              },
+            ]);
+          }
 
           return beneficiary;
         }
 
         /*
          * Offline mode.
+         *
+         * Ownership is checked using the
+         * logged-in ASHA ID.
          */
-        const beneficiary =
-          await getOfflineBeneficiaryById(id);
+        if (user.role === "ASHA") {
+          const beneficiary =
+            await getOfflineBeneficiaryById(
+              id,
+              user.id
+            );
 
-        if (!beneficiary) {
-          throw new Error(
-            "Beneficiary not found offline."
-          );
+          if (!beneficiary) {
+            throw new Error(
+              "Beneficiary not found offline."
+            );
+          }
+
+          return beneficiary;
         }
 
-        return beneficiary;
+        throw new Error(
+          "Beneficiary details are not available offline."
+        );
       } catch (error) {
         return thunkAPI.rejectWithValue(
           normalizeApiError(
