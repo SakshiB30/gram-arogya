@@ -3,11 +3,23 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 
 import { useSelector } from "react-redux";
 
-import MainLayout from "../layouts/MainLayout";
+// Layouts
+import NetworkAwareLayout from "../layouts/NetworkAwareLayout";
+import OfflineBeneficiaries from "../pages/offline/OfflineBeneficiaries";
+import OfflineBeneficiaryDetail from "../pages/offline/OfflineBeneficiaryDetail";
+import OfflineVisits from "../pages/offline/OfflineVisits";
+import OfflineVisitDetail from "../pages/offline/OfflineVisitDetail";
+import CreateOfflineVisit from "../pages/offline/CreateOfflineVisit";
+import OfflineHealthRecords from "../pages/offline/OfflineHealthRecords";
+import CreateOfflineHealthRecord from "../pages/offline/CreateOfflineHealthRecord";
+import OfflineHealthRecordDetail from "../pages/offline/OfflineHealthRecordDetail";
+import PendingSync from "../pages/offline/PendingSync";
+
 
 // Auth
 import Login from "../pages/Login";
@@ -58,17 +70,26 @@ import RoleRoute from "./RoleRoute";
 // Landing Page
 import LandingPage from "../pages/LandingPage";
 
+// Medicine Stock History
 import MedicineStockHistory from "../components/inventory/MedicineStockHistory";
 
+// Admin
 import ManageUsers from "../components/dashboard/admin/ManageUsers";
 
+
 const AppRoutes = () => {
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Root - Landing Page for unauthenticated users */}
+
+        {/* =====================================================
+            ROOT
+        ===================================================== */}
+
         <Route
           path="/"
           element={
@@ -79,23 +100,39 @@ const AppRoutes = () => {
             )
           }
         />
-{/* Login */}
+
+
+        {/* =====================================================
+            AUTH
+        ===================================================== */}
+
+        {/* Login */}
         <Route
           path="/login"
           element={
-            isAuthenticated
-              ? <Navigate to="/app/dashboard" replace />
-              : <Login />
+            isAuthenticated ? (
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
+            ) : (
+              <Login />
+            )
           }
         />
 
-         {/* Register Selection */}
+        {/* Register */}
         <Route
           path="/register"
           element={
-            isAuthenticated
-              ? <Navigate to="/app/dashboard" replace />
-              : <Register />
+            isAuthenticated ? (
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
+            ) : (
+              <Register />
+            )
           }
         />
 
@@ -103,9 +140,14 @@ const AppRoutes = () => {
         <Route
           path="/register/anm"
           element={
-            isAuthenticated
-              ? <Navigate to="/app/dashboard" replace />
-              : <RegisterAnm />
+            isAuthenticated ? (
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
+            ) : (
+              <RegisterAnm />
+            )
           }
         />
 
@@ -113,63 +155,120 @@ const AppRoutes = () => {
         <Route
           path="/register/asha"
           element={
-            isAuthenticated
-              ? <Navigate to="/app/dashboard" replace />
-              : <RegisterAsha />
+            isAuthenticated ? (
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
+            ) : (
+              <RegisterAsha />
+            )
           }
         />
 
-        
-
         {/* Unauthorized */}
-        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route
+          path="/unauthorized"
+          element={<Unauthorized />}
+        />
 
-        {/* Protected App Routes */}
+
+        {/* =====================================================
+            PROTECTED APPLICATION
+        ===================================================== */}
+
         <Route
           path="/app"
           element={
             <ProtectedRoute>
-              <MainLayout />
+              <NetworkAwareLayout />
             </ProtectedRoute>
           }
         >
-          {/* Default */}
-          <Route index element={<Navigate to="dashboard" replace />} />
+
+          {/* ===================================================
+              DEFAULT
+          =================================================== */}
 
           <Route
-  path="manage-users"
-  element={
-    <RoleRoute allowedRoles={["ADMIN"]}>
-      <ManageUsers />
-    </RoleRoute>
-  }
-/>
+            index
+            element={
+              <Navigate
+                to="dashboard"
+                replace
+              />
+            }
+          />
 
-          {/* Dashboard */}
+
+          {/* ===================================================
+              ADMIN - MANAGE USERS
+          =================================================== */}
+
+          <Route
+            path="manage-users"
+            element={
+              <RoleRoute allowedRoles={["ADMIN"]}>
+                <ManageUsers />
+              </RoleRoute>
+            }
+          />
+
+
+          {/* ===================================================
+              DASHBOARD
+          =================================================== */}
+
           <Route
             path="dashboard"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <Dashboard />
               </RoleRoute>
             }
           />
 
-          {/* Profile */}
+
+          {/* ===================================================
+              PROFILE
+          =================================================== */}
+
           <Route
             path="profile"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <Profile />
               </RoleRoute>
             }
           />
 
-          {/* ================= BENEFICIARIES ================= */}
+
+          {/* ===================================================
+              BENEFICIARIES
+          =================================================== */}
+
           <Route
             path="beneficiaries"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <BeneficiaryPage />
               </RoleRoute>
             }
@@ -178,7 +277,13 @@ const AppRoutes = () => {
           <Route
             path="beneficiaries/add"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <AddBeneficiary />
               </RoleRoute>
             }
@@ -187,7 +292,13 @@ const AppRoutes = () => {
           <Route
             path="beneficiaries/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <BeneficiaryDetail />
               </RoleRoute>
             }
@@ -196,17 +307,33 @@ const AppRoutes = () => {
           <Route
             path="beneficiaries/edit/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <EditBeneficiary />
               </RoleRoute>
             }
           />
 
-          {/* ================= VISITS ================= */}
+
+          {/* ===================================================
+              VISITS
+          =================================================== */}
+
           <Route
             path="visit"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <VisitPage />
               </RoleRoute>
             }
@@ -215,7 +342,13 @@ const AppRoutes = () => {
           <Route
             path="visit/add"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <AddVisit />
               </RoleRoute>
             }
@@ -224,7 +357,13 @@ const AppRoutes = () => {
           <Route
             path="visit/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <VisitDetail />
               </RoleRoute>
             }
@@ -233,13 +372,23 @@ const AppRoutes = () => {
           <Route
             path="visit/edit/:id"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <EditVisit />
               </RoleRoute>
             }
           />
 
-          {/* ================= INVENTORY ================= */}
+
+          {/* ===================================================
+              INVENTORY - ADMIN ONLY
+          =================================================== */}
+
           <Route
             path="inventory"
             element={
@@ -295,29 +444,55 @@ const AppRoutes = () => {
           />
 
 
-          {/* ================= REPORTS ================= */}
+          {/* ===================================================
+              REPORTS
+          =================================================== */}
+
           <Route
             path="reports"
             element={
-              <RoleRoute allowedRoles={["ASHA", "ADMIN", "ANM"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ASHA",
+                  "ADMIN",
+                  "ANM",
+                ]}
+              >
                 <ReportsPage />
               </RoleRoute>
             }
           />
 
-          {/* ================= HEALTH RECORDS ================= */}
+
+          {/* ===================================================
+              HEALTH RECORDS
+          =================================================== */}
+
           <Route
             path="health-records"
             element={
-              <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+              <RoleRoute
+                allowedRoles={[
+                  "ADMIN",
+                  "ANM",
+                  "ASHA",
+                ]}
+              >
                 <HealthRecordsPage />
               </RoleRoute>
             }
           >
+
             <Route
               index
               element={
-                <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <RoleRoute
+                  allowedRoles={[
+                    "ADMIN",
+                    "ANM",
+                    "ASHA",
+                  ]}
+                >
                   <HealthRecordList />
                 </RoleRoute>
               }
@@ -326,7 +501,12 @@ const AppRoutes = () => {
             <Route
               path="add"
               element={
-                <RoleRoute allowedRoles={["ANM", "ASHA"]}>
+                <RoleRoute
+                  allowedRoles={[
+                    "ANM",
+                    "ASHA",
+                  ]}
+                >
                   <AddHealthRecord />
                 </RoleRoute>
               }
@@ -335,7 +515,12 @@ const AppRoutes = () => {
             <Route
               path="edit/:id"
               element={
-                <RoleRoute allowedRoles={["ANM", "ASHA"]}>
+                <RoleRoute
+                  allowedRoles={[
+                    "ANM",
+                    "ASHA",
+                  ]}
+                >
                   <EditHealthRecord />
                 </RoleRoute>
               }
@@ -344,28 +529,144 @@ const AppRoutes = () => {
             <Route
               path=":id"
               element={
-                <RoleRoute allowedRoles={["ADMIN", "ANM", "ASHA"]}>
+                <RoleRoute
+                  allowedRoles={[
+                    "ADMIN",
+                    "ANM",
+                    "ASHA",
+                  ]}
+                >
                   <HealthRecordDetail />
                 </RoleRoute>
               }
             />
-           
+
           </Route>
 
-           
+
+          {/* ===================================================
+              ASHA OFFLINE WORKSPACE
+          =================================================== */}
+
+          <Route
+  path="offline"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <Outlet />
+    </RoleRoute>
+  }
+>
+  <Route
+    index
+    element={<Navigate to="beneficiaries" replace />}
+  />
+
+  <Route
+  path="beneficiaries"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <OfflineBeneficiaries />
+    </RoleRoute>
+  }
+/>
+
+<Route
+    path="beneficiaries/:id"
+    element={
+      <RoleRoute allowedRoles={["ASHA"]}>
+        <OfflineBeneficiaryDetail />
+      </RoleRoute>
+    }
+  />
+
+  <Route
+  path="visits"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <OfflineVisits />
+    </RoleRoute>
+  }
+/>
+
+<Route
+  path="visits/:id"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <OfflineVisitDetail />
+    </RoleRoute>
+  }
+/>
+    <Route
+  path="visits/create"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <CreateOfflineVisit />
+    </RoleRoute>
+  }
+/>
+  
+
+  <Route
+    path="health-records"
+    element={
+      <RoleRoute allowedRoles={["ASHA"]}>
+        <OfflineHealthRecords />
+      </RoleRoute>
+    }
+  />
+
+  <Route
+    path="health-records/create"
+    element={
+      <RoleRoute allowedRoles={["ASHA"]}>
+        <CreateOfflineHealthRecord />
+      </RoleRoute>
+    }
+  />
+    <Route
+  path="health-records/:id"
+  element={
+    <RoleRoute allowedRoles={["ASHA"]}>
+      <OfflineHealthRecordDetail />
+    </RoleRoute>
+  }
+/>
+
+
+  <Route
+    path="pending-sync"
+    element={
+      <RoleRoute allowedRoles={["ASHA"]}>
+         <PendingSync />
+      </RoleRoute>
+    }
+  />
+</Route>
+
         </Route>
 
-        {/* Catch All - Redirect to appropriate page */}
+
+        {/* =====================================================
+            CATCH ALL
+        ===================================================== */}
+
         <Route
           path="*"
           element={
             isAuthenticated ? (
-              <Navigate to="/app/dashboard" replace />
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate
+                to="/"
+                replace
+              />
             )
           }
         />
+
       </Routes>
     </BrowserRouter>
   );

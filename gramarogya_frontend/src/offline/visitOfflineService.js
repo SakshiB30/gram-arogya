@@ -35,15 +35,16 @@ export const saveVisitsOffline = async (
     return;
   }
 
-  const pendingVisits = await db.visits
-  .filter(
-    (visit) =>
-      visit.syncStatus === "PENDING" ||
-      visit.syncStatus === "SYNCING" ||
-      visit.syncStatus === "FAILED" ||
-      visit.syncStatus === "PENDING_DELETE"
-  )
-  .toArray();
+  const pendingVisits =
+    await db.visits
+      .filter(
+        (visit) =>
+          visit.syncStatus === "PENDING" ||
+          visit.syncStatus === "SYNCING" ||
+          visit.syncStatus === "FAILED" ||
+          visit.syncStatus === "PENDING_DELETE"
+      )
+      .toArray();
 
   await db.transaction(
     "rw",
@@ -54,7 +55,9 @@ export const saveVisitsOffline = async (
       await db.visits.bulkPut(visits);
 
       if (pendingVisits.length > 0) {
-        await db.visits.bulkPut(pendingVisits);
+        await db.visits.bulkPut(
+          pendingVisits
+        );
       }
     }
   );
@@ -101,41 +104,72 @@ export const upsertVisitsOffline = async (
 };
 
 /**
- * Get all locally stored visits.
+ * Get all locally stored visits
+ * belonging to the logged-in ASHA.
  */
-export const getOfflineVisits = async () => {
-  return await db.visits.toArray();
-};
-
-/**
- * Get visits for a beneficiary.
- */
-export const getOfflineVisitsByBeneficiary =
-  async (beneficiaryId) => {
-    if (!beneficiaryId) {
-      return [];
-    }
-
-    return await db.visits
-      .where("beneficiaryId")
-      .equals(beneficiaryId)
-      .toArray();
-  };
-
-/**
- * Get today's visits.
- */
-export const getOfflineTodayVisits = async (
-  today
+export const getOfflineVisits = async (
+  ashaId
 ) => {
-  if (!today) {
+  if (!ashaId) {
     return [];
   }
 
-  return await db.visits
-    .where("scheduledDate")
-    .equals(today)
-    .toArray();
+  const visits =
+    await db.visits.toArray();
+
+  return visits.filter(
+    (visit) =>
+      visit.ashaId === ashaId
+  );
+};
+
+/**
+ * Get visits for a beneficiary
+ * belonging to the logged-in ASHA.
+ */
+export const getOfflineVisitsByBeneficiary =
+  async (
+    beneficiaryId,
+    ashaId
+  ) => {
+    if (!beneficiaryId || !ashaId) {
+      return [];
+    }
+
+    const visits =
+      await db.visits
+        .where("beneficiaryId")
+        .equals(beneficiaryId)
+        .toArray();
+
+    return visits.filter(
+      (visit) =>
+        visit.ashaId === ashaId
+    );
+  };
+
+/**
+ * Get today's visits
+ * belonging to the logged-in ASHA.
+ */
+export const getOfflineTodayVisits = async (
+  today,
+  ashaId
+) => {
+  if (!today || !ashaId) {
+    return [];
+  }
+
+  const visits =
+    await db.visits
+      .where("scheduledDate")
+      .equals(today)
+      .toArray();
+
+  return visits.filter(
+    (visit) =>
+      visit.ashaId === ashaId
+  );
 };
 
 /**
@@ -185,7 +219,8 @@ export const updateOfflineVisit = async (
     syncStatus: "PENDING",
     isOffline: true,
 
-    updatedAt: new Date().toISOString(),
+    updatedAt:
+      new Date().toISOString(),
   };
 
   await db.visits.put(
@@ -201,32 +236,38 @@ export const updateOfflineVisit = async (
  * The visit is kept in IndexedDB until
  * the backend confirms the DELETE operation.
  */
-export const deleteOfflineVisit = async (id) => {
-  if (!id) {
-    throw new Error(
-      "Visit ID is required."
+export const deleteOfflineVisit =
+  async (id) => {
+    if (!id) {
+      throw new Error(
+        "Visit ID is required."
+      );
+    }
+
+    const existingVisit =
+      await db.visits.get(id);
+
+    if (!existingVisit) {
+      throw new Error(
+        "Visit not found offline."
+      );
+    }
+
+    const deletedVisit = {
+      ...existingVisit,
+
+      syncStatus:
+        "PENDING_DELETE",
+
+      isOffline: true,
+
+      updatedAt:
+        new Date().toISOString(),
+    };
+
+    await db.visits.put(
+      deletedVisit
     );
-  }
 
-  const existingVisit =
-    await db.visits.get(id);
-
-  if (!existingVisit) {
-    throw new Error(
-      "Visit not found offline."
-    );
-  }
-
-  const deletedVisit = {
-    ...existingVisit,
-
-    syncStatus: "PENDING_DELETE",
-    isOffline: true,
-
-    updatedAt: new Date().toISOString(),
+    return deletedVisit;
   };
-
-  await db.visits.put(deletedVisit);
-
-  return deletedVisit;
-};

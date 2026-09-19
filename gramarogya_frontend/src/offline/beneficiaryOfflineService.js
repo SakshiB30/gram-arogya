@@ -73,9 +73,6 @@ export const getOfflineBeneficiaries = async (
 
 /**
  * Get one beneficiary by ID.
- *
- * The ASHA can use this when opening
- * a beneficiary detail page while offline.
  */
 export const getOfflineBeneficiaryById = async (
   id
@@ -89,9 +86,6 @@ export const getOfflineBeneficiaryById = async (
 
 /**
  * Clear all locally stored beneficiaries.
- *
- * This should normally only be used when
- * intentionally clearing the offline cache.
  */
 export const clearOfflineBeneficiaries = async () => {
   await db.beneficiaries.clear();

@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,15 +47,59 @@ public class ReportServiceImpl implements ReportService {
     private User getCurrentUser(Authentication authentication) {
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AuthenticationRequiredException("Please sign in to continue.");
+            throw new AuthenticationRequiredException(
+                    "Please sign in to continue."
+            );
         }
 
         String email = authentication.getName();
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found.")
+                        new ResourceNotFoundException(
+                                "User not found."
+                        )
                 );
+    }
+
+
+    // =====================================================
+    // GET ACCESSIBLE ASHA IDS
+    // =====================================================
+
+    /*
+     * ADMIN:
+     *     Returns null because ADMIN can access everything.
+     *
+     * ANM:
+     *     Returns IDs of ASHAs supervised by logged-in ANM.
+     *
+     * ASHA:
+     *     Returns only logged-in ASHA ID.
+     */
+    private List<String> getAccessibleAshaIds(User currentUser) {
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return null;
+        }
+
+        if (currentUser.getRole() == Role.ASHA) {
+            return List.of(currentUser.getId());
+        }
+
+        if (currentUser.getRole() == Role.ANM) {
+
+            return userRepository
+                    .findByRoleAndSupervisorId(
+                            Role.ASHA,
+                            currentUser.getId()
+                    )
+                    .stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+        }
+
+        return List.of();
     }
 
 
@@ -90,44 +135,64 @@ public class ReportServiceImpl implements ReportService {
         long visits;
         long healthRecords;
 
-        /*
-         * ADMIN and ANM can see all data.
-         * ASHA sees only their own assigned data.
-         */
 
-        if (currentUser.getRole() == Role.ASHA) {
+        // =================================================
+        // ADMIN
+        // =================================================
 
-            beneficiaries =
-                    beneficiaryRepository.countByUserId(
-                            currentUser.getId()
-                    );
-
-            visits =
-                    visitRepository.countByUserId(
-                            currentUser.getId()
-                    );
-
-            List<String> beneficiaryIds =
-                    beneficiaryRepository
-                            .findByUserId(currentUser.getId())
-                            .stream()
-                            .map(Beneficiary::getId)
-                            .collect(Collectors.toList());
-
-            healthRecords = beneficiaryIds.isEmpty()
-                    ? 0
-                    : healthRecordRepository
-                    .findByBeneficiaryIdIn(
-                            beneficiaryIds,
-                            Pageable.unpaged()
-                    )
-                    .getTotalElements();
-
-        } else {
+        if (currentUser.getRole() == Role.ADMIN) {
 
             beneficiaries = beneficiaryRepository.count();
+
             visits = visitRepository.count();
+
             healthRecords = healthRecordRepository.count();
+
+        }
+
+        // =================================================
+        // ASHA / ANM
+        // =================================================
+
+        else {
+
+            List<String> ashaIds =
+                    getAccessibleAshaIds(currentUser);
+
+            if (ashaIds.isEmpty()) {
+
+                beneficiaries = 0L;
+                visits = 0L;
+                healthRecords = 0L;
+
+            } else {
+
+                List<Beneficiary> accessibleBeneficiaries =
+                        beneficiaryRepository.findByAshaIdIn(ashaIds);
+
+                beneficiaries =
+                        accessibleBeneficiaries.size();
+
+                visits =
+                        visitRepository
+                                .findByUserIdIn(ashaIds)
+                                .size();
+
+                List<String> beneficiaryIds =
+                        accessibleBeneficiaries
+                                .stream()
+                                .map(Beneficiary::getId)
+                                .collect(Collectors.toList());
+
+                healthRecords = beneficiaryIds.isEmpty()
+                        ? 0L
+                        : healthRecordRepository
+                        .findByBeneficiaryIdIn(
+                                beneficiaryIds,
+                                Pageable.unpaged()
+                        )
+                        .getTotalElements();
+            }
         }
 
 
@@ -136,22 +201,27 @@ public class ReportServiceImpl implements ReportService {
         // ADMIN ONLY
         // =================================================
 
-        long medicines = 0;
-        long lowStock = 0;
-        long outOfStock = 0;
+        long medicines = 0L;
+        long lowStock = 0L;
+        long outOfStock = 0L;
 
         if (currentUser.getRole() == Role.ADMIN) {
 
-            medicines = medicineRepository.count();
+            medicines =
+                    medicineRepository.count();
 
             lowStock =
                     medicineRepository
-                            .findByStatus(MedicineStatus.LOW_STOCK)
+                            .findByStatus(
+                                    MedicineStatus.LOW_STOCK
+                            )
                             .size();
 
             outOfStock =
                     medicineRepository
-                            .findByStatus(MedicineStatus.OUT_OF_STOCK)
+                            .findByStatus(
+                                    MedicineStatus.OUT_OF_STOCK
+                            )
                             .size();
         }
 
@@ -180,22 +250,34 @@ public class ReportServiceImpl implements ReportService {
 
         List<Beneficiary> beneficiaries;
 
-        /*
-         * ASHA sees only their beneficiaries.
-         * ADMIN and ANM see all beneficiaries.
-         */
 
-        if (currentUser.getRole() == Role.ASHA) {
+        // =================================================
+        // ADMIN
+        // =================================================
 
-            beneficiaries =
-                    beneficiaryRepository.findByUserId(
-                            currentUser.getId()
-                    );
-
-        } else {
+        if (currentUser.getRole() == Role.ADMIN) {
 
             beneficiaries =
                     beneficiaryRepository.findAll();
+
+        }
+
+        // =================================================
+        // ASHA / ANM
+        // =================================================
+
+        else {
+
+            List<String> ashaIds =
+                    getAccessibleAshaIds(currentUser);
+
+            if (ashaIds.isEmpty()) {
+                return List.of();
+            }
+
+            beneficiaries =
+                    beneficiaryRepository
+                            .findByAshaIdIn(ashaIds);
         }
 
 
@@ -204,6 +286,10 @@ public class ReportServiceImpl implements ReportService {
                 .collect(Collectors.toList());
     }
 
+
+    // =====================================================
+    // MAP BENEFICIARY
+    // =====================================================
 
     private BeneficiaryReportDto mapBeneficiary(
             Beneficiary beneficiary
@@ -234,21 +320,34 @@ public class ReportServiceImpl implements ReportService {
 
         List<Visit> visits;
 
-        /*
-         * ASHA sees only their visits.
-         * ADMIN and ANM see all visits.
-         */
 
-        if (currentUser.getRole() == Role.ASHA) {
+        // =================================================
+        // ADMIN
+        // =================================================
+
+        if (currentUser.getRole() == Role.ADMIN) {
 
             visits =
-                    visitRepository.findByUserId(
-                            currentUser.getId()
-                    );
+                    visitRepository.findAll();
 
-        } else {
+        }
 
-            visits = visitRepository.findAll();
+        // =================================================
+        // ASHA / ANM
+        // =================================================
+
+        else {
+
+            List<String> ashaIds =
+                    getAccessibleAshaIds(currentUser);
+
+            if (ashaIds.isEmpty()) {
+                return List.of();
+            }
+
+            visits =
+                    visitRepository
+                            .findByUserIdIn(ashaIds);
         }
 
 
@@ -257,6 +356,10 @@ public class ReportServiceImpl implements ReportService {
                 .collect(Collectors.toList());
     }
 
+
+    // =====================================================
+    // MAP VISIT
+    // =====================================================
 
     private VisitReportDto mapVisit(
             Visit visit
@@ -269,11 +372,11 @@ public class ReportServiceImpl implements ReportService {
                         .orElse("-");
 
 
-        String ashaWorker = visit.getUserId();
+        String ashaWorker =
+                visit.getUserId();
 
-        /*
-         * Display ASHA name instead of user ID.
-         */
+
+        // Display ASHA name instead of user ID
 
         if (visit.getUserId() != null) {
 
@@ -281,7 +384,9 @@ public class ReportServiceImpl implements ReportService {
                     userRepository
                             .findById(visit.getUserId())
                             .map(User::getName)
-                            .orElse(visit.getUserId());
+                            .orElse(
+                                    visit.getUserId()
+                            );
         }
 
 
@@ -318,6 +423,10 @@ public class ReportServiceImpl implements ReportService {
     }
 
 
+    // =====================================================
+    // MAP MEDICINE
+    // =====================================================
+
     private InventoryReportDto mapMedicine(
             Medicine medicine
     ) {
@@ -351,16 +460,37 @@ public class ReportServiceImpl implements ReportService {
 
         List<HealthRecord> records;
 
-        /*
-         * ASHA sees health records of their beneficiaries.
-         * ADMIN and ANM see all health records.
-         */
 
-        if (currentUser.getRole() == Role.ASHA) {
+        // =================================================
+        // ADMIN
+        // =================================================
+
+        if (currentUser.getRole() == Role.ADMIN) {
+
+            records =
+                    healthRecordRepository.findAll();
+
+        }
+
+        // =================================================
+        // ASHA / ANM
+        // =================================================
+
+        else {
+
+            List<String> ashaIds =
+                    getAccessibleAshaIds(currentUser);
+
+            if (ashaIds.isEmpty()) {
+                return List.of();
+            }
+
+            List<Beneficiary> beneficiaries =
+                    beneficiaryRepository
+                            .findByAshaIdIn(ashaIds);
 
             List<String> beneficiaryIds =
-                    beneficiaryRepository
-                            .findByUserId(currentUser.getId())
+                    beneficiaries
                             .stream()
                             .map(Beneficiary::getId)
                             .collect(Collectors.toList());
@@ -376,10 +506,6 @@ public class ReportServiceImpl implements ReportService {
                                     Pageable.unpaged()
                             )
                             .getContent();
-
-        } else {
-
-            records = healthRecordRepository.findAll();
         }
 
 
@@ -388,6 +514,10 @@ public class ReportServiceImpl implements ReportService {
                 .collect(Collectors.toList());
     }
 
+
+    // =====================================================
+    // MAP HEALTH RECORD
+    // =====================================================
 
     private HealthRecordReportDto mapHealthRecord(
             HealthRecord record
@@ -432,7 +562,9 @@ public class ReportServiceImpl implements ReportService {
         requireAdmin(authentication);
 
         return medicineRepository
-                .findByStatus(MedicineStatus.LOW_STOCK)
+                .findByStatus(
+                        MedicineStatus.LOW_STOCK
+                )
                 .stream()
                 .map(this::mapMedicine)
                 .collect(Collectors.toList());
@@ -452,7 +584,9 @@ public class ReportServiceImpl implements ReportService {
         requireAdmin(authentication);
 
         return medicineRepository
-                .findByStatus(MedicineStatus.OUT_OF_STOCK)
+                .findByStatus(
+                        MedicineStatus.OUT_OF_STOCK
+                )
                 .stream()
                 .map(this::mapMedicine)
                 .collect(Collectors.toList());

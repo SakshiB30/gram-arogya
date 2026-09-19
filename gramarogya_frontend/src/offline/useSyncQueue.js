@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import db from "./db";
 
-const useSyncQueue = () => {
+const useSyncQueue = (ashaId) => {
   const [operations, setOperations] = useState([]);
 
   const loadOperations = async () => {
@@ -11,19 +11,43 @@ const useSyncQueue = () => {
         .reverse()
         .toArray();
 
-      setOperations(data);
+      if (!ashaId) {
+        setOperations([]);
+        return;
+      }
+
+      /*
+       * Only show operations belonging to
+       * the currently logged-in ASHA.
+       */
+      const filteredOperations = data.filter(
+        (operation) =>
+          operation.ashaId === ashaId
+      );
+
+      setOperations(filteredOperations);
     } catch (error) {
-      console.error("Failed to load sync queue:", error);
+      console.error(
+        "Failed to load sync queue:",
+        error
+      );
+
+      setOperations([]);
     }
   };
 
   useEffect(() => {
     loadOperations();
 
-    const interval = setInterval(loadOperations, 1000);
+    const interval = setInterval(
+      loadOperations,
+      1000
+    );
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [ashaId]);
 
   return operations;
 };

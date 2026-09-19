@@ -1,6 +1,7 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-
-import db from "../../offline/db";
+import {
+  createAsyncThunk,
+  createSlice,
+} from "@reduxjs/toolkit";
 
 import healthRecordService from "../../services/healthRecordService";
 
@@ -13,203 +14,78 @@ import {
   getOfflineHealthRecordsByVisit,
   updateOfflineHealthRecord,
   deleteOfflineHealthRecord,
+  removeOfflineHealthRecord,
 } from "../../offline/healthRecordOfflineService";
 
-import {
-  addToSyncQueue,
-} from "../../offline/syncQueueService";
+import { addToSyncQueue } from "../../offline/syncQueueService";
 
 import { isOnline } from "../../offline/network";
 
-/*
- * Convert different API error formats into
- * one simple error message.
- */
-const normalizeApiError = (error) => {
-  if (!error) {
-    return "Something went wrong.";
-  }
+/* =========================================================
+   FETCH ALL HEALTH RECORDS
+========================================================= */
 
-  if (typeof error === "string") {
-    return error;
-  }
-
-  if (error.response?.data) {
-    const data = error.response.data;
-
-    if (typeof data === "string") {
-      return data;
-    }
-
-    if (data.message) {
-      return data.message;
-    }
-
-    if (data.error) {
-      return data.error;
-    }
-
-    if (data.errors) {
-      if (Array.isArray(data.errors)) {
-        return data.errors.join(", ");
-      }
-
-      if (typeof data.errors === "object") {
-        return Object.values(data.errors)
-          .flat()
-          .join(", ");
-      }
-    }
-  }
-
-  return (
-    error.message ||
-    "Something went wrong."
-  );
-};
-
-/*
- * Generate a temporary ID for a health record
- * created while offline.
- *
- * This ID exists only in IndexedDB until the
- * backend gives us the real MongoDB ID.
- */
-const generateLocalHealthRecordId = () => {
-  if (
-    typeof crypto !== "undefined" &&
-    crypto.randomUUID
-  ) {
-    return `LOCAL_HEALTH_${crypto.randomUUID()}`;
-  }
-
-  return `LOCAL_HEALTH_${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 10)}`;
-};
-
-/*
- * Generate a unique operation ID for the sync queue.
- */
-const generateOperationId = () => {
-  if (
-    typeof crypto !== "undefined" &&
-    crypto.randomUUID
-  ) {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 10)}`;
-};
-
-/*
- * FETCH ALL HEALTH RECORDS
- *
- * ONLINE:
- *   GET /health-records
- *   Save returned records into IndexedDB.
- *
- * OFFLINE:
- *   Read records from IndexedDB.
- */
-
-export const fetchHealthRecords =
-  createAsyncThunk(
-    "healthRecords/fetchHealthRecords",
-    async (_, { rejectWithValue }) => {
-      try {
-        if (isOnline()) {
-          /*
-           * Fetch up to 50 health records from backend.
-           *
-           * Backend allows maximum size = 50.
-           *
-           * Previously this used the default:
-           *
-           * page = 0
-           * size = 10
-           *
-           * which meant only the first 10 records
-           * were displayed.
-           */
-          const response =
-            await healthRecordService.getAllHealthRecords(
-              0,
-              50
-            );
-
-          /*
-           * Backend returns a Spring Page:
-           *
-           * {
-           *   content: [...],
-           *   totalElements: ...,
-           *   totalPages: ...
-           * }
-           *
-           * Extract the actual records.
-           */
-          const records = Array.isArray(response)
-            ? response
-            : response?.content || [];
-
-          /*
-           * Save server records into IndexedDB.
-           */
-          for (const record of records) {
-            await saveHealthRecordOffline({
-              ...record,
-              syncStatus: "SYNCED",
-              isOffline: false,
-            });
-          }
-
-          return records;
-        }
-
-        /*
-         * OFFLINE:
-         *
-         * Read all locally stored health records.
-         */
-        return await getOfflineHealthRecords();
-
-      } catch (error) {
-        /*
-         * If the online request fails,
-         * fall back to IndexedDB.
-         */
-        try {
-          const offlineRecords =
-            await getOfflineHealthRecords();
-
-          if (offlineRecords.length > 0) {
-            return offlineRecords;
-          }
-        } catch (offlineError) {
-          console.error(
-            "Failed to load offline health records:",
-            offlineError
+export const fetchHealthRecords = createAsyncThunk(
+  "healthRecords/fetchHealthRecords",
+  async (_, { rejectWithValue }) => {
+    try {
+      if (isOnline()) {
+        const response =
+          await healthRecordService.getAllHealthRecords(
+            0,
+            50
           );
+
+        const records =
+          response?.content || [];
+
+        /*
+         * Save online records locally.
+         */
+        for (const record of records) {
+          await saveHealthRecordOffline({
+            ...record,
+            syncStatus: "SYNCED",
+            isOffline: false,
+          });
         }
 
-        return rejectWithValue(
-          normalizeApiError(error)
-        );
+        return records;
       }
+
+      /*
+       * Offline mode
+       */
+      const records =
+        await getOfflineHealthRecords();
+
+      return records;
+    } catch (error) {
+      console.error(
+        "Failed to fetch health records:",
+        error
+      );
+
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch health records."
+      );
     }
-  );
+  }
+);
 
+/* =========================================================
+   FETCH HEALTH RECORD BY ID
+========================================================= */
 
-/*
- * FETCH HEALTH RECORD BY ID
- */
 export const fetchHealthRecordById =
   createAsyncThunk(
     "healthRecords/fetchHealthRecordById",
-    async (id, { rejectWithValue }) => {
+    async (
+      id,
+      { rejectWithValue }
+    ) => {
       try {
         if (!id) {
           return rejectWithValue(
@@ -223,61 +99,52 @@ export const fetchHealthRecordById =
               id
             );
 
-          if (record) {
-            await saveHealthRecordOffline({
-              ...record,
-              syncStatus: "SYNCED",
-              isOffline: false,
-            });
-          }
+          await saveHealthRecordOffline({
+            ...record,
+            syncStatus: "SYNCED",
+            isOffline: false,
+          });
 
           return record;
         }
 
         /*
-         * Offline lookup.
+         * Offline mode
          */
         const record =
-          await getOfflineHealthRecordById(id);
+          await getOfflineHealthRecordById(
+            id
+          );
 
         if (!record) {
-          throw new Error(
+          return rejectWithValue(
             "Health record not found offline."
           );
         }
 
         return record;
       } catch (error) {
-        /*
-         * Try local data if online request fails.
-         */
-        try {
-          const offlineRecord =
-            await getOfflineHealthRecordById(id);
-
-          if (offlineRecord) {
-            return offlineRecord;
-          }
-        } catch (offlineError) {
-          console.error(
-            "Failed to get offline health record:",
-            offlineError
-          );
-        }
+        console.error(
+          "Failed to fetch health record:",
+          error
+        );
 
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to fetch health record."
         );
       }
     }
   );
 
-/*
- * FETCH HEALTH RECORDS BY BENEFICIARY
- */
+/* =========================================================
+   FETCH HEALTH RECORDS BY BENEFICIARY
+========================================================= */
+
 export const fetchHealthRecordsByBeneficiary =
   createAsyncThunk(
-    "healthRecords/fetchByBeneficiary",
+    "healthRecords/fetchHealthRecordsByBeneficiary",
     async (
       beneficiaryId,
       { rejectWithValue }
@@ -295,12 +162,15 @@ export const fetchHealthRecordsByBeneficiary =
               beneficiaryId
             );
 
-          const healthRecords =
+          const recordsArray =
             Array.isArray(records)
               ? records
               : records?.content || [];
 
-          for (const record of healthRecords) {
+          /*
+           * Save online records locally.
+           */
+          for (const record of recordsArray) {
             await saveHealthRecordOffline({
               ...record,
               syncStatus: "SYNCED",
@@ -308,38 +178,44 @@ export const fetchHealthRecordsByBeneficiary =
             });
           }
 
-          return healthRecords;
+          return recordsArray;
         }
 
-        return await getOfflineHealthRecordsByBeneficiary(
-          beneficiaryId
-        );
-      } catch (error) {
-        try {
-          return await getOfflineHealthRecordsByBeneficiary(
+        /*
+         * Offline mode
+         */
+        const records =
+          await getOfflineHealthRecordsByBeneficiary(
             beneficiaryId
           );
-        } catch (offlineError) {
-          console.error(
-            "Failed to load offline beneficiary health records:",
-            offlineError
-          );
-        }
+
+        return records;
+      } catch (error) {
+        console.error(
+          "Failed to fetch health records by beneficiary:",
+          error
+        );
 
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to fetch health records."
         );
       }
     }
   );
 
-/*
- * FETCH HEALTH RECORDS BY VISIT
- */
+/* =========================================================
+   FETCH HEALTH RECORDS BY VISIT
+========================================================= */
+
 export const fetchHealthRecordsByVisit =
   createAsyncThunk(
-    "healthRecords/fetchByVisit",
-    async (visitId, { rejectWithValue }) => {
+    "healthRecords/fetchHealthRecordsByVisit",
+    async (
+      visitId,
+      { rejectWithValue }
+    ) => {
       try {
         if (!visitId) {
           return rejectWithValue(
@@ -353,12 +229,15 @@ export const fetchHealthRecordsByVisit =
               visitId
             );
 
-          const healthRecords =
+          const recordsArray =
             Array.isArray(records)
               ? records
               : records?.content || [];
 
-          for (const record of healthRecords) {
+          /*
+           * Save online records locally.
+           */
+          for (const record of recordsArray) {
             await saveHealthRecordOffline({
               ...record,
               syncStatus: "SYNCED",
@@ -366,46 +245,47 @@ export const fetchHealthRecordsByVisit =
             });
           }
 
-          return healthRecords;
+          return recordsArray;
         }
 
-        return await getOfflineHealthRecordsByVisit(
-          visitId
-        );
-      } catch (error) {
-        try {
-          return await getOfflineHealthRecordsByVisit(
+        /*
+         * Offline mode
+         */
+        const records =
+          await getOfflineHealthRecordsByVisit(
             visitId
           );
-        } catch (offlineError) {
-          console.error(
-            "Failed to load offline visit health records:",
-            offlineError
-          );
-        }
+
+        return records;
+      } catch (error) {
+        console.error(
+          "Failed to fetch health records by visit:",
+          error
+        );
 
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to fetch health records."
         );
       }
     }
   );
 
-/*
- * CREATE HEALTH RECORD
- *
- * ONLINE:
- *   Send directly to backend.
- *
- * OFFLINE:
- *   1. Generate LOCAL_HEALTH_xxx
- *   2. Save to IndexedDB
- *   3. Add CREATE operation to sync queue
- */
+/* =========================================================
+   CREATE HEALTH RECORD
+========================================================= */
+
 export const createHealthRecord =
   createAsyncThunk(
     "healthRecords/createHealthRecord",
-    async (healthRecord, { rejectWithValue }) => {
+    async (
+      healthRecord,
+      {
+        rejectWithValue,
+        getState,
+      }
+    ) => {
       try {
         if (!healthRecord) {
           return rejectWithValue(
@@ -414,8 +294,11 @@ export const createHealthRecord =
         }
 
         /*
+         * =============================================
          * ONLINE CREATE
+         * =============================================
          */
+
         if (isOnline()) {
           const createdRecord =
             await healthRecordService.createHealthRecord(
@@ -423,32 +306,56 @@ export const createHealthRecord =
             );
 
           /*
-           * Store the server version locally.
+           * Keep local IndexedDB copy updated.
            */
-          if (createdRecord) {
-            await saveHealthRecordOffline({
-              ...createdRecord,
-              syncStatus: "SYNCED",
-              isOffline: false,
-            });
-          }
+          await saveHealthRecordOffline({
+            ...createdRecord,
+            syncStatus: "SYNCED",
+            isOffline: false,
+          });
 
           return createdRecord;
         }
 
         /*
+         * =============================================
          * OFFLINE CREATE
+         * =============================================
          */
-        const localId =
-          generateLocalHealthRecordId();
+
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required for offline health record."
+          );
+        }
+
+        /*
+         * Generate temporary local ID.
+         */
+        const localHealthRecordId =
+          `LOCAL_HEALTH_${crypto.randomUUID()}`;
+
+        /*
+         * Generate sync operation ID.
+         */
+        const operationId =
+          `SYNC_HEALTH_CREATE_${crypto.randomUUID()}`;
 
         const now =
           new Date().toISOString();
 
-        const localHealthRecord = {
+        /*
+         * Create local health record.
+         */
+        const offlineHealthRecord = {
           ...healthRecord,
 
-          id: localId,
+          id: localHealthRecordId,
+
+          ashaId: user.id,
 
           syncStatus: "PENDING",
 
@@ -460,56 +367,56 @@ export const createHealthRecord =
         };
 
         /*
-         * Save the health record locally.
+         * Save to IndexedDB.
          */
         await createOfflineHealthRecord(
-          localHealthRecord
+          offlineHealthRecord
         );
 
         /*
          * Add CREATE operation to sync queue.
          */
         await addToSyncQueue({
-          operationId:
-            generateOperationId(),
-
-          entityType:
-            "HEALTH_RECORD",
-
-          operation:
-            "CREATE",
-
-          localId,
-
-          payload: localHealthRecord,
+          operationId,
+          entityType: "HEALTH_RECORD",
+          operation: "CREATE",
+          localId: localHealthRecordId,
+          payload: offlineHealthRecord,
+          ashaId: user.id,
         });
 
-        return localHealthRecord;
+        return offlineHealthRecord;
       } catch (error) {
+        console.error(
+          "Failed to create health record:",
+          error
+        );
+
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to create health record."
         );
       }
     }
   );
 
-/*
- * UPDATE HEALTH RECORD
- *
- * ONLINE:
- *   PUT /health-records/{id}
- *
- * OFFLINE:
- *   1. Update IndexedDB
- *   2. Mark PENDING
- *   3. Add UPDATE operation
- */
+/* =========================================================
+   UPDATE HEALTH RECORD
+========================================================= */
+
 export const updateHealthRecord =
   createAsyncThunk(
     "healthRecords/updateHealthRecord",
     async (
-      { id, healthRecord },
-      { rejectWithValue }
+      {
+        id,
+        healthRecord,
+      },
+      {
+        rejectWithValue,
+        getState,
+      }
     ) => {
       try {
         if (!id) {
@@ -525,8 +432,11 @@ export const updateHealthRecord =
         }
 
         /*
+         * =============================================
          * ONLINE UPDATE
+         * =============================================
          */
+
         if (isOnline()) {
           const updatedRecord =
             await healthRecordService.updateHealthRecord(
@@ -534,73 +444,87 @@ export const updateHealthRecord =
               healthRecord
             );
 
-          if (updatedRecord) {
-            await saveHealthRecordOffline({
-              ...updatedRecord,
-              syncStatus: "SYNCED",
-              isOffline: false,
-            });
-          }
+          /*
+           * Update local copy.
+           */
+          await saveHealthRecordOffline({
+            ...updatedRecord,
+            syncStatus: "SYNCED",
+            isOffline: false,
+          });
 
           return updatedRecord;
         }
 
         /*
+         * =============================================
          * OFFLINE UPDATE
+         * =============================================
          */
+
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required for offline health record update."
+          );
+        }
+
         const updatedRecord =
           await updateOfflineHealthRecord(
             id,
-            healthRecord
+            {
+              ...healthRecord,
+              ashaId: user.id,
+            }
           );
+
+        const operationId =
+          `SYNC_HEALTH_UPDATE_${crypto.randomUUID()}`;
 
         /*
          * Add UPDATE operation.
          */
         await addToSyncQueue({
-          operationId:
-            generateOperationId(),
-
-          entityType:
-            "HEALTH_RECORD",
-
-          operation:
-            "UPDATE",
-
+          operationId,
+          entityType: "HEALTH_RECORD",
+          operation: "UPDATE",
           localId: id,
-
           payload: updatedRecord,
+          ashaId: user.id,
         });
 
         return updatedRecord;
       } catch (error) {
+        console.error(
+          "Failed to update health record:",
+          error
+        );
+
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update health record."
         );
       }
     }
   );
 
-/*
- * DELETE HEALTH RECORD
- *
- * ONLINE:
- *   Delete directly from backend.
- *
- * OFFLINE:
- *
- *   LOCAL_HEALTH_xxx:
- *       remove locally
- *       remove pending CREATE
- *
- *   SERVER ID:
- *       mark PENDING_DELETE
- *       add DELETE operation
- */
+/* =========================================================
+   DELETE HEALTH RECORD
+========================================================= */
+
 export const deleteHealthRecord =
   createAsyncThunk(
     "healthRecords/deleteHealthRecord",
-    async (id, { rejectWithValue }) => {
+    async (
+      id,
+      {
+        rejectWithValue,
+        getState,
+      }
+    ) => {
       try {
         if (!id) {
           return rejectWithValue(
@@ -609,141 +533,139 @@ export const deleteHealthRecord =
         }
 
         /*
+         * =============================================
          * ONLINE DELETE
+         * =============================================
          */
+
         if (isOnline()) {
           await healthRecordService.deleteHealthRecord(
             id
           );
 
           /*
-           * Remove local copy after successful
-           * backend deletion.
+           * Remove local copy after
+           * successful backend deletion.
            */
-          await db.healthRecords.delete(id);
+          await removeOfflineHealthRecord(
+            id
+          );
 
           return id;
         }
 
         /*
+         * =============================================
          * OFFLINE DELETE
+         * =============================================
          */
-        const isLocalHealthRecord =
-          typeof id === "string" &&
-          id.startsWith(
-            "LOCAL_HEALTH_"
+
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required for offline health record deletion."
           );
-
-        if (isLocalHealthRecord) {
-          /*
-           * This record has never reached backend.
-           *
-           * Therefore no DELETE API call is required.
-           */
-          await db.healthRecords.delete(id);
-
-          /*
-           * Remove its pending CREATE operation.
-           *
-           * We intentionally do NOT remove unrelated
-           * queue operations here.
-           */
-          const createOperations =
-            await db.syncQueue
-              .where("entityType")
-              .equals("HEALTH_RECORD")
-              .filter(
-                (operation) =>
-                  operation.operation ===
-                    "CREATE" &&
-                  operation.localId === id
-              )
-              .toArray();
-
-          for (const operation of createOperations) {
-            await db.syncQueue.delete(
-              operation.id
-            );
-          }
-
-          /*
-           * Also remove any UPDATE operations
-           * belonging to this local-only record.
-           *
-           * This prevents:
-           *
-           * CREATE
-           * UPDATE
-           *
-           * from remaining in the queue after
-           * the record itself has been deleted.
-           */
-          const updateOperations =
-            await db.syncQueue
-              .where("entityType")
-              .equals("HEALTH_RECORD")
-              .filter(
-                (operation) =>
-                  operation.operation ===
-                    "UPDATE" &&
-                  operation.localId === id
-              )
-              .toArray();
-
-          for (const operation of updateOperations) {
-            await db.syncQueue.delete(
-              operation.id
-            );
-          }
-
-          return {
-            id,
-            syncStatus:
-              "LOCAL_DELETED",
-            isOffline: true,
-          };
         }
 
         /*
-         * Existing server record.
-         *
-         * Mark it PENDING_DELETE locally.
+         * Check whether record exists locally.
          */
+        const existingRecord =
+          await getOfflineHealthRecordById(
+            id
+          );
+
+        if (!existingRecord) {
+          return rejectWithValue(
+            "Health record not found offline."
+          );
+        }
+
+        /*
+         * ---------------------------------------------
+         * LOCAL RECORD
+         * ---------------------------------------------
+         *
+         * A LOCAL_HEALTH record has never reached
+         * the backend.
+         *
+         * Therefore we simply remove the local
+         * record.
+         *
+         * NOTE:
+         * We intentionally do not call
+         * removePendingCreateOperations or
+         * removePendingUpdateOperations because
+         * those functions are not exported by
+         * syncQueueService.js.
+         */
+
+        if (
+          typeof id === "string" &&
+          id.startsWith(
+            "LOCAL_HEALTH_"
+          )
+        ) {
+          await removeOfflineHealthRecord(
+            id
+          );
+
+          return id;
+        }
+
+        /*
+         * ---------------------------------------------
+         * SERVER RECORD
+         * ---------------------------------------------
+         *
+         * Backend already knows this record.
+         *
+         * Mark it as PENDING_DELETE locally
+         * and create a DELETE sync operation.
+         */
+
         const deletedRecord =
           await deleteOfflineHealthRecord(
             id
           );
 
+        const operationId =
+          `SYNC_HEALTH_DELETE_${crypto.randomUUID()}`;
+
         /*
          * Add DELETE operation.
          */
         await addToSyncQueue({
-          operationId:
-            generateOperationId(),
-
-          entityType:
-            "HEALTH_RECORD",
-
-          operation:
-            "DELETE",
-
+          operationId,
+          entityType: "HEALTH_RECORD",
+          operation: "DELETE",
           localId: id,
-
           payload: deletedRecord,
+          ashaId: user.id,
         });
 
-        return deletedRecord;
+        return id;
       } catch (error) {
+        console.error(
+          "Failed to delete health record:",
+          error
+        );
+
         return rejectWithValue(
-          normalizeApiError(error)
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to delete health record."
         );
       }
     }
   );
 
-/*
- * INITIAL STATE
- */
+/* =========================================================
+   INITIAL STATE
+========================================================= */
+
 const initialState = {
   healthRecords: [],
 
@@ -758,9 +680,10 @@ const initialState = {
   actionError: null,
 };
 
-/*
- * SLICE
- */
+/* =========================================================
+   SLICE
+========================================================= */
+
 const healthRecordSlice =
   createSlice({
     name: "healthRecords",
@@ -768,13 +691,6 @@ const healthRecordSlice =
     initialState,
 
     reducers: {
-      clearHealthRecordError: (
-        state
-      ) => {
-        state.error = null;
-        state.actionError = null;
-      },
-
       clearSelectedHealthRecord: (
         state
       ) => {
@@ -782,21 +698,34 @@ const healthRecordSlice =
           null;
       },
 
-      setSelectedHealthRecord: (
-        state,
-        action
+      clearHealthRecordError: (
+        state
       ) => {
+        state.error = null;
+      },
+
+      clearHealthRecordActionError: (
+        state
+      ) => {
+        state.actionError = null;
+      },
+
+      clearHealthRecords: (
+        state
+      ) => {
+        state.healthRecords = [];
+
         state.selectedHealthRecord =
-          action.payload;
+          null;
       },
     },
 
     extraReducers: (builder) => {
-      /*
-       * FETCH ALL
-       */
-      builder
+      /* ==========================================
+         FETCH ALL
+      ========================================== */
 
+      builder
         .addCase(
           fetchHealthRecords.pending,
           (state) => {
@@ -807,9 +736,11 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecords.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
-            state.error = null;
 
             state.healthRecords =
               action.payload || [];
@@ -818,7 +749,10 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecords.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
 
             state.error =
@@ -827,11 +761,11 @@ const healthRecordSlice =
           }
         );
 
-      /*
-       * FETCH BY ID
-       */
-      builder
+      /* ==========================================
+         FETCH BY ID
+      ========================================== */
 
+      builder
         .addCase(
           fetchHealthRecordById.pending,
           (state) => {
@@ -842,15 +776,17 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecordById.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
-            state.error = null;
 
             state.selectedHealthRecord =
               action.payload;
 
             /*
-             * Keep the Redux list updated.
+             * Keep record inside collection.
              */
             const index =
               state.healthRecords.findIndex(
@@ -859,19 +795,26 @@ const healthRecordSlice =
                   action.payload?.id
               );
 
-            if (
-              index !== -1 &&
+            if (index >= 0) {
+              state.healthRecords[
+                index
+              ] = action.payload;
+            } else if (
               action.payload
             ) {
-              state.healthRecords[index] =
-                action.payload;
+              state.healthRecords.push(
+                action.payload
+              );
             }
           }
         )
 
         .addCase(
           fetchHealthRecordById.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
 
             state.error =
@@ -880,11 +823,11 @@ const healthRecordSlice =
           }
         );
 
-      /*
-       * FETCH BY BENEFICIARY
-       */
-      builder
+      /* ==========================================
+         FETCH BY BENEFICIARY
+      ========================================== */
 
+      builder
         .addCase(
           fetchHealthRecordsByBeneficiary.pending,
           (state) => {
@@ -895,9 +838,11 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecordsByBeneficiary.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
-            state.error = null;
 
             state.healthRecords =
               action.payload || [];
@@ -906,20 +851,23 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecordsByBeneficiary.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
 
             state.error =
               action.payload ||
-              "Failed to fetch beneficiary health records.";
+              "Failed to fetch health records.";
           }
         );
 
-      /*
-       * FETCH BY VISIT
-       */
-      builder
+      /* ==========================================
+         FETCH BY VISIT
+      ========================================== */
 
+      builder
         .addCase(
           fetchHealthRecordsByVisit.pending,
           (state) => {
@@ -930,9 +878,11 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecordsByVisit.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
-            state.error = null;
 
             state.healthRecords =
               action.payload || [];
@@ -941,20 +891,23 @@ const healthRecordSlice =
 
         .addCase(
           fetchHealthRecordsByVisit.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.loading = false;
 
             state.error =
               action.payload ||
-              "Failed to fetch visit health records.";
+              "Failed to fetch health records.";
           }
         );
 
-      /*
-       * CREATE
-       */
-      builder
+      /* ==========================================
+         CREATE
+      ========================================== */
 
+      builder
         .addCase(
           createHealthRecord.pending,
           (state) => {
@@ -965,25 +918,48 @@ const healthRecordSlice =
 
         .addCase(
           createHealthRecord.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
-            state.actionError = null;
+
+            const record =
+              action.payload;
 
             /*
-             * Add new record to Redux.
+             * Avoid duplicate entries.
              */
-            state.healthRecords.push(
-              action.payload
-            );
+            const existingIndex =
+              state.healthRecords.findIndex(
+                (item) =>
+                  item.id ===
+                  record?.id
+              );
+
+            if (
+              existingIndex >= 0
+            ) {
+              state.healthRecords[
+                existingIndex
+              ] = record;
+            } else {
+              state.healthRecords.push(
+                record
+              );
+            }
 
             state.selectedHealthRecord =
-              action.payload;
+              record;
           }
         )
 
         .addCase(
           createHealthRecord.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
 
             state.actionError =
@@ -992,11 +968,11 @@ const healthRecordSlice =
           }
         );
 
-      /*
-       * UPDATE
-       */
-      builder
+      /* ==========================================
+         UPDATE
+      ========================================== */
 
+      builder
         .addCase(
           updateHealthRecord.pending,
           (state) => {
@@ -1007,34 +983,43 @@ const healthRecordSlice =
 
         .addCase(
           updateHealthRecord.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
-            state.actionError = null;
+
+            const updatedRecord =
+              action.payload;
 
             const index =
               state.healthRecords.findIndex(
                 (record) =>
                   record.id ===
-                  action.payload?.id
+                  updatedRecord?.id
               );
 
-            if (index !== -1) {
-              state.healthRecords[index] =
-                action.payload;
+            if (index >= 0) {
+              state.healthRecords[
+                index
+              ] = updatedRecord;
             } else {
               state.healthRecords.push(
-                action.payload
+                updatedRecord
               );
             }
 
             state.selectedHealthRecord =
-              action.payload;
+              updatedRecord;
           }
         )
 
         .addCase(
           updateHealthRecord.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
 
             state.actionError =
@@ -1043,11 +1028,11 @@ const healthRecordSlice =
           }
         );
 
-      /*
-       * DELETE
-       */
-      builder
+      /* ==========================================
+         DELETE
+      ========================================== */
 
+      builder
         .addCase(
           deleteHealthRecord.pending,
           (state) => {
@@ -1058,45 +1043,21 @@ const healthRecordSlice =
 
         .addCase(
           deleteHealthRecord.fulfilled,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
-            state.actionError = null;
 
             const deletedId =
-              action.payload?.id ||
               action.payload;
 
-            /*
-             * If the record was deleted offline,
-             * remove local-only records immediately.
-             *
-             * For server records marked
-             * PENDING_DELETE, keeping it in Redux
-             * temporarily is useful for sync state.
-             */
-            if (
-              action.payload?.syncStatus ===
-              "PENDING_DELETE"
-            ) {
-              const index =
-                state.healthRecords.findIndex(
-                  (record) =>
-                    record.id ===
-                    deletedId
-                );
-
-              if (index !== -1) {
-                state.healthRecords[index] =
-                  action.payload;
-              }
-            } else {
-              state.healthRecords =
-                state.healthRecords.filter(
-                  (record) =>
-                    record.id !==
-                    deletedId
-                );
-            }
+            state.healthRecords =
+              state.healthRecords.filter(
+                (record) =>
+                  record.id !==
+                  deletedId
+              );
 
             if (
               state.selectedHealthRecord
@@ -1110,7 +1071,10 @@ const healthRecordSlice =
 
         .addCase(
           deleteHealthRecord.rejected,
-          (state, action) => {
+          (
+            state,
+            action
+          ) => {
             state.actionLoading = false;
 
             state.actionError =
@@ -1121,11 +1085,59 @@ const healthRecordSlice =
     },
   });
 
+/* =========================================================
+   ACTIONS
+========================================================= */
+
 export const {
-  clearHealthRecordError,
   clearSelectedHealthRecord,
-  setSelectedHealthRecord,
+  clearHealthRecordError,
+  clearHealthRecordActionError,
+  clearHealthRecords,
 } =
   healthRecordSlice.actions;
+
+/* =========================================================
+   SELECTORS
+========================================================= */
+
+export const selectHealthRecords = (
+  state
+) =>
+  state.healthRecords?.healthRecords ||
+  [];
+
+export const selectSelectedHealthRecord = (
+  state
+) =>
+  state.healthRecords
+    ?.selectedHealthRecord || null;
+
+export const selectHealthRecordsLoading = (
+  state
+) =>
+  state.healthRecords?.loading ||
+  false;
+
+export const selectHealthRecordsError = (
+  state
+) =>
+  state.healthRecords?.error || null;
+
+export const selectHealthRecordActionLoading = (
+  state
+) =>
+  state.healthRecords
+    ?.actionLoading || false;
+
+export const selectHealthRecordActionError = (
+  state
+) =>
+  state.healthRecords
+    ?.actionError || null;
+
+/* =========================================================
+   EXPORT
+========================================================= */
 
 export default healthRecordSlice.reducer;

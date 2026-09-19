@@ -14,29 +14,28 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CreateHealthRecordRequestDto {
 
-    @NotBlank
+    @NotBlank(message = "Beneficiary ID is required")
     private String beneficiaryId;
 
-    @NotBlank
+    @NotBlank(message = "Visit ID is required")
     private String visitId;
 
-    @NotNull
-    @PastOrPresent
+    @NotNull(message = "Recorded date is required")
+    @PastOrPresent(message = "Recorded date cannot be in the future")
     private LocalDateTime recordedAt;
 
-    @NotBlank
+    @NotBlank(message = "Blood pressure is required")
     private String bloodPressure;
 
-    @NotNull
+    @NotNull(message = "Weight is required")
     private Double weight;
 
-    @NotNull
+    @NotNull(message = "Temperature is required")
     private Double temperature;
 
-    @NotNull
+    @NotNull(message = "Hemoglobin is required")
     private Double hemoglobin;
 
-    @NotBlank
     private String diagnosis;
 
     private String prescription;

@@ -5,6 +5,9 @@ import db from "./db";
  *
  * Every offline CREATE / UPDATE / DELETE operation
  * comes here.
+ *
+ * ashaId identifies the ASHA who created the
+ * offline operation.
  */
 export const addToSyncQueue = async ({
   operationId,
@@ -12,6 +15,7 @@ export const addToSyncQueue = async ({
   operation,
   localId,
   payload,
+  ashaId,
 }) => {
   if (
     !operationId ||
@@ -21,6 +25,12 @@ export const addToSyncQueue = async ({
   ) {
     throw new Error(
       "Invalid sync operation data."
+    );
+  }
+
+  if (!ashaId) {
+    throw new Error(
+      "ASHA ID is required for offline sync operation."
     );
   }
 
@@ -34,6 +44,7 @@ export const addToSyncQueue = async ({
       entityType,
       operation,
       localId,
+      ashaId,
     }
   );
 
@@ -48,6 +59,9 @@ export const addToSyncQueue = async ({
       localId,
 
       payload,
+
+      // Store the ASHA who created this operation
+      ashaId,
 
       status: "PENDING",
 
@@ -110,10 +124,6 @@ export const markSyncing = async (id) => {
  * SYNCING
  *    ↓
  * SYNCED
- *
- * Important:
- * retryCount is reset to 0 because the operation
- * eventually succeeded.
  */
 export const markSynced = async (id) => {
   if (!id) {
@@ -136,14 +146,6 @@ export const markSynced = async (id) => {
  * Mark an operation as failed.
  *
  * Every failure increases retryCount by 1.
- *
- * Example:
- *
- * retryCount 0
- *      ↓
- * failed
- *      ↓
- * retryCount 1
  */
 export const markSyncFailed = async (
   id,
@@ -177,11 +179,6 @@ export const markSyncFailed = async (
 
 /*
  * Get all failed operations.
- *
- * Useful for:
- * - Sync Queue page
- * - retry buttons
- * - debugging
  */
 export const getFailedSyncOperations =
   async () => {
@@ -189,7 +186,7 @@ export const getFailedSyncOperations =
       .where("status")
       .equals("FAILED")
       .sortBy("createdAt");
-  };
+};
 
 /*
  * Get every operation in the sync queue.
@@ -206,7 +203,7 @@ export const getAllSyncOperations =
     return await db.syncQueue
       .orderBy("createdAt")
       .toArray();
-  };
+};
 
 /*
  * Retry a failed operation.
@@ -214,8 +211,6 @@ export const getAllSyncOperations =
  * FAILED
  *    ↓
  * PENDING
- *
- * The sync engine can then process it again.
  */
 export const retrySyncOperation =
   async (id) => {
@@ -242,9 +237,6 @@ export const retrySyncOperation =
 
 /*
  * Remove an operation completely from the queue.
- *
- * Use this only when you intentionally want to
- * remove a queue operation.
  */
 export const removeSyncOperation =
   async (id) => {

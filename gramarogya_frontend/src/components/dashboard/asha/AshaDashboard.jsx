@@ -356,7 +356,7 @@ const useDashboardData = () => {
 // =====================================================
 
 export default function AshaDashboard() {
-  const syncOperations = useSyncQueue();
+  
 
   const {
     user,
@@ -367,6 +367,8 @@ export default function AshaDashboard() {
     isLoading,
     error,
   } = useDashboardData();
+
+  const syncOperations = useSyncQueue(user?.id);
 
   const config =
     dashboardConfig?.[user?.role];

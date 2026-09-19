@@ -70,48 +70,98 @@ public class DashboardServiceImpl implements DashboardService {
     // ASHA DASHBOARD
     // =========================================================
 
-    private DashboardResponseDto getAshaDashboard(User currentUser) {
+    private DashboardResponseDto getAshaDashboard(
+            User currentUser
+    ) {
 
-        String userId = currentUser.getId();
+        /*
+         * IMPORTANT:
+         * The dashboard is always generated for the
+         * currently authenticated ASHA.
+         */
+        String ashaId = currentUser.getId();
 
         LocalDate today = LocalDate.now();
 
-        // Get all beneficiaries belonging to this ASHA
-        List<Beneficiary> beneficiaries =
-                beneficiaryRepository.findByUserId(userId);
 
-        // Calculate health program counts from actual beneficiary data
+        // =====================================================
+        // ASHA BENEFICIARIES
+        // =====================================================
+
+        /*
+         * Use ashaId because Beneficiary.ashaId represents
+         * the ASHA assigned to the beneficiary.
+         *
+         * This prevents beneficiaries belonging to other
+         * ASHAs from appearing on this dashboard.
+         */
+        List<Beneficiary> beneficiaries =
+                beneficiaryRepository.findByAshaId(ashaId);
+
+
+        // =====================================================
+        // HEALTH PROGRAM COUNTS
+        // =====================================================
+
         long pregnantWomen = beneficiaries.stream()
+
                 .filter(b -> b.getCategory() != null)
-                .filter(b -> b.getCategory()
-                        .toLowerCase()
-                        .contains("pregnant"))
+
+                .filter(b ->
+                        b.getCategory()
+                                .toLowerCase()
+                                .contains("pregnant")
+                )
+
                 .count();
+
 
         long children = beneficiaries.stream()
+
                 .filter(b -> b.getCategory() != null)
-                .filter(b -> b.getCategory()
-                        .toLowerCase()
-                        .contains("child"))
+
+                .filter(b ->
+                        b.getCategory()
+                                .toLowerCase()
+                                .contains("child")
+                )
+
                 .count();
+
 
         long tbPatients = beneficiaries.stream()
+
                 .filter(b -> b.getCategory() != null)
-                .filter(b -> b.getCategory()
-                        .toLowerCase()
-                        .contains("tb"))
+
+                .filter(b ->
+                        b.getCategory()
+                                .toLowerCase()
+                                .contains("tb")
+                )
+
                 .count();
+
 
         long elderly = beneficiaries.stream()
+
                 .filter(b -> b.getCategory() != null)
-                .filter(b -> b.getCategory()
-                        .toLowerCase()
-                        .contains("elder"))
+
+                .filter(b ->
+                        b.getCategory()
+                                .toLowerCase()
+                                .contains("elder")
+                )
+
                 .count();
 
-        // Debug
-        System.out.println("========== HEALTH PROGRAM ==========");
-        System.out.println("ASHA ID       : " + userId);
+
+        // =====================================================
+        // DEBUG
+        // =====================================================
+
+        System.out.println("========== ASHA DASHBOARD ==========");
+        System.out.println("ASHA ID       : " + ashaId);
+        System.out.println("ASHA NAME     : " + currentUser.getName());
         System.out.println("Beneficiaries : " + beneficiaries.size());
         System.out.println("Pregnant      : " + pregnantWomen);
         System.out.println("Children      : " + children);
@@ -120,28 +170,39 @@ public class DashboardServiceImpl implements DashboardService {
         System.out.println("====================================");
 
 
-        // Alerts
-        List<AlertDto> alerts = buildAlerts(currentUser);
+        // =====================================================
+        // ASHA-SPECIFIC ALERTS
+        // =====================================================
 
-        long criticalAlerts = countCriticalAlerts(alerts);
+        List<AlertDto> alerts =
+                buildAlerts(currentUser);
 
+        long criticalAlerts =
+                countCriticalAlerts(alerts);
+
+
+        // =====================================================
+        // ASHA DASHBOARD STATS
+        // =====================================================
 
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
 
-                        .userName(currentUser.getName())
+                        .userName(
+                                currentUser.getName()
+                        )
 
-                        // -----------------------------------------
+                        // -------------------------------------
                         // BENEFICIARIES
-                        // -----------------------------------------
+                        // -------------------------------------
 
                         .totalBeneficiaries(
                                 beneficiaries.size()
                         )
 
-                        // -----------------------------------------
+                        // -------------------------------------
                         // HEALTH PROGRAMS
-                        // -----------------------------------------
+                        // -------------------------------------
 
                         .pregnantWomen(
                                 pregnantWomen
@@ -159,19 +220,21 @@ public class DashboardServiceImpl implements DashboardService {
                                 elderly
                         )
 
-                        // -----------------------------------------
+                        // -------------------------------------
                         // VISITS
-                        // -----------------------------------------
+                        // -------------------------------------
 
                         .totalVisits(
                                 visitRepository
-                                        .countByUserId(userId)
+                                        .countByUserId(
+                                                ashaId
+                                        )
                         )
 
                         .todayVisits(
                                 visitRepository
                                         .countByUserIdAndVisitDate(
-                                                userId,
+                                                ashaId,
                                                 today
                                         )
                         )
@@ -179,7 +242,7 @@ public class DashboardServiceImpl implements DashboardService {
                         .pendingVisits(
                                 visitRepository
                                         .countByUserIdAndVisitDateAndStatus(
-                                                userId,
+                                                ashaId,
                                                 today,
                                                 "Pending"
                                         )
@@ -188,41 +251,64 @@ public class DashboardServiceImpl implements DashboardService {
                         .upcomingVisits(
                                 visitRepository
                                         .countByUserIdAndNextVisitDateAfter(
-                                                userId,
+                                                ashaId,
                                                 today
-                                        ))
+                                        )
+                        )
+
+                        // -------------------------------------
+                        // CRITICAL ALERTS
+                        // -------------------------------------
+
+                        .criticalAlerts(
+                                criticalAlerts
+                        )
 
                         .build();
 
+
+        // =====================================================
+        // ASHA DASHBOARD RESPONSE
+        // =====================================================
 
         return DashboardResponseDto.builder()
 
                 .stats(stats)
 
+                // Only current ASHA activities
                 .recentActivities(
                         buildRecentActivities(currentUser)
                 )
 
+                // Only alerts accessible to current ASHA
                 .alerts(alerts)
 
                 .healthPrograms(
                         buildHealthPrograms(stats)
                 )
 
+                // Only current ASHA upcoming visits
                 .upcomingVisits(
                         buildUpcomingVisits(currentUser)
                 )
 
+                /*
+                 * Medicine data is not shown for ASHA because
+                 * the current medicine model/repository does
+                 * not provide ASHA ownership filtering.
+                 */
                 .lowStockMedicines(
-                        buildMedicineAlerts(currentUser)
+                        List.of()
                 )
 
+                // ASHA cannot verify users
                 .pendingVerifications(
                         List.of()
                 )
 
                 .build();
     }
+
 
     // =========================================================
     // ANM DASHBOARD
@@ -238,25 +324,40 @@ public class DashboardServiceImpl implements DashboardService {
                         currentUser.getId()
                 );
 
+
         // Extract ASHA IDs
         List<String> ashaIds =
                 ashas.stream()
                         .map(User::getId)
                         .toList();
 
-        LocalDate today = LocalDate.now();
+
+        LocalDate today =
+                LocalDate.now();
+
 
         // Build alerts once
-        List<AlertDto> alerts = buildAlerts(currentUser);
+        List<AlertDto> alerts =
+                buildAlerts(currentUser);
+
 
         // Count HIGH priority alerts
-        long criticalAlerts = countCriticalAlerts(alerts);
+        long criticalAlerts =
+                countCriticalAlerts(alerts);
 
 
+        // -----------------------------------------
+        // HEALTH PROGRAMS
+        // -----------------------------------------
+        // -----------------------------------------
+        // CRITICAL ALERTS
+        // -----------------------------------------
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
 
-                        .userName(currentUser.getName())
+                        .userName(
+                                currentUser.getName()
+                        )
 
                         // -----------------------------------------
                         // ASSIGNED ASHAS
@@ -316,60 +417,7 @@ public class DashboardServiceImpl implements DashboardService {
                                         .countByUserIdInAndNextVisitDateAfter(
                                                 ashaIds,
                                                 today
-                                        )
-                        )
-
-                        // -----------------------------------------
-                        // HEALTH PROGRAMS
-                        // -----------------------------------------
-
-                        .pregnantWomen(
-                                ashaIds.isEmpty()
-                                        ? 0
-                                        : beneficiaryRepository
-                                        .countByUserIdInAndCategoryContainingIgnoreCase(
-                                                ashaIds,
-                                                "pregnant"
-                                        )
-                        )
-
-                        .children(
-                                ashaIds.isEmpty()
-                                        ? 0
-                                        : beneficiaryRepository
-                                        .countByUserIdInAndCategoryContainingIgnoreCase(
-                                                ashaIds,
-                                                "child"
-                                        )
-                        )
-
-                        .tbPatients(
-                                ashaIds.isEmpty()
-                                        ? 0
-                                        : beneficiaryRepository
-                                        .countByUserIdInAndCategoryContainingIgnoreCase(
-                                                ashaIds,
-                                                "tb"
-                                        )
-                        )
-
-                        .elderly(
-                                ashaIds.isEmpty()
-                                        ? 0
-                                        : beneficiaryRepository
-                                        .countByUserIdInAndCategoryContainingIgnoreCase(
-                                                ashaIds,
-                                                "elder"
-                                        )
-                        )
-
-                        // -----------------------------------------
-                        // CRITICAL ALERTS
-                        // -----------------------------------------
-
-                        .criticalAlerts(criticalAlerts)
-
-                        .build();
+                                        )).build();
 
 
         return DashboardResponseDto.builder()
@@ -410,19 +458,29 @@ public class DashboardServiceImpl implements DashboardService {
             User currentUser
     ) {
 
-        LocalDate today = LocalDate.now();
+        LocalDate today =
+                LocalDate.now();
+
 
         // Build alerts once
-        List<AlertDto> alerts = buildAlerts(currentUser);
+        List<AlertDto> alerts =
+                buildAlerts(currentUser);
+
 
         // Count HIGH priority alerts
-        long criticalAlerts = countCriticalAlerts(alerts);
+        long criticalAlerts =
+                countCriticalAlerts(alerts);
 
 
+        // -----------------------------------------
+        // CRITICAL ALERTS
+        // -----------------------------------------
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
 
-                        .userName(currentUser.getName())
+                        .userName(
+                                currentUser.getName()
+                        )
 
                         // -----------------------------------------
                         // BENEFICIARIES
@@ -454,17 +512,8 @@ public class DashboardServiceImpl implements DashboardService {
 
                         .upcomingVisits(
                                 visitRepository.countByNextVisitDateAfter(
-                                        today
-                                )
-                        )
-
-                        // -----------------------------------------
-                        // CRITICAL ALERTS
-                        // -----------------------------------------
-
-                        .criticalAlerts(criticalAlerts)
-
-                        .build();
+                                                today
+                                        )).build();
 
 
         return DashboardResponseDto.builder()
@@ -508,9 +557,11 @@ public class DashboardServiceImpl implements DashboardService {
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
 
+
         if (userIds.isEmpty()) {
             return List.of();
         }
+
 
         return activityService.getActivities(userIds);
     }
@@ -547,10 +598,12 @@ public class DashboardServiceImpl implements DashboardService {
             List<String> userIds =
                     new ArrayList<>();
 
+
             // ANM's own activities
             userIds.add(
                     currentUser.getId()
             );
+
 
             // Assigned ASHA activities
             List<String> ashaIds =
@@ -562,6 +615,7 @@ public class DashboardServiceImpl implements DashboardService {
                             .map(User::getId)
                             .toList();
 
+
             userIds.addAll(ashaIds);
 
             return userIds;
@@ -572,6 +626,9 @@ public class DashboardServiceImpl implements DashboardService {
         // ASHA
         // -----------------------------------------------------
 
+        /*
+         * ASHA can access only their own activities.
+         */
         return List.of(
                 currentUser.getId()
         );
@@ -589,12 +646,15 @@ public class DashboardServiceImpl implements DashboardService {
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
 
+
         if (userIds.isEmpty()) {
             return List.of();
         }
 
+
         LocalDate today =
                 LocalDate.now();
+
 
         LocalDate threeDaysLater =
                 today.plusDays(3);
@@ -769,6 +829,7 @@ public class DashboardServiceImpl implements DashboardService {
         List<AlertDto> alerts =
                 new ArrayList<>();
 
+
         List<String> userIds =
                 getAccessibleUserIds(currentUser);
 
@@ -782,6 +843,7 @@ public class DashboardServiceImpl implements DashboardService {
             long pendingCount =
                     buildPendingVerifications(currentUser)
                             .size();
+
 
             if (pendingCount > 0) {
 
@@ -819,63 +881,73 @@ public class DashboardServiceImpl implements DashboardService {
         // 2. LOW STOCK MEDICINES
         // =====================================================
 
-        medicineRepository
-                .findAll()
-                .stream()
+        /*
+         * Medicine data is global in the current model.
+         *
+         * Therefore ASHA should not receive these alerts.
+         * ADMIN and ANM behavior remains unchanged.
+         */
+        if (currentUser.getRole() != Role.ASHA) {
 
-                .filter(medicine ->
-                        medicine.getStock() != null
-                                && medicine.getStock() <= 10
-                )
+            medicineRepository
+                    .findAll()
+                    .stream()
 
-                .limit(5)
+                    .filter(medicine ->
+                            medicine.getStock() != null
+                                    && medicine.getStock() <= 10
+                    )
 
-                .forEach(medicine -> {
+                    .limit(5)
 
-                    String priority =
-                            medicine.getStock() == 0
-                                    ? "HIGH"
-                                    : "MEDIUM";
+                    .forEach(medicine -> {
 
-                    String description =
-                            medicine.getStock() == 0
-                                    ? medicine.getName()
-                                    + " is out of stock."
-                                    : medicine.getName()
-                                    + " has only "
-                                    + medicine.getStock()
-                                    + " units remaining.";
+                        String priority =
+                                medicine.getStock() == 0
+                                        ? "HIGH"
+                                        : "MEDIUM";
 
 
-                    alerts.add(
-                            AlertDto.builder()
+                        String description =
+                                medicine.getStock() == 0
+                                        ? medicine.getName()
+                                        + " is out of stock."
+                                        : medicine.getName()
+                                        + " has only "
+                                        + medicine.getStock()
+                                        + " units remaining.";
 
-                                    .id(
-                                            "medicine-"
-                                                    + medicine.getId()
-                                    )
 
-                                    .title(
-                                            medicine.getStock() == 0
-                                                    ? "Medicine Out of Stock"
-                                                    : "Low Medicine Stock"
-                                    )
+                        alerts.add(
+                                AlertDto.builder()
 
-                                    .description(
-                                            description
-                                    )
+                                        .id(
+                                                "medicine-"
+                                                        + medicine.getId()
+                                        )
 
-                                    .priority(
-                                            priority
-                                    )
+                                        .title(
+                                                medicine.getStock() == 0
+                                                        ? "Medicine Out of Stock"
+                                                        : "Low Medicine Stock"
+                                        )
 
-                                    .type(
-                                            "MEDICINE"
-                                    )
+                                        .description(
+                                                description
+                                        )
 
-                                    .build()
-                    );
-                });
+                                        .priority(
+                                                priority
+                                        )
+
+                                        .type(
+                                                "MEDICINE"
+                                        )
+
+                                        .build()
+                        );
+                    });
+        }
 
 
         // =====================================================
@@ -887,6 +959,7 @@ public class DashboardServiceImpl implements DashboardService {
             LocalDate today =
                     LocalDate.now();
 
+
             LocalDate threeDaysLater =
                     today.plusDays(3);
 
@@ -897,6 +970,7 @@ public class DashboardServiceImpl implements DashboardService {
                             today,
                             threeDaysLater
                     )
+
                     .stream()
 
                     .filter(visit ->
@@ -960,10 +1034,38 @@ public class DashboardServiceImpl implements DashboardService {
         // 4. TB PATIENT ALERTS
         // =====================================================
 
+        /*
+         * IMPORTANT:
+         *
+         * ASHA → use ashaId
+         * ANM   → use userIdIn for assigned ASHAs
+         * ADMIN → use userIdIn for all users
+         */
         if (!userIds.isEmpty()) {
 
-            beneficiaryRepository
-                    .findByUserIdIn(userIds)
+            List<Beneficiary> alertBeneficiaries;
+
+
+            if (currentUser.getRole() == Role.ASHA) {
+
+                alertBeneficiaries =
+                        beneficiaryRepository
+                                .findByAshaId(
+                                        currentUser.getId()
+                                );
+
+            } else {
+
+                alertBeneficiaries =
+                        beneficiaryRepository
+                                .findByUserIdIn(
+                                        userIds
+                                );
+            }
+
+
+            alertBeneficiaries
+
                     .stream()
 
                     .filter(beneficiary ->
@@ -1065,6 +1167,7 @@ public class DashboardServiceImpl implements DashboardService {
             return 3;
         }
 
+
         return switch (
                 priority.toUpperCase()
                 ) {
@@ -1088,6 +1191,14 @@ public class DashboardServiceImpl implements DashboardService {
     buildMedicineAlerts(
             User currentUser
     ) {
+
+        /*
+         * ASHA should not see global medicine information.
+         */
+        if (currentUser.getRole() == Role.ASHA) {
+            return List.of();
+        }
+
 
         return medicineRepository
                 .findAll()
@@ -1243,9 +1354,9 @@ public class DashboardServiceImpl implements DashboardService {
             return 0;
         }
 
+
         return (int) Math.round(
                 ((double) count / total) * 100
         );
     }
 }
-
