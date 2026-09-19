@@ -26,13 +26,7 @@ export const saveHealthRecordOffline = async (
 /*
  * Create a NEW health record locally.
  *
- * This is mainly used by the offline Redux flow.
- *
- * The record should already contain:
- *
- * id: LOCAL_HEALTH_xxx
- * syncStatus: PENDING
- * isOffline: true
+ * Used by the offline Redux flow.
  */
 export const createOfflineHealthRecord = async (
   healthRecord
@@ -49,75 +43,133 @@ export const createOfflineHealthRecord = async (
 };
 
 /*
- * Get all health records stored locally.
+ * Get all health records belonging
+ * to the logged-in ASHA.
  */
-export const getOfflineHealthRecords =
-  async () => {
-    return await db.healthRecords.toArray();
-  };
+export const getOfflineHealthRecords = async (
+  ashaId
+) => {
+  if (!ashaId) {
+    return [];
+  }
+
+  const healthRecords =
+    await db.healthRecords.toArray();
+
+  return healthRecords.filter(
+    (record) =>
+      record.ashaId === ashaId
+  );
+};
 
 /*
- * Get health records for one beneficiary.
+ * Get health records for one beneficiary
+ * belonging to the logged-in ASHA.
  */
 export const getOfflineHealthRecordsByBeneficiary =
-  async (beneficiaryId) => {
-    if (!beneficiaryId) {
+  async (
+    beneficiaryId,
+    ashaId
+  ) => {
+    if (!beneficiaryId || !ashaId) {
       return [];
     }
 
-    return await db.healthRecords
-      .where("beneficiaryId")
-      .equals(beneficiaryId)
-      .toArray();
+    const healthRecords =
+      await db.healthRecords
+        .where("beneficiaryId")
+        .equals(beneficiaryId)
+        .toArray();
+
+    return healthRecords.filter(
+      (record) =>
+        record.ashaId === ashaId
+    );
   };
 
 /*
- * Get health records for one visit.
+ * Get health records for one visit
+ * belonging to the logged-in ASHA.
  */
 export const getOfflineHealthRecordsByVisit =
-  async (visitId) => {
-    if (!visitId) {
+  async (
+    visitId,
+    ashaId
+  ) => {
+    if (!visitId || !ashaId) {
       return [];
     }
 
-    return await db.healthRecords
-      .where("visitId")
-      .equals(visitId)
-      .toArray();
+    const healthRecords =
+      await db.healthRecords
+        .where("visitId")
+        .equals(visitId)
+        .toArray();
+
+    return healthRecords.filter(
+      (record) =>
+        record.ashaId === ashaId
+    );
   };
 
 /*
  * Get one health record by ID.
+ *
+ * Security:
+ * The record must belong to the
+ * currently logged-in ASHA.
  */
 export const getOfflineHealthRecordById =
-  async (id) => {
-    if (!id) {
+  async (
+    id,
+    ashaId
+  ) => {
+    if (!id || !ashaId) {
       return null;
     }
 
-    return await db.healthRecords.get(id);
+    const healthRecord =
+      await db.healthRecords.get(id);
+
+    if (!healthRecord) {
+      return null;
+    }
+
+    if (
+      healthRecord.ashaId !== ashaId
+    ) {
+      console.warn(
+        "OFFLINE HEALTH RECORD ACCESS DENIED:",
+        {
+          healthRecordId: id,
+          requestedAshaId: ashaId,
+          ownerAshaId:
+            healthRecord.ashaId,
+        }
+      );
+
+      return null;
+    }
+
+    return healthRecord;
   };
 
 /*
  * Update a health record while offline.
  *
- * The important part is:
- *
- * syncStatus = PENDING
- *
- * This tells the sync engine:
- *
- * "This local record has changed and needs
- * to be sent to the backend."
+ * Security:
+ * Only the ASHA who owns the record
+ * can update it.
  */
 export const updateOfflineHealthRecord =
   async (
     id,
-    healthRecordData
+    healthRecordData,
+    ashaId
   ) => {
-    if (!id) {
+    if (!id || !ashaId) {
       throw new Error(
-        "Health Record ID is required."
+        "Health Record ID and ASHA ID are required."
       );
     }
 
@@ -130,15 +182,25 @@ export const updateOfflineHealthRecord =
       );
     }
 
+    if (
+      existingHealthRecord.ashaId !==
+      ashaId
+    ) {
+      throw new Error(
+        "You are not authorized to update this health record."
+      );
+    }
+
     const updatedHealthRecord = {
       ...existingHealthRecord,
       ...healthRecordData,
 
-      /*
-       * Always preserve the same local/server ID
-       * during an update.
-       */
       id,
+
+      /*
+       * Always preserve the owner.
+       */
+      ashaId,
 
       /*
        * The updated record needs synchronization.
@@ -161,37 +223,31 @@ export const updateOfflineHealthRecord =
 /*
  * Delete a health record while offline.
  *
- * There are TWO different cases.
- *
  * CASE 1:
  * Local-only record
  *
- * id = LOCAL_HEALTH_xxx
+ * LOCAL_HEALTH_xxx
  *
- * It has never reached the backend.
- *
- * Therefore we can safely remove it from IndexedDB.
+ * It has never reached the backend,
+ * so it can be removed immediately.
  *
  *
  * CASE 2:
  * Server health record
  *
- * It has a real MongoDB ID.
+ * It has a real server ID.
  *
- * We CANNOT immediately remove it from IndexedDB
- * because the sync engine still needs to know:
- *
- * "Delete this record from the backend."
- *
- * Therefore we keep it with:
- *
- * syncStatus = PENDING_DELETE
+ * Keep it locally with PENDING_DELETE
+ * until backend synchronization succeeds.
  */
 export const deleteOfflineHealthRecord =
-  async (id) => {
-    if (!id) {
+  async (
+    id,
+    ashaId
+  ) => {
+    if (!id || !ashaId) {
       throw new Error(
-        "Health Record ID is required."
+        "Health Record ID and ASHA ID are required."
       );
     }
 
@@ -205,6 +261,21 @@ export const deleteOfflineHealthRecord =
     }
 
     /*
+     * SECURITY CHECK
+     *
+     * Only the owning ASHA can delete
+     * the health record.
+     */
+    if (
+      existingHealthRecord.ashaId !==
+      ashaId
+    ) {
+      throw new Error(
+        "You are not authorized to delete this health record."
+      );
+    }
+
+    /*
      * LOCAL_HEALTH records have never been
      * synchronized with the backend.
      */
@@ -214,10 +285,6 @@ export const deleteOfflineHealthRecord =
     ) {
       await db.healthRecords.delete(id);
 
-      /*
-       * This return value is useful to Redux,
-       * but the record is no longer stored locally.
-       */
       return {
         ...existingHealthRecord,
         id,
@@ -236,6 +303,8 @@ export const deleteOfflineHealthRecord =
     const deletedHealthRecord = {
       ...existingHealthRecord,
 
+      ashaId,
+
       syncStatus: "PENDING_DELETE",
 
       isOffline: true,
@@ -252,26 +321,23 @@ export const deleteOfflineHealthRecord =
   };
 
 /*
- * Mark a health record as successfully synchronized.
+ * Mark a health record as successfully
+ * synchronized.
  *
- * This helper is useful when the sync engine receives
- * the server response and wants to update IndexedDB.
+ * Security:
+ * The record must belong to the
+ * logged-in ASHA.
  */
 export const markHealthRecordSynced =
   async (
     localId,
-    serverHealthRecord
+    serverHealthRecord,
+    ashaId
   ) => {
-    if (!localId) {
+    if (!localId || !ashaId) {
       return null;
     }
 
-    /*
-     * If backend returned the complete record,
-     * prefer that version.
-     *
-     * Otherwise use the existing local record.
-     */
     const existingHealthRecord =
       await db.healthRecords.get(
         localId
@@ -281,12 +347,41 @@ export const markHealthRecordSynced =
       return null;
     }
 
+    /*
+     * SECURITY CHECK
+     */
+    if (
+      existingHealthRecord.ashaId !==
+      ashaId
+    ) {
+      console.warn(
+        "OFFLINE HEALTH RECORD SYNC ACCESS DENIED:",
+        {
+          healthRecordId: localId,
+          requestedAshaId: ashaId,
+          ownerAshaId:
+            existingHealthRecord.ashaId,
+        }
+      );
+
+      return null;
+    }
+
+    /*
+     * If backend returned the complete
+     * record, prefer that version.
+     */
     const syncedHealthRecord = {
       ...existingHealthRecord,
       ...(serverHealthRecord || {}),
 
       /*
-       * The server ID should be used after successful
+       * Preserve ASHA ownership locally.
+       */
+      ashaId,
+
+      /*
+       * Use server ID after successful
        * synchronization when available.
        */
       id:
@@ -302,8 +397,8 @@ export const markHealthRecordSynced =
     };
 
     /*
-     * If the server returned a different ID,
-     * remove the temporary local record first.
+     * If server returned a different ID,
+     * remove temporary local record first.
      */
     if (
       serverHealthRecord?.id &&
@@ -322,14 +417,45 @@ export const markHealthRecordSynced =
   };
 
 /*
- * Remove a health record completely from IndexedDB.
+ * Remove a health record completely
+ * from IndexedDB.
  *
- * This should generally be used only after a DELETE
- * operation has been successfully synchronized.
+ * Used after DELETE synchronization
+ * succeeds.
  */
 export const removeOfflineHealthRecord =
-  async (id) => {
-    if (!id) {
+  async (
+    id,
+    ashaId
+  ) => {
+    if (!id || !ashaId) {
+      return;
+    }
+
+    const existingHealthRecord =
+      await db.healthRecords.get(id);
+
+    if (!existingHealthRecord) {
+      return;
+    }
+
+    /*
+     * Security check before permanent deletion.
+     */
+    if (
+      existingHealthRecord.ashaId !==
+      ashaId
+    ) {
+      console.warn(
+        "OFFLINE HEALTH RECORD DELETE ACCESS DENIED:",
+        {
+          healthRecordId: id,
+          requestedAshaId: ashaId,
+          ownerAshaId:
+            existingHealthRecord.ashaId,
+        }
+      );
+
       return;
     }
 

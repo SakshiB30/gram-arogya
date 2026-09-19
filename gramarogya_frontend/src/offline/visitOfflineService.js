@@ -173,18 +173,39 @@ export const getOfflineTodayVisits = async (
 };
 
 /**
- * Get one visit by ID.
+ * Get one visit by ID
+ * only if it belongs to the requested ASHA.
  */
 export const getOfflineVisitById = async (
-  id
+  id,
+  ashaId
 ) => {
-  if (!id) {
+  if (!id || !ashaId) {
     return null;
   }
 
-  return await db.visits.get(id);
-};
+  const visit =
+    await db.visits.get(id);
 
+  if (!visit) {
+    return null;
+  }
+
+  if (visit.ashaId !== ashaId) {
+    console.warn(
+      "OFFLINE VISIT ACCESS DENIED:",
+      {
+        visitId: id,
+        requestedAshaId: ashaId,
+        ownerAshaId: visit.ashaId,
+      }
+    );
+
+    return null;
+  }
+
+  return visit;
+};
 /**
  * Update a visit locally.
  *
@@ -193,11 +214,12 @@ export const getOfflineVisitById = async (
  */
 export const updateOfflineVisit = async (
   id,
-  visitData
+  visitData,
+  ashaId
 ) => {
-  if (!id) {
+  if (!id || !ashaId) {
     throw new Error(
-      "Visit ID is required."
+      "Visit ID and ASHA ID are required."
     );
   }
 
@@ -210,11 +232,27 @@ export const updateOfflineVisit = async (
     );
   }
 
+  if (existingVisit.ashaId !== ashaId) {
+    console.warn(
+      "OFFLINE VISIT UPDATE DENIED:",
+      {
+        visitId: id,
+        requestedAshaId: ashaId,
+        ownerAshaId: existingVisit.ashaId,
+      }
+    );
+
+    throw new Error(
+      "You are not authorized to update this visit."
+    );
+  }
+
   const updatedVisit = {
     ...existingVisit,
     ...visitData,
 
     id,
+    ashaId,
 
     syncStatus: "PENDING",
     isOffline: true,
@@ -237,10 +275,10 @@ export const updateOfflineVisit = async (
  * the backend confirms the DELETE operation.
  */
 export const deleteOfflineVisit =
-  async (id) => {
-    if (!id) {
+  async (id, ashaId) => {
+    if (!id || !ashaId) {
       throw new Error(
-        "Visit ID is required."
+        "Visit ID and ASHA ID are required."
       );
     }
 
@@ -250,6 +288,21 @@ export const deleteOfflineVisit =
     if (!existingVisit) {
       throw new Error(
         "Visit not found offline."
+      );
+    }
+
+    if (existingVisit.ashaId !== ashaId) {
+      console.warn(
+        "OFFLINE VISIT DELETE DENIED:",
+        {
+          visitId: id,
+          requestedAshaId: ashaId,
+          ownerAshaId: existingVisit.ashaId,
+        }
+      );
+
+      throw new Error(
+        "You are not authorized to delete this visit."
       );
     }
 

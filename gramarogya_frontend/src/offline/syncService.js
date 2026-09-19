@@ -49,21 +49,30 @@ const cleanPayload = (payload, operationType) => {
 };
 
 /**
- * Resolve a local Visit ID to its real backend Visit ID.
+ * Resolve a Visit ID to its real backend Visit ID.
+ *
+ * There are two possible situations:
+ *
+ * 1. The ID is a LOCAL_VISIT_xxx ID.
+ *    → Find its persistent mapping.
+ *
+ * 2. The Visit was already synchronized.
+ *    → IndexedDB and the queue may contain the real
+ *      MongoDB/server ID directly.
  */
 const resolveVisitServerId = async (
-  localVisitId,
+  visitId,
   idMappings
 ) => {
-  if (!localVisitId) {
+  if (!visitId) {
     return null;
   }
 
   /**
    * Already resolved during this sync session.
    */
-  if (idMappings.visits[localVisitId]) {
-    return idMappings.visits[localVisitId];
+  if (idMappings.visits[visitId]) {
+    return idMappings.visits[visitId];
   }
 
   /**
@@ -72,11 +81,30 @@ const resolveVisitServerId = async (
   const mappedServerId =
     await getServerIdFromLocalId({
       entityType: "VISIT",
-      localId: localVisitId,
+      localId: visitId,
     });
 
   if (mappedServerId) {
     return mappedServerId;
+  }
+
+  /**
+   * The Visit may already have been synchronized.
+   *
+   * After CREATE synchronization:
+   *
+   * LOCAL_VISIT_xxx
+   *       ↓
+   * SERVER_ID
+   *
+   * Therefore UPDATE/DELETE operations can contain
+   * the real server ID directly.
+   */
+  if (
+    typeof visitId === "string" &&
+    !visitId.startsWith("LOCAL_VISIT_")
+  ) {
+    return visitId;
   }
 
   return null;
@@ -108,18 +136,17 @@ const processSyncOperation = async (
 
     let result;
 
-    // =========================================================
+    // =====================================================
     // VISIT
-    // =========================================================
+    // =====================================================
 
     if (entityType === "VISIT") {
 
-      // -------------------------------------------------------
-      // CREATE VISIT
-      // -------------------------------------------------------
+      // ---------------------------------------------------
+      // VISIT CREATE
+      // ---------------------------------------------------
 
       if (operationType === "CREATE") {
-
         result =
           await visitService.createVisit(
             serverPayload
@@ -131,9 +158,6 @@ const processSyncOperation = async (
           );
         }
 
-        /**
-         * Store local → server mapping.
-         */
         idMappings.visits[localId] =
           result.id;
 
@@ -143,9 +167,6 @@ const processSyncOperation = async (
           serverId: result.id,
         });
 
-        /**
-         * Replace local Visit with server Visit.
-         */
         const localVisit =
           await db.visits.get(localId);
 
@@ -168,14 +189,13 @@ const processSyncOperation = async (
         }
       }
 
-      // -------------------------------------------------------
-      // UPDATE VISIT
-      // -------------------------------------------------------
+      // ---------------------------------------------------
+      // VISIT UPDATE
+      // ---------------------------------------------------
 
       else if (
         operationType === "UPDATE"
       ) {
-
         const realVisitId =
           await resolveVisitServerId(
             localId,
@@ -188,9 +208,6 @@ const processSyncOperation = async (
           );
         }
 
-        /**
-         * Do not send local IndexedDB ID.
-         */
         serverPayload = {
           ...serverPayload,
           id: realVisitId,
@@ -203,28 +220,32 @@ const processSyncOperation = async (
           );
       }
 
-      // -------------------------------------------------------
-      // DELETE VISIT
-      // -------------------------------------------------------
+      // ---------------------------------------------------
+      // VISIT DELETE
+      // ---------------------------------------------------
 
       else if (
         operationType === "DELETE"
       ) {
-
         const realVisitId =
           await resolveVisitServerId(
             localId,
             idMappings
           );
 
+        /**
+         * If there is no server ID, this was most likely
+         * a local-only Visit that had never synchronized.
+         *
+         * Remove it locally and mark the queue operation
+         * as synchronized.
+         */
         if (!realVisitId) {
-          /**
-           * If the Visit never reached backend,
-           * there is nothing to delete remotely.
-           */
           await db.visits.delete(
             localId
           );
+
+          await markSynced(id);
 
           return {
             success: true,
@@ -239,12 +260,13 @@ const processSyncOperation = async (
               realVisitId
             );
         } catch (error) {
-
           /**
-           * Already deleted on backend.
+           * If the backend says the Visit does not exist,
+           * consider the delete already completed.
            */
           if (
-            error?.response?.status === 404
+            error?.response?.status ===
+            404
           ) {
             result = null;
           } else {
@@ -264,25 +286,22 @@ const processSyncOperation = async (
       }
     }
 
-    // =========================================================
+    // =====================================================
     // HEALTH RECORD
-    // =========================================================
+    // =====================================================
 
     else if (
-      entityType === "HEALTH_RECORD"
+      entityType ===
+      "HEALTH_RECORD"
     ) {
 
-      // -------------------------------------------------------
+      // ---------------------------------------------------
       // CREATE HEALTH RECORD
-      // -------------------------------------------------------
+      // ---------------------------------------------------
 
       if (
         operationType === "CREATE"
       ) {
-
-        /**
-         * Health Record MUST have a Visit.
-         */
         if (!serverPayload.visitId) {
           throw new Error(
             "Health Record cannot be synchronized without a Visit ID."
@@ -292,27 +311,13 @@ const processSyncOperation = async (
         const localVisitId =
           serverPayload.visitId;
 
-        /**
-         * IMPORTANT:
-         *
-         * If Health Record points to a local Visit,
-         * that Visit must be synchronized first.
-         */
         const mappedVisitId =
           await resolveVisitServerId(
             localVisitId,
             idMappings
           );
 
-        /**
-         * No server Visit yet.
-         */
         if (!mappedVisitId) {
-
-          /**
-           * This is expected when the Visit CREATE
-           * has not completed yet.
-           */
           if (
             typeof localVisitId ===
               "string" &&
@@ -324,28 +329,14 @@ const processSyncOperation = async (
               `Visit ${localVisitId} has not been synchronized yet.`
             );
           }
-
-          /**
-           * If it is not a local Visit ID,
-           * assume it is already a server ID.
-           */
         } else {
-
-          /**
-           * Replace local Visit ID
-           * with real backend Visit ID.
-           */
           serverPayload = {
             ...serverPayload,
-            visitId: mappedVisitId,
+            visitId:
+              mappedVisitId,
           };
         }
 
-        /**
-         * Final protection:
-         *
-         * Never send LOCAL_VISIT_* to backend.
-         */
         if (
           typeof serverPayload.visitId ===
             "string" &&
@@ -358,9 +349,6 @@ const processSyncOperation = async (
           );
         }
 
-        /**
-         * Now create Health Record.
-         */
         result =
           await healthRecordService.createHealthRecord(
             serverPayload
@@ -372,10 +360,6 @@ const processSyncOperation = async (
           );
         }
 
-        /**
-         * Store local Health Record
-         * → server Health Record mapping.
-         */
         idMappings.healthRecords[
           localId
         ] = result.id;
@@ -387,17 +371,12 @@ const processSyncOperation = async (
           serverId: result.id,
         });
 
-        /**
-         * Replace local Health Record
-         * with server Health Record.
-         */
         const localHealthRecord =
           await db.healthRecords.get(
             localId
           );
 
         if (localHealthRecord) {
-
           const updatedHealthRecord = {
             ...localHealthRecord,
             ...result,
@@ -416,15 +395,18 @@ const processSyncOperation = async (
         }
       }
 
-      // -------------------------------------------------------
+      // ---------------------------------------------------
       // UPDATE HEALTH RECORD
-      // -------------------------------------------------------
+      // ---------------------------------------------------
 
       else if (
-        operationType === "UPDATE"
+        operationType ===
+        "UPDATE"
       ) {
-
-        const realHealthRecordId =
+        /**
+         * First try the current sync-session mapping.
+         */
+        let realHealthRecordId =
           idMappings.healthRecords[
             localId
           ] ||
@@ -433,6 +415,24 @@ const processSyncOperation = async (
               "HEALTH_RECORD",
             localId,
           });
+
+        /**
+         * If no mapping exists, check whether the ID
+         * is already a real backend/server ID.
+         *
+         * After a successful CREATE sync, the local
+         * IndexedDB record ID becomes the server ID.
+         */
+        if (
+          !realHealthRecordId &&
+          typeof localId === "string" &&
+          !localId.startsWith(
+            "LOCAL_HEALTH_"
+          )
+        ) {
+          realHealthRecordId =
+            localId;
+        }
 
         if (!realHealthRecordId) {
           throw new Error(
@@ -446,10 +446,10 @@ const processSyncOperation = async (
         };
 
         /**
-         * Resolve Visit ID if necessary.
+         * Resolve Visit ID if the Health Record
+         * references an offline-created Visit.
          */
         if (serverPayload.visitId) {
-
           const mappedVisitId =
             await resolveVisitServerId(
               serverPayload.visitId,
@@ -467,9 +467,6 @@ const processSyncOperation = async (
           }
         }
 
-        /**
-         * Never send local Visit ID.
-         */
         if (
           typeof serverPayload.visitId ===
             "string" &&
@@ -489,15 +486,18 @@ const processSyncOperation = async (
           );
       }
 
-      // -------------------------------------------------------
+      // ---------------------------------------------------
       // DELETE HEALTH RECORD
-      // -------------------------------------------------------
+      // ---------------------------------------------------
 
       else if (
-        operationType === "DELETE"
+        operationType ===
+        "DELETE"
       ) {
-
-        const realHealthRecordId =
+        /**
+         * First try the current sync-session mapping.
+         */
+        let realHealthRecordId =
           idMappings.healthRecords[
             localId
           ] ||
@@ -508,14 +508,30 @@ const processSyncOperation = async (
           });
 
         /**
-         * If it was only created offline
-         * and never synced, simply remove it locally.
+         * If the record has already synchronized,
+         * the queue may contain the real server ID.
+         */
+        if (
+          !realHealthRecordId &&
+          typeof localId === "string" &&
+          !localId.startsWith(
+            "LOCAL_HEALTH_"
+          )
+        ) {
+          realHealthRecordId =
+            localId;
+        }
+
+        /**
+         * Local-only Health Record that never reached
+         * the backend.
          */
         if (!realHealthRecordId) {
-
           await db.healthRecords.delete(
             localId
           );
+
+          await markSynced(id);
 
           return {
             success: true,
@@ -525,16 +541,17 @@ const processSyncOperation = async (
         }
 
         try {
-
           result =
             await healthRecordService.deleteHealthRecord(
               realHealthRecordId
             );
-
         } catch (error) {
-
+          /**
+           * Already deleted on backend.
+           */
           if (
-            error?.response?.status === 404
+            error?.response?.status ===
+            404
           ) {
             result = null;
           } else {
@@ -554,6 +571,10 @@ const processSyncOperation = async (
       }
     }
 
+    // =====================================================
+    // UNKNOWN ENTITY
+    // =====================================================
+
     else {
       throw new Error(
         `Unsupported entity type: ${entityType}`
@@ -569,7 +590,6 @@ const processSyncOperation = async (
     };
 
   } catch (error) {
-
     const errorMessage =
       error?.apiError?.message ||
       error?.response?.data?.message ||
@@ -607,12 +627,10 @@ const hasFailedCreate = (
  */
 export const syncPendingOperations =
   async () => {
-
     const operations =
       await getPendingSyncOperations();
 
     if (!operations.length) {
-
       return {
         success: true,
         total: 0,
@@ -624,34 +642,13 @@ export const syncPendingOperations =
     let synced = 0;
     let failed = 0;
 
-    /**
-     * Runtime mappings created during
-     * this synchronization session.
-     */
     const idMappings = {
       visits: {},
       healthRecords: {},
     };
 
-    /**
-     * Track failed CREATE operations.
-     */
     const failedCreates =
       new Set();
-
-    /**
-     * ---------------------------------------------------------
-     * IMPORTANT:
-     *
-     * Sort operations so that:
-     *
-     * VISIT CREATE
-     * comes before
-     * HEALTH_RECORD CREATE
-     *
-     * This guarantees dependency order.
-     * ---------------------------------------------------------
-     */
 
     const entityPriority = {
       VISIT: 1,
@@ -667,10 +664,6 @@ export const syncPendingOperations =
     const sortedOperations =
       [...operations].sort(
         (a, b) => {
-
-          /**
-           * First sort by entity.
-           */
           const entityDifference =
             (entityPriority[
               a.entityType
@@ -685,9 +678,6 @@ export const syncPendingOperations =
             return entityDifference;
           }
 
-          /**
-           * Then CREATE → UPDATE → DELETE.
-           */
           const operationDifference =
             (operationPriority[
               a.operation
@@ -702,9 +692,6 @@ export const syncPendingOperations =
             return operationDifference;
           }
 
-          /**
-           * Finally preserve creation order.
-           */
           return (
             new Date(
               a.createdAt
@@ -731,17 +718,10 @@ export const syncPendingOperations =
       )
     );
 
-    /**
-     * ---------------------------------------------------------
-     * PROCESS OPERATIONS
-     * ---------------------------------------------------------
-     */
-
     for (
       const operation
       of sortedOperations
     ) {
-
       const {
         entityType,
         operation: operationType,
@@ -749,18 +729,19 @@ export const syncPendingOperations =
       } = operation;
 
       /**
-       * If a CREATE operation failed,
-       * don't process dependent operations.
+       * If a CREATE failed, dependent UPDATE/DELETE
+       * operations for that same local record should
+       * not be processed.
        */
       if (
-        operationType !== "CREATE" &&
+        operationType !==
+          "CREATE" &&
         hasFailedCreate(
           failedCreates,
           entityType,
           localId
         )
       ) {
-
         const dependencyError =
           `Skipped because the original ${entityType} CREATE operation failed.`;
 
@@ -787,10 +768,8 @@ export const syncPendingOperations =
       }
 
       /**
-       * Special protection for Health Record.
-       *
-       * If it depends on a local Visit,
-       * verify the Visit mapping before processing.
+       * Health Record CREATE depends on Visit CREATE
+       * when it references a LOCAL_VISIT ID.
        */
       if (
         entityType ===
@@ -798,7 +777,6 @@ export const syncPendingOperations =
         operationType ===
           "CREATE"
       ) {
-
         const visitId =
           operation.payload?.visitId;
 
@@ -809,18 +787,13 @@ export const syncPendingOperations =
             "LOCAL_VISIT_"
           )
         ) {
-
           const mappedVisitId =
             await resolveVisitServerId(
               visitId,
               idMappings
             );
 
-          /**
-           * Visit is not synced yet.
-           */
           if (!mappedVisitId) {
-
             const dependencyError =
               `Skipped Health Record because Visit ${visitId} has not been synchronized yet.`;
 
@@ -852,18 +825,14 @@ export const syncPendingOperations =
         );
 
       if (result.success) {
-
         synced++;
-
       } else {
-
         failed++;
 
         if (
           operationType ===
           "CREATE"
         ) {
-
           failedCreates.add(
             `${entityType}:${localId}`
           );

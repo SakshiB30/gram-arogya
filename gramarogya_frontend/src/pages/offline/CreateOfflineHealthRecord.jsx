@@ -1,9 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+
+import {
+  useDispatch,
+  useSelector,
+} from "react-redux";
+
 import {
   ArrowLeft,
   Save,
@@ -17,10 +27,12 @@ import {
 
 import {
   getOfflineBeneficiaries,
+  getOfflineBeneficiaryById,
 } from "../../offline/beneficiaryOfflineService";
 
 import {
   getOfflineVisits,
+  getOfflineVisitById,
 } from "../../offline/visitOfflineService";
 
 const CreateOfflineHealthRecord = () => {
@@ -123,8 +135,8 @@ const CreateOfflineHealthRecord = () => {
               : [];
 
           /*
-           * Keep only beneficiaries assigned
-           * to the logged-in ASHA.
+           * Only beneficiaries explicitly owned
+           * by the logged-in ASHA are allowed.
            */
           const ownedBeneficiaries =
             safeBeneficiaries.filter(
@@ -134,16 +146,14 @@ const CreateOfflineHealthRecord = () => {
             );
 
           /*
-           * getOfflineVisits(user.id)
-           * already filters by ASHA, but we
-           * validate again for safety.
+           * Only visits explicitly owned
+           * by the logged-in ASHA are allowed.
            */
           const ownedVisits =
             safeVisits.filter(
               (visit) =>
-                !visit.ashaId ||
                 visit.ashaId ===
-                  user.id
+                user.id
             );
 
           setBeneficiaries(
@@ -156,7 +166,7 @@ const CreateOfflineHealthRecord = () => {
 
           /*
            * If a beneficiary was passed
-           * through URL, verify ownership.
+           * through the URL, verify ownership.
            */
           if (
             queryBeneficiaryId
@@ -184,13 +194,13 @@ const CreateOfflineHealthRecord = () => {
           }
 
           /*
-           * If a visit was passed through URL,
+           * If a visit was passed through the URL,
            * verify:
            *
            * 1. Visit exists
            * 2. Visit belongs to ASHA
-           * 3. Visit is not deleted
-           * 4. Beneficiary belongs to ASHA
+           * 3. Visit is not pending deletion
+           * 4. Visit's beneficiary belongs to ASHA
            */
           if (queryVisitId) {
             const selectedVisit =
@@ -303,7 +313,8 @@ const CreateOfflineHealthRecord = () => {
   const allSelectedBeneficiaryVisits =
     useMemo(() => {
       if (
-        !formData.beneficiaryId
+        !formData.beneficiaryId ||
+        !user?.id
       ) {
         return [];
       }
@@ -314,9 +325,8 @@ const CreateOfflineHealthRecord = () => {
             formData.beneficiaryId &&
           visit.syncStatus !==
             "PENDING_DELETE" &&
-          (!visit.ashaId ||
-            visit.ashaId ===
-              user?.id)
+          visit.ashaId ===
+            user.id
       );
     }, [
       visits,
@@ -337,12 +347,15 @@ const CreateOfflineHealthRecord = () => {
               record.visitId ===
                 visit.id &&
               record.syncStatus !==
-                "PENDING_DELETE"
+                "PENDING_DELETE" &&
+              record.ashaId ===
+                user?.id
           )
       );
     }, [
       allSelectedBeneficiaryVisits,
       healthRecords,
+      user?.id,
     ]);
 
   /* =====================================================
@@ -388,7 +401,7 @@ const CreateOfflineHealthRecord = () => {
      VALIDATION
   ===================================================== */
 
-  const validateForm = () => {
+  const validateForm = async () => {
     if (!user?.id) {
       return "ASHA user information is not available.";
     }
@@ -399,80 +412,63 @@ const CreateOfflineHealthRecord = () => {
       return "Please select a beneficiary.";
     }
 
-    /*
-     * Verify beneficiary belongs
-     * to logged-in ASHA.
-     */
-    const selectedBeneficiary =
-      beneficiaries.find(
-        (beneficiary) =>
-          beneficiary.id ===
-          formData.beneficiaryId
-      );
-
-    if (!selectedBeneficiary) {
-      return "Selected beneficiary is not available offline.";
-    }
-
-    if (
-      selectedBeneficiary.ashaId !==
-      user.id
-    ) {
-      return "This beneficiary is not assigned to the logged-in ASHA.";
-    }
-
     if (!formData.visitId) {
       return "Please select a visit.";
     }
 
     /*
-     * Find selected visit.
+     * Final beneficiary ownership check
+     * directly against IndexedDB.
+     */
+    const selectedBeneficiary =
+      await getOfflineBeneficiaryById(
+        formData.beneficiaryId,
+        user.id
+      );
+
+    if (!selectedBeneficiary) {
+      return "Selected beneficiary is not available offline or does not belong to the logged-in ASHA.";
+    }
+
+    /*
+     * Final visit ownership check
+     * directly against IndexedDB.
      */
     const selectedVisit =
-      visits.find(
-        (visit) =>
-          visit.id ===
-          formData.visitId
+      await getOfflineVisitById(
+        formData.visitId,
+        user.id
       );
 
     if (!selectedVisit) {
-      return "Selected visit was not found offline.";
+      return "Selected visit is not available offline or does not belong to the logged-in ASHA.";
     }
 
     /*
-     * Verify visit ownership.
-     */
-    if (
-      selectedVisit.ashaId &&
-      selectedVisit.ashaId !==
-        user.id
-    ) {
-      return "This visit does not belong to the logged-in ASHA.";
-    }
-
-    /*
-     * Verify beneficiary relationship.
-     */
-    if (
-      selectedVisit.beneficiaryId !==
-      formData.beneficiaryId
-    ) {
-      return "Selected visit does not belong to the selected beneficiary.";
-    }
-
-    /*
-     * Deleted visits cannot receive
-     * a health record.
+     * A visit pending deletion cannot
+     * receive a health record.
      */
     if (
       selectedVisit.syncStatus ===
       "PENDING_DELETE"
     ) {
-      return "This visit has been deleted and cannot have a health record.";
+      return "This visit is pending deletion and cannot have a health record.";
     }
 
     /*
-     * Check duplicate health record.
+     * Verify that the visit belongs
+     * to the selected beneficiary.
+     */
+    if (
+      selectedVisit.beneficiaryId !==
+      selectedBeneficiary.id
+    ) {
+      return "Selected visit does not belong to the selected beneficiary.";
+    }
+
+    /*
+     * Prevent duplicate health records
+     * for the same visit.
      */
     const existingRecord =
       healthRecords.some(
@@ -480,7 +476,9 @@ const CreateOfflineHealthRecord = () => {
           record.visitId ===
             formData.visitId &&
           record.syncStatus !==
-            "PENDING_DELETE"
+            "PENDING_DELETE" &&
+          record.ashaId ===
+            user.id
       );
 
     if (existingRecord) {
@@ -574,7 +572,7 @@ const CreateOfflineHealthRecord = () => {
     setError("");
 
     const validationError =
-      validateForm();
+      await validateForm();
 
     if (validationError) {
       setError(
@@ -596,8 +594,14 @@ const CreateOfflineHealthRecord = () => {
           formData.visitId,
 
         /*
+         * Explicit ownership.
+         */
+        ashaId:
+          user.id,
+
+        /*
          * Backend uses LocalDateTime.
-         * Therefore remove trailing Z.
+         * Remove trailing Z.
          */
         recordedAt:
           now
@@ -646,7 +650,7 @@ const CreateOfflineHealthRecord = () => {
       };
 
       /*
-       * Redux automatically handles:
+       * Redux handles:
        *
        * ONLINE
        * -> Backend POST

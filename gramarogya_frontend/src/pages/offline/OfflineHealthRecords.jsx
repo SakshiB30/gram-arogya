@@ -1,11 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, HeartPulse, WifiOff, Eye } from "lucide-react";
+import {
+  Plus,
+  HeartPulse,
+  WifiOff,
+  Eye,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 
-import { getOfflineHealthRecords } from "../../offline/healthRecordOfflineService";
-import { getOfflineBeneficiaries } from "../../offline/beneficiaryOfflineService";
-import { getOfflineVisits } from "../../offline/visitOfflineService";
+import {
+  getOfflineHealthRecords,
+} from "../../offline/healthRecordOfflineService";
+
+import {
+  getOfflineBeneficiaries,
+} from "../../offline/beneficiaryOfflineService";
+
+import {
+  getOfflineVisits,
+} from "../../offline/visitOfflineService";
 
 const OfflineHealthRecords = () => {
   const navigate = useNavigate();
@@ -45,12 +58,23 @@ const OfflineHealthRecords = () => {
         return;
       }
 
+      /*
+       * IMPORTANT:
+       * getOfflineHealthRecords now requires
+       * the logged-in ASHA ID.
+       *
+       * This ensures that only health records
+       * belonging to the current ASHA are loaded.
+       */
+
       const [
         records,
         offlineBeneficiaries,
         offlineVisits,
       ] = await Promise.all([
-        getOfflineHealthRecords(),
+        getOfflineHealthRecords(
+          user.id
+        ),
 
         getOfflineBeneficiaries(
           user.id
@@ -62,13 +86,18 @@ const OfflineHealthRecords = () => {
       ]);
 
       /*
-       * Only show records belonging to the
-       * logged-in ASHA.
+       * Extra frontend ownership check.
        *
-       * Older synced records may not have
-       * ashaId, so records without ashaId
-       * are kept for compatibility.
+       * The offline service already filters
+       * records by ASHA, but this additional
+       * check keeps the page safe if older
+       * records exist in IndexedDB.
+       *
+       * Records without ashaId are retained
+       * for backward compatibility with older
+       * locally stored records.
        */
+
       const ashaRecords =
         (records || []).filter(
           (record) =>
@@ -119,8 +148,7 @@ const OfflineHealthRecords = () => {
     const beneficiary =
       beneficiaries.find(
         (item) =>
-          item.id ===
-          beneficiaryId
+          item.id === beneficiaryId
       );
 
     return (
@@ -384,8 +412,7 @@ const OfflineHealthRecords = () => {
           EMPTY STATE
       ================================================= */}
 
-      {healthRecords.length ===
-        0 && (
+      {healthRecords.length === 0 && (
         <div className="rounded-xl border bg-white p-10 text-center">
 
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-100 text-violet-600">
@@ -425,8 +452,7 @@ const OfflineHealthRecords = () => {
           TABLE
       ================================================= */}
 
-      {healthRecords.length >
-        0 && (
+      {healthRecords.length > 0 && (
         <div className="overflow-hidden rounded-xl border bg-white">
 
           <div className="overflow-x-auto">
@@ -473,6 +499,7 @@ const OfflineHealthRecords = () => {
 
                 {healthRecords.map(
                   (record) => {
+
                     const sync =
                       getSyncStatus(
                         record.syncStatus
@@ -497,7 +524,9 @@ const OfflineHealthRecords = () => {
                           </div>
 
                           <div className="mt-1 text-xs text-gray-400">
-                            {record.beneficiaryId}
+                            {
+                              record.beneficiaryId
+                            }
                           </div>
 
                         </td>

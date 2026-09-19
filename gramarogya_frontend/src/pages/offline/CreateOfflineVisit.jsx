@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
+
 import {
   ArrowLeft,
   Save,
   WifiOff,
 } from "lucide-react";
+
 import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+
 import { useSelector } from "react-redux";
 
 import {
@@ -15,8 +18,13 @@ import {
   getOfflineBeneficiaryById,
 } from "../../offline/beneficiaryOfflineService";
 
-import { createOfflineVisit } from "../../offline/visitOfflineService";
-import { addToSyncQueue } from "../../offline/syncQueueService";
+import {
+  createOfflineVisit,
+} from "../../offline/visitOfflineService";
+
+import {
+  addToSyncQueue,
+} from "../../offline/syncQueueService";
 
 
 const CreateOfflineVisit = () => {
@@ -43,18 +51,22 @@ const CreateOfflineVisit = () => {
       beneficiaryId:
         beneficiaryId || "",
 
-      visitType: "Home Visit",
+      visitType:
+        "Home Visit",
 
-      status: "Pending",
+      status:
+        "Pending",
 
       scheduledDate:
         new Date()
           .toISOString()
           .split("T")[0],
 
-      nextVisitDate: "",
+      nextVisitDate:
+        "",
 
-      notes: "",
+      notes:
+        "",
     });
 
   const [loading, setLoading] =
@@ -84,35 +96,82 @@ const CreateOfflineVisit = () => {
             );
           }
 
+          /*
+           * getOfflineBeneficiaries already filters
+           * beneficiaries using the logged-in ASHA ID.
+           *
+           * We still perform an explicit ownership
+           * filter here as an additional local
+           * protection layer.
+           */
           const data =
             await getOfflineBeneficiaries(
               user.id
             );
 
-          setBeneficiaries(
+          const safeBeneficiaries =
             Array.isArray(data)
               ? data
-              : []
+              : [];
+
+          const ownedBeneficiaries =
+            safeBeneficiaries.filter(
+              (beneficiary) =>
+                beneficiary.ashaId ===
+                user.id
+            );
+
+          setBeneficiaries(
+            ownedBeneficiaries
           );
 
+          /*
+           * If beneficiaryId is provided in the URL,
+           * verify it directly against IndexedDB
+           * using the logged-in ASHA ID.
+           */
           if (beneficiaryId) {
             const beneficiary =
               await getOfflineBeneficiaryById(
-                beneficiaryId
+                beneficiaryId,
+                user.id
               );
 
             if (
-              beneficiary &&
-              beneficiary.ashaId === user.id
+              !beneficiary
             ) {
-              setSelectedBeneficiary(
-                beneficiary
+              throw new Error(
+                "Selected beneficiary is not assigned to the logged-in ASHA."
               );
-            } else {
+            }
+
+            /*
+             * Extra ownership verification.
+             */
+            if (
+              beneficiary.ashaId !==
+              user.id
+            ) {
               throw new Error(
                 "Selected beneficiary is not assigned to you."
               );
             }
+
+            setSelectedBeneficiary(
+              beneficiary
+            );
+
+            /*
+             * Keep the verified beneficiary ID
+             * in the form.
+             */
+            setFormData(
+              (prev) => ({
+                ...prev,
+                beneficiaryId:
+                  beneficiary.id,
+              })
+            );
           }
 
         } catch (err) {
@@ -121,8 +180,12 @@ const CreateOfflineVisit = () => {
             err
           );
 
+          setSelectedBeneficiary(
+            null
+          );
+
           setError(
-            err.message ||
+            err?.message ||
               "Failed to load beneficiaries."
           );
         } finally {
@@ -146,40 +209,92 @@ const CreateOfflineVisit = () => {
       const id =
         event.target.value;
 
-      setFormData((prev) => ({
-        ...prev,
-        beneficiaryId: id,
-      }));
+      setError("");
+
+      setFormData(
+        (prev) => ({
+          ...prev,
+          beneficiaryId:
+            id,
+        })
+      );
 
       if (!id) {
-        setSelectedBeneficiary(null);
+        setSelectedBeneficiary(
+          null
+        );
+
         return;
       }
 
       try {
+        if (!user?.id) {
+          throw new Error(
+            "Logged-in ASHA not found."
+          );
+        }
+
+        /*
+         * Direct secure lookup.
+         *
+         * The service checks:
+         * beneficiary exists
+         * AND beneficiary.ashaId === user.id
+         */
         const beneficiary =
           await getOfflineBeneficiaryById(
-            id
+            id,
+            user.id
           );
 
+        if (!beneficiary) {
+          setSelectedBeneficiary(
+            null
+          );
+
+          setError(
+            "This beneficiary is not available offline or is not assigned to the logged-in ASHA."
+          );
+
+          return;
+        }
+
+        /*
+         * Extra explicit ownership check.
+         */
         if (
-          beneficiary &&
-          beneficiary.ashaId === user.id
+          beneficiary.ashaId !==
+          user.id
         ) {
           setSelectedBeneficiary(
-            beneficiary
+            null
           );
-        } else {
-          setSelectedBeneficiary(null);
 
           setError(
             "This beneficiary is not assigned to you."
           );
-        }
-      } catch (err) {
-        console.error(err);
 
-        setSelectedBeneficiary(null);
+          return;
+        }
+
+        setSelectedBeneficiary(
+          beneficiary
+        );
+
+      } catch (err) {
+        console.error(
+          "Failed to select offline beneficiary:",
+          err
+        );
+
+        setSelectedBeneficiary(
+          null
+        );
+
+        setError(
+          err?.message ||
+            "Unable to load selected beneficiary."
+        );
       }
     };
 
@@ -196,10 +311,59 @@ const CreateOfflineVisit = () => {
       value,
     } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setError("");
+
+    setFormData(
+      (prev) => ({
+        ...prev,
+        [name]: value,
+      })
+    );
+  };
+
+
+  /* =====================================================
+     VALIDATE VISIT
+  ===================================================== */
+
+  const validateVisit = async () => {
+    if (!user?.id) {
+      return "Logged-in ASHA not found.";
+    }
+
+    if (
+      !formData.beneficiaryId
+    ) {
+      return "Please select a beneficiary.";
+    }
+
+    /*
+     * Final ownership check directly against
+     * IndexedDB before creating the visit.
+     *
+     * This prevents relying only on the UI state.
+     */
+    const verifiedBeneficiary =
+      await getOfflineBeneficiaryById(
+        formData.beneficiaryId,
+        user.id
+      );
+
+    if (!verifiedBeneficiary) {
+      return "Selected beneficiary is not available offline or does not belong to the logged-in ASHA.";
+    }
+
+    /*
+     * Explicit ownership verification.
+     */
+    if (
+      verifiedBeneficiary.ashaId !==
+      user.id
+    ) {
+      return "Selected beneficiary is not assigned to the logged-in ASHA.";
+    }
+
+    return "";
   };
 
 
@@ -215,23 +379,43 @@ const CreateOfflineVisit = () => {
     try {
       setError("");
 
-      if (!user?.id) {
+      /*
+       * Final validation happens immediately
+       * before writing anything to IndexedDB.
+       */
+      const validationError =
+        await validateVisit();
+
+      if (validationError) {
         throw new Error(
-          "Logged-in ASHA not found."
+          validationError
+        );
+      }
+
+      /*
+       * Re-fetch the beneficiary one final time.
+       *
+       * This ensures we use the actual IndexedDB
+       * record rather than trusting stale UI state.
+       */
+      const verifiedBeneficiary =
+        await getOfflineBeneficiaryById(
+          formData.beneficiaryId,
+          user.id
+        );
+
+      if (!verifiedBeneficiary) {
+        throw new Error(
+          "Selected beneficiary is no longer available offline."
         );
       }
 
       if (
-        !formData.beneficiaryId
+        verifiedBeneficiary.ashaId !==
+        user.id
       ) {
         throw new Error(
-          "Please select a beneficiary."
-        );
-      }
-
-      if (!selectedBeneficiary) {
-        throw new Error(
-          "Selected beneficiary is not available offline."
+          "You are not authorized to create a visit for this beneficiary."
         );
       }
 
@@ -246,11 +430,17 @@ const CreateOfflineVisit = () => {
       const now =
         new Date().toISOString();
 
+      /*
+       * Create the offline visit.
+       *
+       * ASHA ownership is explicitly stored.
+       */
       const offlineVisit = {
-        id: localVisitId,
+        id:
+          localVisitId,
 
         beneficiaryId:
-          formData.beneficiaryId,
+          verifiedBeneficiary.id,
 
         ashaId:
           user.id,
@@ -298,7 +488,7 @@ const CreateOfflineVisit = () => {
 
 
       /* -----------------------------------------------
-         ADD TO SYNC QUEUE
+         ADD VISIT TO SYNC QUEUE
       ----------------------------------------------- */
 
       await addToSyncQueue({
@@ -336,7 +526,7 @@ const CreateOfflineVisit = () => {
       );
 
       setError(
-        err.message ||
+        err?.message ||
           "Failed to save visit."
       );
     } finally {
@@ -382,7 +572,10 @@ const CreateOfflineVisit = () => {
             }
             className="mb-3 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900"
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft
+              size={17}
+            />
+
             Back to Visits
           </button>
 
@@ -398,8 +591,13 @@ const CreateOfflineVisit = () => {
 
 
         <div className="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
-          <WifiOff size={16} />
+
+          <WifiOff
+            size={16}
+          />
+
           Offline Mode
+
         </div>
 
       </div>
@@ -417,7 +615,9 @@ const CreateOfflineVisit = () => {
       {/* FORM */}
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={
+          handleSubmit
+        }
         className="rounded-xl border bg-white p-6"
       >
 
@@ -446,7 +646,9 @@ const CreateOfflineVisit = () => {
                 handleBeneficiaryChange
               }
               disabled={
-                Boolean(beneficiaryId)
+                Boolean(
+                  beneficiaryId
+                )
               }
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:bg-gray-100"
             >
@@ -456,7 +658,9 @@ const CreateOfflineVisit = () => {
               </option>
 
               {beneficiaries.map(
-                (beneficiary) => (
+                (
+                  beneficiary
+                ) => (
                   <option
                     key={
                       beneficiary.id
@@ -465,7 +669,10 @@ const CreateOfflineVisit = () => {
                       beneficiary.id
                     }
                   >
-                    {beneficiary.name}
+                    {
+                      beneficiary.name
+                    }
+
                     {beneficiary.village
                       ? ` - ${beneficiary.village}`
                       : ""}
@@ -474,6 +681,13 @@ const CreateOfflineVisit = () => {
               )}
 
             </select>
+
+            {beneficiaries.length ===
+              0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                No beneficiaries are available offline.
+              </p>
+            )}
 
           </div>
 
@@ -490,6 +704,7 @@ const CreateOfflineVisit = () => {
               <div className="grid gap-3 sm:grid-cols-3">
 
                 <div>
+
                   <p className="text-xs text-gray-500">
                     Name
                   </p>
@@ -499,9 +714,11 @@ const CreateOfflineVisit = () => {
                       selectedBeneficiary.name
                     }
                   </p>
+
                 </div>
 
                 <div>
+
                   <p className="text-xs text-gray-500">
                     Age
                   </p>
@@ -512,9 +729,11 @@ const CreateOfflineVisit = () => {
                       "N/A"
                     }
                   </p>
+
                 </div>
 
                 <div>
+
                   <p className="text-xs text-gray-500">
                     Village
                   </p>
@@ -525,6 +744,7 @@ const CreateOfflineVisit = () => {
                       "N/A"
                     }
                   </p>
+
                 </div>
 
               </div>
@@ -744,7 +964,9 @@ const CreateOfflineVisit = () => {
             className="flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
 
-            <Save size={17} />
+            <Save
+              size={17}
+            />
 
             {saving
               ? "Saving..."

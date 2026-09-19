@@ -27,8 +27,16 @@ import { isOnline } from "../../offline/network";
 
 export const fetchHealthRecords = createAsyncThunk(
   "healthRecords/fetchHealthRecords",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      const { user } = getState().auth;
+
+      if (!user?.id) {
+        return rejectWithValue(
+          "ASHA user information is required."
+        );
+      }
+
       if (isOnline()) {
         const response =
           await healthRecordService.getAllHealthRecords(
@@ -40,9 +48,16 @@ export const fetchHealthRecords = createAsyncThunk(
           response?.content || [];
 
         /*
-         * Save online records locally.
+         * Save only records belonging to
+         * the logged-in ASHA locally.
+         *
+         * Backend remains the final authorization layer.
          */
         for (const record of records) {
+          if (record.ashaId !== user.id) {
+            continue;
+          }
+
           await saveHealthRecordOffline({
             ...record,
             syncStatus: "SYNCED",
@@ -57,7 +72,9 @@ export const fetchHealthRecords = createAsyncThunk(
        * Offline mode
        */
       const records =
-        await getOfflineHealthRecords();
+        await getOfflineHealthRecords(
+          user.id
+        );
 
       return records;
     } catch (error) {
@@ -84,7 +101,7 @@ export const fetchHealthRecordById =
     "healthRecords/fetchHealthRecordById",
     async (
       id,
-      { rejectWithValue }
+      { rejectWithValue, getState }
     ) => {
       try {
         if (!id) {
@@ -93,11 +110,29 @@ export const fetchHealthRecordById =
           );
         }
 
+        const { user } = getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
+          );
+        }
+
         if (isOnline()) {
           const record =
             await healthRecordService.getHealthRecordById(
               id
             );
+
+          /*
+           * Do not store another ASHA's record
+           * in this ASHA's offline database.
+           */
+          if (record?.ashaId !== user.id) {
+            return rejectWithValue(
+              "You are not authorized to access this health record."
+            );
+          }
 
           await saveHealthRecordOffline({
             ...record,
@@ -113,7 +148,8 @@ export const fetchHealthRecordById =
          */
         const record =
           await getOfflineHealthRecordById(
-            id
+            id,
+            user.id
           );
 
         if (!record) {
@@ -147,12 +183,20 @@ export const fetchHealthRecordsByBeneficiary =
     "healthRecords/fetchHealthRecordsByBeneficiary",
     async (
       beneficiaryId,
-      { rejectWithValue }
+      { rejectWithValue, getState }
     ) => {
       try {
         if (!beneficiaryId) {
           return rejectWithValue(
             "Beneficiary ID is required."
+          );
+        }
+
+        const { user } = getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
           );
         }
 
@@ -168,9 +212,15 @@ export const fetchHealthRecordsByBeneficiary =
               : records?.content || [];
 
           /*
-           * Save online records locally.
+           * Save only this ASHA's records locally.
            */
-          for (const record of recordsArray) {
+          const authorizedRecords =
+            recordsArray.filter(
+              (record) =>
+                record.ashaId === user.id
+            );
+
+          for (const record of authorizedRecords) {
             await saveHealthRecordOffline({
               ...record,
               syncStatus: "SYNCED",
@@ -178,7 +228,7 @@ export const fetchHealthRecordsByBeneficiary =
             });
           }
 
-          return recordsArray;
+          return authorizedRecords;
         }
 
         /*
@@ -186,7 +236,8 @@ export const fetchHealthRecordsByBeneficiary =
          */
         const records =
           await getOfflineHealthRecordsByBeneficiary(
-            beneficiaryId
+            beneficiaryId,
+            user.id
           );
 
         return records;
@@ -214,12 +265,20 @@ export const fetchHealthRecordsByVisit =
     "healthRecords/fetchHealthRecordsByVisit",
     async (
       visitId,
-      { rejectWithValue }
+      { rejectWithValue, getState }
     ) => {
       try {
         if (!visitId) {
           return rejectWithValue(
             "Visit ID is required."
+          );
+        }
+
+        const { user } = getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
           );
         }
 
@@ -235,9 +294,15 @@ export const fetchHealthRecordsByVisit =
               : records?.content || [];
 
           /*
-           * Save online records locally.
+           * Save only this ASHA's records locally.
            */
-          for (const record of recordsArray) {
+          const authorizedRecords =
+            recordsArray.filter(
+              (record) =>
+                record.ashaId === user.id
+            );
+
+          for (const record of authorizedRecords) {
             await saveHealthRecordOffline({
               ...record,
               syncStatus: "SYNCED",
@@ -245,7 +310,7 @@ export const fetchHealthRecordsByVisit =
             });
           }
 
-          return recordsArray;
+          return authorizedRecords;
         }
 
         /*
@@ -253,7 +318,8 @@ export const fetchHealthRecordsByVisit =
          */
         const records =
           await getOfflineHealthRecordsByVisit(
-            visitId
+            visitId,
+            user.id
           );
 
         return records;
@@ -293,6 +359,15 @@ export const createHealthRecord =
           );
         }
 
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
+          );
+        }
+
         /*
          * =============================================
          * ONLINE CREATE
@@ -323,33 +398,15 @@ export const createHealthRecord =
          * =============================================
          */
 
-        const { user } =
-          getState().auth;
-
-        if (!user?.id) {
-          return rejectWithValue(
-            "ASHA user information is required for offline health record."
-          );
-        }
-
-        /*
-         * Generate temporary local ID.
-         */
         const localHealthRecordId =
           `LOCAL_HEALTH_${crypto.randomUUID()}`;
 
-        /*
-         * Generate sync operation ID.
-         */
         const operationId =
           `SYNC_HEALTH_CREATE_${crypto.randomUUID()}`;
 
         const now =
           new Date().toISOString();
 
-        /*
-         * Create local health record.
-         */
         const offlineHealthRecord = {
           ...healthRecord,
 
@@ -366,16 +423,10 @@ export const createHealthRecord =
           updatedAt: now,
         };
 
-        /*
-         * Save to IndexedDB.
-         */
         await createOfflineHealthRecord(
           offlineHealthRecord
         );
 
-        /*
-         * Add CREATE operation to sync queue.
-         */
         await addToSyncQueue({
           operationId,
           entityType: "HEALTH_RECORD",
@@ -431,6 +482,15 @@ export const updateHealthRecord =
           );
         }
 
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
+          );
+        }
+
         /*
          * =============================================
          * ONLINE UPDATE
@@ -444,9 +504,6 @@ export const updateHealthRecord =
               healthRecord
             );
 
-          /*
-           * Update local copy.
-           */
           await saveHealthRecordOffline({
             ...updatedRecord,
             syncStatus: "SYNCED",
@@ -462,30 +519,19 @@ export const updateHealthRecord =
          * =============================================
          */
 
-        const { user } =
-          getState().auth;
-
-        if (!user?.id) {
-          return rejectWithValue(
-            "ASHA user information is required for offline health record update."
-          );
-        }
-
         const updatedRecord =
           await updateOfflineHealthRecord(
             id,
             {
               ...healthRecord,
               ashaId: user.id,
-            }
+            },
+            user.id
           );
 
         const operationId =
           `SYNC_HEALTH_UPDATE_${crypto.randomUUID()}`;
 
-        /*
-         * Add UPDATE operation.
-         */
         await addToSyncQueue({
           operationId,
           entityType: "HEALTH_RECORD",
@@ -532,6 +578,15 @@ export const deleteHealthRecord =
           );
         }
 
+        const { user } =
+          getState().auth;
+
+        if (!user?.id) {
+          return rejectWithValue(
+            "ASHA user information is required."
+          );
+        }
+
         /*
          * =============================================
          * ONLINE DELETE
@@ -543,12 +598,9 @@ export const deleteHealthRecord =
             id
           );
 
-          /*
-           * Remove local copy after
-           * successful backend deletion.
-           */
           await removeOfflineHealthRecord(
-            id
+            id,
+            user.id
           );
 
           return id;
@@ -560,21 +612,10 @@ export const deleteHealthRecord =
          * =============================================
          */
 
-        const { user } =
-          getState().auth;
-
-        if (!user?.id) {
-          return rejectWithValue(
-            "ASHA user information is required for offline health record deletion."
-          );
-        }
-
-        /*
-         * Check whether record exists locally.
-         */
         const existingRecord =
           await getOfflineHealthRecordById(
-            id
+            id,
+            user.id
           );
 
         if (!existingRecord) {
@@ -587,19 +628,6 @@ export const deleteHealthRecord =
          * ---------------------------------------------
          * LOCAL RECORD
          * ---------------------------------------------
-         *
-         * A LOCAL_HEALTH record has never reached
-         * the backend.
-         *
-         * Therefore we simply remove the local
-         * record.
-         *
-         * NOTE:
-         * We intentionally do not call
-         * removePendingCreateOperations or
-         * removePendingUpdateOperations because
-         * those functions are not exported by
-         * syncQueueService.js.
          */
 
         if (
@@ -609,7 +637,8 @@ export const deleteHealthRecord =
           )
         ) {
           await removeOfflineHealthRecord(
-            id
+            id,
+            user.id
           );
 
           return id;
@@ -619,24 +648,17 @@ export const deleteHealthRecord =
          * ---------------------------------------------
          * SERVER RECORD
          * ---------------------------------------------
-         *
-         * Backend already knows this record.
-         *
-         * Mark it as PENDING_DELETE locally
-         * and create a DELETE sync operation.
          */
 
         const deletedRecord =
           await deleteOfflineHealthRecord(
-            id
+            id,
+            user.id
           );
 
         const operationId =
           `SYNC_HEALTH_DELETE_${crypto.randomUUID()}`;
 
-        /*
-         * Add DELETE operation.
-         */
         await addToSyncQueue({
           operationId,
           entityType: "HEALTH_RECORD",
@@ -785,9 +807,6 @@ const healthRecordSlice =
             state.selectedHealthRecord =
               action.payload;
 
-            /*
-             * Keep record inside collection.
-             */
             const index =
               state.healthRecords.findIndex(
                 (record) =>
@@ -927,9 +946,6 @@ const healthRecordSlice =
             const record =
               action.payload;
 
-            /*
-             * Avoid duplicate entries.
-             */
             const existingIndex =
               state.healthRecords.findIndex(
                 (item) =>

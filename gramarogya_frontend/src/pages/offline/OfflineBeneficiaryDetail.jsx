@@ -14,9 +14,16 @@ import {
   getOfflineBeneficiaryById,
 } from "../../offline/beneficiaryOfflineService";
 
+import { useSelector } from "react-redux";
+
 import db from "../../offline/db";
 
 const OfflineBeneficiaryDetail = () => {
+
+  const user = useSelector(
+  (state) => state.auth.user
+  );
+
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -40,7 +47,10 @@ const OfflineBeneficiaryDetail = () => {
 
         // Get beneficiary from IndexedDB
         const beneficiaryData =
-          await getOfflineBeneficiaryById(id);
+  await getOfflineBeneficiaryById(
+    id,
+    user?.id
+  );
 
         if (!beneficiaryData) {
           setError(
@@ -52,11 +62,17 @@ const OfflineBeneficiaryDetail = () => {
         setBeneficiary(beneficiaryData);
 
         // Get visits for this beneficiary
-        const visitData =
-          await db.visits
-            .where("beneficiaryId")
-            .equals(id)
-            .toArray();
+        const allVisitData =
+  await db.visits
+    .where("beneficiaryId")
+    .equals(id)
+    .toArray();
+
+const visitData =
+  allVisitData.filter(
+    (visit) =>
+      visit.ashaId === user?.id
+  );
 
         // Newest visit first
         visitData.sort((a, b) => {
@@ -89,7 +105,7 @@ const OfflineBeneficiaryDetail = () => {
     if (id) {
       loadOfflineData();
     }
-  }, [id]);
+  }, [id, user?.id]);
 
   const formatDate = (date) => {
     if (!date) {

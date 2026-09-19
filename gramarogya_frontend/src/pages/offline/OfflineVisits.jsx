@@ -7,12 +7,16 @@ import {
   User,
   MapPin,
   Eye,
+  Trash2,
   WifiOff,
 } from "lucide-react";
 
 import {
   getOfflineVisits,
+  deleteOfflineVisit,
 } from "../../offline/visitOfflineService";
+
+import { addToSyncQueue } from "../../offline/syncQueueService";
 
 import db from "../../offline/db";
 
@@ -42,7 +46,6 @@ const OfflineVisits = () => {
           return;
         }
 
-        // Get visits belonging to logged-in ASHA
         const offlineVisits =
           await getOfflineVisits(user.id);
 
@@ -52,12 +55,7 @@ const OfflineVisits = () => {
         }
 
         /*
-         * Get beneficiary details from IndexedDB
-         * using visit.beneficiaryId.
-         *
-         * Visit stores only beneficiaryId.
-         * Beneficiary name/village are stored
-         * separately in db.beneficiaries.
+         * Get beneficiary details from IndexedDB.
          */
         const visitsWithBeneficiaries =
           await Promise.all(
@@ -102,6 +100,99 @@ const OfflineVisits = () => {
   }, [user?.id]);
 
   /* =====================================================
+     DELETE OFFLINE VISIT
+  ===================================================== */
+
+  const handleDelete = async (visit) => {
+    if (!user?.id || !visit?.id) {
+      return;
+    }
+
+    /*
+     * Prevent deleting a visit that is already
+     * waiting for deletion.
+     */
+    if (
+      visit.syncStatus ===
+      "PENDING_DELETE"
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this visit? The deletion will be synchronized when the network is available."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError(null);
+
+      /*
+       * Secure delete.
+       *
+       * deleteOfflineVisit() verifies that
+       * this visit belongs to the logged-in ASHA.
+       */
+      const deletedVisit =
+        await deleteOfflineVisit(
+          visit.id,
+          user.id
+        );
+
+      /*
+       * Add DELETE operation to sync queue.
+       */
+      await addToSyncQueue({
+        operationId:
+          crypto.randomUUID(),
+
+        entityType: "VISIT",
+
+        operation: "DELETE",
+
+        localId:
+          deletedVisit.id,
+
+        payload:
+          deletedVisit,
+
+        ashaId:
+          user.id,
+      });
+
+      /*
+       * Keep the visit in the list temporarily
+       * so the ASHA can see PENDING_DELETE status.
+       */
+      setVisits((currentVisits) =>
+        currentVisits.map(
+          (currentVisit) =>
+            currentVisit.id ===
+            deletedVisit.id
+              ? {
+                  ...currentVisit,
+                  ...deletedVisit,
+                }
+              : currentVisit
+        )
+      );
+    } catch (err) {
+      console.error(
+        "Failed to delete offline visit:",
+        err
+      );
+
+      setError(
+        err?.message ||
+          "Failed to delete visit."
+      );
+    }
+  };
+
+  /* =====================================================
      FORMAT DATE
   ===================================================== */
 
@@ -111,7 +202,8 @@ const OfflineVisits = () => {
     }
 
     try {
-      const parsedDate = new Date(date);
+      const parsedDate =
+        new Date(date);
 
       if (
         Number.isNaN(
@@ -222,8 +314,6 @@ const OfflineVisits = () => {
 
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 
-        {/* TITLE */}
-
         <div>
           <div className="flex items-center gap-3">
 
@@ -243,8 +333,6 @@ const OfflineVisits = () => {
 
           </div>
         </div>
-
-        {/* ACTIONS */}
 
         <div className="flex flex-wrap items-center gap-3">
 
@@ -269,14 +357,13 @@ const OfflineVisits = () => {
 
       </div>
 
-
       {/* =========================
           SUMMARY
       ========================= */}
 
       <div className="grid gap-4 sm:grid-cols-3">
 
-        {/* TOTAL VISITS */}
+        {/* TOTAL */}
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
 
@@ -302,7 +389,6 @@ const OfflineVisits = () => {
 
         </div>
 
-
         {/* COMPLETED */}
 
         <div className="rounded-xl bg-white p-5 shadow-sm">
@@ -320,7 +406,6 @@ const OfflineVisits = () => {
               </p>
 
               <p className="text-2xl font-bold text-slate-800">
-
                 {
                   visits.filter(
                     (visit) =>
@@ -328,7 +413,6 @@ const OfflineVisits = () => {
                       "Completed"
                   ).length
                 }
-
               </p>
 
             </div>
@@ -336,7 +420,6 @@ const OfflineVisits = () => {
           </div>
 
         </div>
-
 
         {/* PENDING SYNC */}
 
@@ -355,7 +438,6 @@ const OfflineVisits = () => {
               </p>
 
               <p className="text-2xl font-bold text-slate-800">
-
                 {
                   visits.filter(
                     (visit) =>
@@ -369,7 +451,6 @@ const OfflineVisits = () => {
                         "PENDING_DELETE"
                   ).length
                 }
-
               </p>
 
             </div>
@@ -379,7 +460,6 @@ const OfflineVisits = () => {
         </div>
 
       </div>
-
 
       {/* =========================
           EMPTY STATE
@@ -436,7 +516,6 @@ const OfflineVisits = () => {
 
           </div>
 
-
           <div className="overflow-x-auto">
 
             <table className="min-w-full">
@@ -473,7 +552,6 @@ const OfflineVisits = () => {
 
               </thead>
 
-
               <tbody className="divide-y divide-gray-100">
 
                 {visits.map((visit) => (
@@ -483,9 +561,7 @@ const OfflineVisits = () => {
                     className="hover:bg-gray-50"
                   >
 
-                    {/* =========================
-                        BENEFICIARY
-                    ========================= */}
+                    {/* BENEFICIARY */}
 
                     <td className="px-6 py-4">
 
@@ -518,21 +594,13 @@ const OfflineVisits = () => {
 
                     </td>
 
-
-                    {/* =========================
-                        VISIT TYPE
-                    ========================= */}
+                    {/* VISIT TYPE */}
 
                     <td className="px-6 py-4 text-sm text-gray-700">
-
                       {visit.visitType || "-"}
-
                     </td>
 
-
-                    {/* =========================
-                        DATE
-                    ========================= */}
+                    {/* DATE */}
 
                     <td className="px-6 py-4">
 
@@ -549,10 +617,7 @@ const OfflineVisits = () => {
 
                     </td>
 
-
-                    {/* =========================
-                        STATUS
-                    ========================= */}
+                    {/* STATUS */}
 
                     <td className="px-6 py-4">
 
@@ -566,10 +631,7 @@ const OfflineVisits = () => {
 
                     </td>
 
-
-                    {/* =========================
-                        SYNC STATUS
-                    ========================= */}
+                    {/* SYNC */}
 
                     <td className="px-6 py-4">
 
@@ -584,28 +646,52 @@ const OfflineVisits = () => {
 
                     </td>
 
+                    {/* ACTION */}
 
-                    {/* =========================
-                        ACTION
-                    ========================= */}
+                    <td className="px-6 py-4">
 
-                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/app/offline/visits/${visit.id}`
-                          )
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
-                      >
+                        {/* VIEW */}
 
-                        <Eye size={16} />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/app/offline/visits/${visit.id}`
+                            )
+                          }
+                          disabled={
+                            visit.syncStatus ===
+                            "PENDING_DELETE"
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Eye size={16} />
+                          View
+                        </button>
 
-                        View
+                        {/* DELETE */}
 
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDelete(visit)
+                          }
+                          disabled={
+                            visit.syncStatus ===
+                            "PENDING_DELETE"
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Trash2 size={16} />
+                          {visit.syncStatus ===
+                          "PENDING_DELETE"
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+
+                      </div>
 
                     </td>
 

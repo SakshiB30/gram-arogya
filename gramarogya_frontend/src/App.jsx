@@ -10,8 +10,8 @@ function App() {
   return (
     <Provider store={store}>
       <ToastProvider>
-        <SyncTest/>
-        <NetworkStatusTest/>
+        {/* <SyncTest/>
+        <NetworkStatusTest/> */}
         <AppRoutes />
       </ToastProvider>
     </Provider>

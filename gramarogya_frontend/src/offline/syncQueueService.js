@@ -211,6 +211,9 @@ export const getAllSyncOperations =
  * FAILED
  *    ↓
  * PENDING
+ *
+ * The retry count is preserved so that the system
+ * still knows how many times the operation failed.
  */
 export const retrySyncOperation =
   async (id) => {
@@ -225,6 +228,13 @@ export const retrySyncOperation =
       return;
     }
 
+    if (
+      operation.status !==
+      "FAILED"
+    ) {
+      return;
+    }
+
     await db.syncQueue.update(id, {
       status: "PENDING",
 
@@ -233,6 +243,97 @@ export const retrySyncOperation =
       updatedAt:
         new Date().toISOString(),
     });
+  };
+
+/*
+ * Recover a stuck SYNCING operation.
+ *
+ * Sometimes the browser/app can stop while an operation
+ * is between:
+ *
+ * PENDING
+ *    ↓
+ * SYNCING
+ *
+ * If the process stops at that point, the operation can
+ * remain SYNCING forever because the sync service only
+ * processes PENDING operations.
+ *
+ * This function safely moves that operation back to
+ * PENDING so it can be processed again.
+ *
+ * SYNCING
+ *    ↓
+ * PENDING
+ */
+export const recoverStuckSyncOperation =
+  async (id) => {
+    if (!id) {
+      return;
+    }
+
+    const operation =
+      await db.syncQueue.get(id);
+
+    if (!operation) {
+      return;
+    }
+
+    if (
+      operation.status !==
+      "SYNCING"
+    ) {
+      return;
+    }
+
+    console.warn(
+      "RECOVERING STUCK SYNC OPERATION:",
+      {
+        id: operation.id,
+        entityType:
+          operation.entityType,
+        operation:
+          operation.operation,
+        localId:
+          operation.localId,
+      }
+    );
+
+    await db.syncQueue.update(id, {
+      status: "PENDING",
+
+      lastError:
+        "Previous synchronization attempt was interrupted. Retrying.",
+
+      updatedAt:
+        new Date().toISOString(),
+    });
+  };
+
+/*
+ * Recover all operations that are currently SYNCING.
+ *
+ * This is useful when the application was closed,
+ * refreshed, or interrupted during synchronization.
+ */
+export const recoverAllStuckSyncOperations =
+  async () => {
+    const syncingOperations =
+      await db.syncQueue
+        .where("status")
+        .equals("SYNCING")
+        .toArray();
+
+    for (
+      const operation
+      of syncingOperations
+    ) {
+      await recoverStuckSyncOperation(
+        operation.id
+      );
+    }
+
+    return syncingOperations.length;
   };
 
 /*

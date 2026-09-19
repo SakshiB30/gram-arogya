@@ -14,7 +14,6 @@ import {
 
 import { addToSyncQueue } from "../../offline/syncQueueService";
 
-
 const OfflineVisitDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -54,21 +53,21 @@ const OfflineVisitDetail = () => {
           );
         }
 
+        /*
+         * Secure visit lookup.
+         *
+         * The service verifies that the visit
+         * belongs to the logged-in ASHA.
+         */
         const storedVisit =
-          await getOfflineVisitById(id);
+          await getOfflineVisitById(
+            id,
+            user.id
+          );
 
         if (!storedVisit) {
           throw new Error(
-            "Visit not found offline."
-          );
-        }
-
-        if (
-          storedVisit.ashaId &&
-          storedVisit.ashaId !== user.id
-        ) {
-          throw new Error(
-            "You are not allowed to access this visit."
+            "Visit not found offline or you are not authorized to access it."
           );
         }
 
@@ -93,9 +92,16 @@ const OfflineVisitDetail = () => {
         });
 
         if (storedVisit.beneficiaryId) {
+          /*
+           * Secure beneficiary lookup.
+           *
+           * The service verifies that the beneficiary
+           * belongs to the logged-in ASHA.
+           */
           const storedBeneficiary =
             await getOfflineBeneficiaryById(
-              storedVisit.beneficiaryId
+              storedVisit.beneficiaryId,
+              user.id
             );
 
           setBeneficiary(
@@ -121,7 +127,6 @@ const OfflineVisitDetail = () => {
     loadVisit();
   }, [id, user?.id]);
 
-
   /* =====================================================
      HANDLE CHANGE
   ===================================================== */
@@ -137,7 +142,6 @@ const OfflineVisitDetail = () => {
       [name]: value,
     }));
   };
-
 
   /* =====================================================
      SAVE VISIT
@@ -156,6 +160,13 @@ const OfflineVisitDetail = () => {
       setSaving(true);
       setError("");
 
+      /*
+       * Secure update.
+       *
+       * The service verifies that the visit
+       * belongs to the logged-in ASHA before
+       * allowing the update.
+       */
       const updatedVisit =
         await updateOfflineVisit(
           visit.id,
@@ -167,7 +178,8 @@ const OfflineVisitDetail = () => {
 
             ashaId:
               user.id,
-          }
+          },
+          user.id
         );
 
       /*
@@ -219,7 +231,6 @@ const OfflineVisitDetail = () => {
     }
   };
 
-
   /* =====================================================
      LOADING
   ===================================================== */
@@ -233,7 +244,6 @@ const OfflineVisitDetail = () => {
       </div>
     );
   }
-
 
   /* =====================================================
      ERROR
@@ -260,7 +270,6 @@ const OfflineVisitDetail = () => {
       </div>
     );
   }
-
 
   /* =====================================================
      MAIN UI
@@ -302,7 +311,6 @@ const OfflineVisitDetail = () => {
 
       </div>
 
-
       {/* ERROR */}
 
       {error && (
@@ -310,7 +318,6 @@ const OfflineVisitDetail = () => {
           {error}
         </div>
       )}
-
 
       {/* BENEFICIARY INFORMATION */}
 
@@ -340,8 +347,7 @@ const OfflineVisitDetail = () => {
               </p>
 
               <p className="mt-1 font-medium text-slate-800">
-                {beneficiary.age ??
-                  "N/A"}
+                {beneficiary.age ?? "N/A"}
               </p>
             </div>
 
@@ -376,7 +382,6 @@ const OfflineVisitDetail = () => {
 
       </div>
 
-
       {/* VISIT FORM */}
 
       <form
@@ -387,7 +392,6 @@ const OfflineVisitDetail = () => {
         <h3 className="mb-6 text-lg font-semibold text-slate-900">
           Visit Information
         </h3>
-
 
         <div className="grid gap-5 sm:grid-cols-2">
 
@@ -408,7 +412,6 @@ const OfflineVisitDetail = () => {
               className="w-full rounded-lg border bg-gray-100 px-3 py-2.5 text-sm text-gray-600"
             />
           </div>
-
 
           {/* STATUS */}
 
@@ -441,7 +444,6 @@ const OfflineVisitDetail = () => {
             </select>
           </div>
 
-
           {/* SCHEDULED DATE */}
 
           <div>
@@ -461,7 +463,6 @@ const OfflineVisitDetail = () => {
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
           </div>
-
 
           {/* NEXT VISIT */}
 
@@ -485,7 +486,6 @@ const OfflineVisitDetail = () => {
 
         </div>
 
-
         {/* NOTES */}
 
         <div className="mt-5">
@@ -508,7 +508,6 @@ const OfflineVisitDetail = () => {
           />
 
         </div>
-
 
         {/* OFFLINE NOTICE */}
 
@@ -534,7 +533,6 @@ const OfflineVisitDetail = () => {
           </div>
 
         </div>
-
 
         {/* ACTIONS */}
 

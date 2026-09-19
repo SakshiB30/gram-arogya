@@ -29,7 +29,6 @@ export const fetchVisits = createAsyncThunk(
   "visits/fetchAll",
   async (_, thunkAPI) => {
     try {
-      // Get logged-in user
       const user = JSON.parse(
         localStorage.getItem("user")
       );
@@ -48,13 +47,6 @@ export const fetchVisits = createAsyncThunk(
         const visits =
           await visitService.getAllVisits();
 
-        /*
-         * Normalize backend visit ownership
-         * for offline storage.
-         *
-         * Backend may provide userId,
-         * while offline storage uses ashaId.
-         */
         const visitsForOffline =
           Array.isArray(visits)
             ? visits.map((visit) => ({
@@ -108,6 +100,16 @@ export const fetchVisitById = createAsyncThunk(
         );
       }
 
+      const user = JSON.parse(
+        localStorage.getItem("user")
+      );
+
+      if (!user?.id) {
+        throw new Error(
+          "Logged-in user not found."
+        );
+      }
+
       // =========================
       // ONLINE
       // =========================
@@ -143,8 +145,14 @@ export const fetchVisitById = createAsyncThunk(
       // OFFLINE
       // =========================
 
+      /*
+       * Only retrieve visits belonging
+       * to the logged-in ASHA.
+       */
       const offlineVisits =
-        await getOfflineVisits();
+        await getOfflineVisits(
+          user.id
+        );
 
       const visit =
         offlineVisits.find(
@@ -153,7 +161,7 @@ export const fetchVisitById = createAsyncThunk(
 
       if (!visit) {
         throw new Error(
-          "This visit is not available offline."
+          "This visit is not available offline or you are not authorized to access it."
         );
       }
 
@@ -186,7 +194,6 @@ export const fetchVisitsByBeneficiary =
           );
         }
 
-        // Get logged-in user
         const user = JSON.parse(
           localStorage.getItem("user")
         );
@@ -207,10 +214,6 @@ export const fetchVisitsByBeneficiary =
           visits =
             await visitService.getAllVisits();
 
-          /*
-           * Normalize backend visits
-           * before saving offline.
-           */
           const visitsForOffline =
             Array.isArray(visits)
               ? visits.map((visit) => ({
@@ -311,11 +314,6 @@ export const createVisit = createAsyncThunk(
 
         id: localVisitId,
 
-        /*
-         * Important:
-         * Identify which ASHA created
-         * this offline visit.
-         */
         ashaId: user.id,
 
         syncStatus: "PENDING",
@@ -327,12 +325,10 @@ export const createVisit = createAsyncThunk(
         updatedAt: now,
       };
 
-      // Save visit locally
       await createOfflineVisit(
         offlineVisit
       );
 
-      // Add sync operation
       await addToSyncQueue({
         operationId,
 
@@ -394,6 +390,11 @@ export const updateVisit = createAsyncThunk(
       // OFFLINE
       // =========================
 
+      /*
+       * The service verifies that
+       * this visit belongs to the
+       * logged-in ASHA.
+       */
       const updatedVisit =
         await updateOfflineVisit(
           id,
@@ -401,7 +402,8 @@ export const updateVisit = createAsyncThunk(
             ...visitData,
 
             ashaId: user.id,
-          }
+          },
+          user.id
         );
 
       const operationId =
@@ -467,8 +469,16 @@ export const deleteVisit = createAsyncThunk(
       // OFFLINE
       // =========================
 
+      /*
+       * The service verifies that
+       * this visit belongs to the
+       * logged-in ASHA.
+       */
       const deletedVisit =
-        await deleteOfflineVisit(id);
+        await deleteOfflineVisit(
+          id,
+          user.id
+        );
 
       const operationId =
         crypto.randomUUID();
@@ -503,16 +513,6 @@ export const deleteVisit = createAsyncThunk(
 
 /* =========================================================
    GET TODAY'S VISITS
-
-   Online:
-   - Get today's visits from backend
-   - Normalize ASHA ownership
-   - Add/update them in IndexedDB
-   - DO NOT clear existing visits
-
-   Offline:
-   - Read today's visits from IndexedDB
-   - Return only logged-in ASHA's visits
 ========================================================= */
 
 export const fetchTodayVisits =
@@ -520,7 +520,6 @@ export const fetchTodayVisits =
     "visits/fetchToday",
     async (_, thunkAPI) => {
       try {
-        // Get logged-in user
         const user = JSON.parse(
           localStorage.getItem("user")
         );
@@ -616,34 +615,19 @@ const visitSlice = createSlice({
 
   reducers: {
 
-    /* =========================
-       CLEAR ERROR
-    ========================= */
-
     clearVisitError: (state) => {
       state.error = null;
     },
 
-
-    /* =========================
-       CLEAR SELECTED VISIT
-    ========================= */
-
     clearSelectedVisit: (state) => {
       state.selectedVisit = null;
     },
-
-
-    /* =========================
-       CLEAR BENEFICIARY VISITS
-    ========================= */
 
     clearBeneficiaryVisits: (state) => {
       state.beneficiaryVisits = [];
     },
 
   },
-
 
   /* =======================================================
      ASYNC ACTIONS
@@ -798,19 +782,9 @@ const visitSlice = createSlice({
           const newVisit =
             action.payload;
 
-          /*
-           * Add new visit to main list.
-           */
-
           state.visits.push(
             newVisit
           );
-
-          /*
-           * If visit is scheduled
-           * for today, add it to
-           * today's visits.
-           */
 
           const today =
             new Date()
@@ -866,10 +840,6 @@ const visitSlice = createSlice({
           const updatedVisit =
             action.payload;
 
-          /*
-           * UPDATE MAIN VISITS LIST
-           */
-
           const index =
             state.visits.findIndex(
               (visit) =>
@@ -882,11 +852,6 @@ const visitSlice = createSlice({
               updatedVisit;
           }
 
-
-          /*
-           * UPDATE SELECTED VISIT
-           */
-
           if (
             state.selectedVisit &&
             state.selectedVisit.id ===
@@ -895,11 +860,6 @@ const visitSlice = createSlice({
             state.selectedVisit =
               updatedVisit;
           }
-
-
-          /*
-           * UPDATE BENEFICIARY VISITS
-           */
 
           const beneficiaryIndex =
             state.beneficiaryVisits.findIndex(
@@ -916,11 +876,6 @@ const visitSlice = createSlice({
             ] = updatedVisit;
           }
 
-
-          /*
-           * UPDATE TODAY'S VISITS
-           */
-
           const today =
             new Date()
               .toISOString()
@@ -932,11 +887,6 @@ const visitSlice = createSlice({
                 visit.id ===
                 updatedVisit.id
             );
-
-
-          /*
-           * Visit is scheduled today
-           */
 
           if (
             updatedVisit.scheduledDate ===
@@ -953,14 +903,7 @@ const visitSlice = createSlice({
                 updatedVisit
               );
             }
-          }
-
-
-          /*
-           * Visit is NOT scheduled today
-           */
-
-          else {
+          } else {
             if (
               todayIndex !== -1
             ) {
@@ -1010,22 +953,12 @@ const visitSlice = createSlice({
           const deletedId =
             action.payload;
 
-
-          /*
-           * REMOVE FROM ALL VISITS
-           */
-
           state.visits =
             state.visits.filter(
               (visit) =>
                 visit.id !==
                 deletedId
             );
-
-
-          /*
-           * REMOVE FROM TODAY'S VISITS
-           */
 
           state.todayVisits =
             state.todayVisits.filter(
@@ -1034,22 +967,12 @@ const visitSlice = createSlice({
                 deletedId
             );
 
-
-          /*
-           * REMOVE FROM BENEFICIARY VISITS
-           */
-
           state.beneficiaryVisits =
             state.beneficiaryVisits.filter(
               (visit) =>
                 visit.id !==
                 deletedId
             );
-
-
-          /*
-           * CLEAR SELECTED VISIT
-           */
 
           if (
             state.selectedVisit?.id ===

@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Edit,
@@ -8,11 +12,16 @@ import {
   Save,
   X,
 } from "lucide-react";
+
 import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+
+import {
+  useDispatch,
+  useSelector,
+} from "react-redux";
 
 import {
   fetchHealthRecordById,
@@ -74,14 +83,22 @@ const OfflineHealthRecordDetail = () => {
   ===================================================== */
 
   useEffect(() => {
-    if (!id) {
+    if (!id || !user?.id) {
       return;
     }
 
+    /*
+     * Redux thunk performs the actual
+     * ASHA ownership check.
+     */
     dispatch(
       fetchHealthRecordById(id)
     );
-  }, [dispatch, id]);
+  }, [
+    dispatch,
+    id,
+    user?.id,
+  ]);
 
   /* =====================================================
      LOAD BENEFICIARY + VISIT
@@ -90,21 +107,30 @@ const OfflineHealthRecordDetail = () => {
   useEffect(() => {
     const loadRelatedData =
       async () => {
-        if (!selectedHealthRecord) {
+        if (
+          !selectedHealthRecord ||
+          !user?.id
+        ) {
           return;
         }
 
         try {
+          /*
+           * Both related records are now
+           * checked against the logged-in ASHA.
+           */
           const [
             beneficiaryData,
             visitData,
           ] = await Promise.all([
             getOfflineBeneficiaryById(
-              selectedHealthRecord.beneficiaryId
+              selectedHealthRecord.beneficiaryId,
+              user.id
             ),
 
             getOfflineVisitById(
-              selectedHealthRecord.visitId
+              selectedHealthRecord.visitId,
+              user.id
             ),
           ]);
 
@@ -118,11 +144,17 @@ const OfflineHealthRecordDetail = () => {
             "Failed to load related offline data:",
             err
           );
+
+          setBeneficiary(null);
+          setVisit(null);
         }
       };
 
     loadRelatedData();
-  }, [selectedHealthRecord]);
+  }, [
+    selectedHealthRecord,
+    user?.id,
+  ]);
 
   /* =====================================================
      LOAD FORM DATA
@@ -196,6 +228,13 @@ const OfflineHealthRecordDetail = () => {
     setError("");
 
     if (!selectedHealthRecord) {
+      return;
+    }
+
+    if (!user?.id) {
+      setError(
+        "ASHA user information is unavailable."
+      );
       return;
     }
 
@@ -291,6 +330,12 @@ const OfflineHealthRecordDetail = () => {
             notes:
               formData.notes.trim() ||
               null,
+
+            /*
+             * Ownership is also carried
+             * through the offline Redux flow.
+             */
+            ashaId: user.id,
           },
         })
       ).unwrap();
@@ -321,6 +366,13 @@ const OfflineHealthRecordDetail = () => {
 
   const handleDelete = async () => {
     if (!selectedHealthRecord) {
+      return;
+    }
+
+    if (!user?.id) {
+      setError(
+        "ASHA user information is unavailable."
+      );
       return;
     }
 
@@ -485,7 +537,8 @@ const OfflineHealthRecordDetail = () => {
 
         <p className="mt-2 text-sm text-gray-500">
           This health record is not available
-          on this device.
+          on this device or you are not
+          authorized to access it.
         </p>
 
         <button
@@ -517,9 +570,7 @@ const OfflineHealthRecordDetail = () => {
   return (
     <div className="space-y-6">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* HEADER */}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
@@ -534,19 +585,14 @@ const OfflineHealthRecordDetail = () => {
             }
             className="rounded-lg border bg-white p-2 text-slate-600 hover:bg-gray-50"
           >
-            <ArrowLeft
-              size={20}
-            />
+            <ArrowLeft size={20} />
           </button>
 
           <div className="rounded-xl bg-violet-100 p-3 text-violet-600">
-            <HeartPulse
-              size={24}
-            />
+            <HeartPulse size={24} />
           </div>
 
           <div>
-
             <h1 className="text-2xl font-semibold text-slate-900">
               Health Record
             </h1>
@@ -554,7 +600,6 @@ const OfflineHealthRecordDetail = () => {
             <p className="mt-1 text-sm text-gray-500">
               Offline health information
             </p>
-
           </div>
 
         </div>
@@ -576,17 +621,11 @@ const OfflineHealthRecordDetail = () => {
 
           <button
             type="button"
-            onClick={
-              handleDelete
-            }
-            disabled={
-              actionLoading
-            }
+            onClick={handleDelete}
+            disabled={actionLoading}
             className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Trash2
-              size={17}
-            />
+            <Trash2 size={17} />
             Delete
           </button>
 
@@ -594,9 +633,7 @@ const OfflineHealthRecordDetail = () => {
 
       </div>
 
-      {/* =================================================
-          OFFLINE STATUS
-      ================================================= */}
+      {/* OFFLINE STATUS */}
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
 
@@ -617,21 +654,15 @@ const OfflineHealthRecordDetail = () => {
 
       </div>
 
-      {/* =================================================
-          ERROR
-      ================================================= */}
+      {/* ERROR */}
 
-      {(error ||
-        actionError) && (
+      {(error || actionError) && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error ||
-            actionError}
+          {error || actionError}
         </div>
       )}
 
-      {/* =================================================
-          BENEFICIARY INFORMATION
-      ================================================= */}
+      {/* BENEFICIARY INFORMATION */}
 
       <div className="rounded-xl border bg-white p-6">
 
@@ -658,9 +689,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 font-medium text-slate-800">
-              {
-                selectedHealthRecord.beneficiaryId
-              }
+              {selectedHealthRecord.beneficiaryId}
             </p>
           </div>
 
@@ -670,8 +699,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 font-medium text-slate-800">
-              {beneficiary?.age ??
-                "—"}
+              {beneficiary?.age ?? "—"}
             </p>
           </div>
 
@@ -681,8 +709,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 font-medium text-slate-800">
-              {beneficiary?.gender ||
-                "—"}
+              {beneficiary?.gender || "—"}
             </p>
           </div>
 
@@ -690,9 +717,7 @@ const OfflineHealthRecordDetail = () => {
 
       </div>
 
-      {/* =================================================
-          VISIT INFORMATION
-      ================================================= */}
+      {/* VISIT INFORMATION */}
 
       <div className="rounded-xl border bg-white p-6">
 
@@ -708,8 +733,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 font-medium text-slate-800">
-              {visit?.visitType ||
-                "—"}
+              {visit?.visitType || "—"}
             </p>
           </div>
 
@@ -731,8 +755,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 font-medium text-slate-800">
-              {visit?.status ||
-                "—"}
+              {visit?.status || "—"}
             </p>
           </div>
 
@@ -742,9 +765,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 break-all font-medium text-slate-800">
-              {
-                selectedHealthRecord.visitId
-              }
+              {selectedHealthRecord.visitId}
             </p>
           </div>
 
@@ -752,14 +773,10 @@ const OfflineHealthRecordDetail = () => {
 
       </div>
 
-      {/* =================================================
-          HEALTH INFORMATION
-      ================================================= */}
+      {/* HEALTH INFORMATION */}
 
       <form
-        onSubmit={
-          handleSave
-        }
+        onSubmit={handleSave}
         className="rounded-xl border bg-white p-6"
       >
 
@@ -774,9 +791,7 @@ const OfflineHealthRecordDetail = () => {
 
               <button
                 type="button"
-                onClick={
-                  handleCancelEdit
-                }
+                onClick={handleCancelEdit}
                 className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-slate-600 hover:bg-gray-50"
               >
                 <X size={16} />
@@ -785,9 +800,7 @@ const OfflineHealthRecordDetail = () => {
 
               <button
                 type="submit"
-                disabled={
-                  actionLoading
-                }
+                disabled={actionLoading}
                 className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save size={16} />
@@ -815,19 +828,14 @@ const OfflineHealthRecordDetail = () => {
               <input
                 type="text"
                 name="bloodPressure"
-                value={
-                  formData.bloodPressure
-                }
-                onChange={
-                  handleChange
-                }
+                value={formData.bloodPressure}
+                onChange={handleChange}
                 placeholder="e.g. 120/80"
                 className="mt-2 w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               />
             ) : (
               <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-slate-800">
-                {selectedHealthRecord.bloodPressure ||
-                  "—"}
+                {selectedHealthRecord.bloodPressure || "—"}
               </p>
             )}
 
@@ -848,22 +856,15 @@ const OfflineHealthRecordDetail = () => {
                 min="1"
                 max="300"
                 step="0.1"
-                value={
-                  formData.weight
-                }
-                onChange={
-                  handleChange
-                }
+                value={formData.weight}
+                onChange={handleChange}
                 className="mt-2 w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               />
             ) : (
               <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-slate-800">
-                {selectedHealthRecord.weight ??
-                  "—"}
-                {selectedHealthRecord.weight !==
-                  null &&
-                selectedHealthRecord.weight !==
-                  undefined
+                {selectedHealthRecord.weight ?? "—"}
+                {selectedHealthRecord.weight !== null &&
+                selectedHealthRecord.weight !== undefined
                   ? " kg"
                   : ""}
               </p>
@@ -886,22 +887,15 @@ const OfflineHealthRecordDetail = () => {
                 min="30"
                 max="45"
                 step="0.1"
-                value={
-                  formData.temperature
-                }
-                onChange={
-                  handleChange
-                }
+                value={formData.temperature}
+                onChange={handleChange}
                 className="mt-2 w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               />
             ) : (
               <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-slate-800">
-                {selectedHealthRecord.temperature ??
-                  "—"}
-                {selectedHealthRecord.temperature !==
-                  null &&
-                selectedHealthRecord.temperature !==
-                  undefined
+                {selectedHealthRecord.temperature ?? "—"}
+                {selectedHealthRecord.temperature !== null &&
+                selectedHealthRecord.temperature !== undefined
                   ? " °C"
                   : ""}
               </p>
@@ -924,22 +918,15 @@ const OfflineHealthRecordDetail = () => {
                 min="1"
                 max="30"
                 step="0.1"
-                value={
-                  formData.hemoglobin
-                }
-                onChange={
-                  handleChange
-                }
+                value={formData.hemoglobin}
+                onChange={handleChange}
                 className="mt-2 w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
               />
             ) : (
               <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-slate-800">
-                {selectedHealthRecord.hemoglobin ??
-                  "—"}
-                {selectedHealthRecord.hemoglobin !==
-                  null &&
-                selectedHealthRecord.hemoglobin !==
-                  undefined
+                {selectedHealthRecord.hemoglobin ?? "—"}
+                {selectedHealthRecord.hemoglobin !== null &&
+                selectedHealthRecord.hemoglobin !== undefined
                   ? " g/dL"
                   : ""}
               </p>
@@ -949,9 +936,7 @@ const OfflineHealthRecordDetail = () => {
 
         </div>
 
-        {/* =================================================
-            DIAGNOSIS
-        ================================================= */}
+        {/* DIAGNOSIS */}
 
         <div className="mt-5">
 
@@ -962,17 +947,13 @@ const OfflineHealthRecordDetail = () => {
           {editing ? (
             <textarea
               name="diagnosis"
-              value={
-                formData.diagnosis
-              }
-              onChange={
-                handleChange
-              }
+              value={formData.diagnosis}
+              onChange={handleChange}
               rows={3}
               className="mt-2 w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
           ) : (
-            <div className="mt-2 rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800 whitespace-pre-wrap">
+            <div className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800">
               {selectedHealthRecord.diagnosis ||
                 "No diagnosis recorded."}
             </div>
@@ -980,9 +961,7 @@ const OfflineHealthRecordDetail = () => {
 
         </div>
 
-        {/* =================================================
-            PRESCRIPTION
-        ================================================= */}
+        {/* PRESCRIPTION */}
 
         <div className="mt-5">
 
@@ -993,17 +972,13 @@ const OfflineHealthRecordDetail = () => {
           {editing ? (
             <textarea
               name="prescription"
-              value={
-                formData.prescription
-              }
-              onChange={
-                handleChange
-              }
+              value={formData.prescription}
+              onChange={handleChange}
               rows={3}
               className="mt-2 w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
           ) : (
-            <div className="mt-2 rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800 whitespace-pre-wrap">
+            <div className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800">
               {selectedHealthRecord.prescription ||
                 "No prescription recorded."}
             </div>
@@ -1011,9 +986,7 @@ const OfflineHealthRecordDetail = () => {
 
         </div>
 
-        {/* =================================================
-            NOTES
-        ================================================= */}
+        {/* NOTES */}
 
         <div className="mt-5">
 
@@ -1024,17 +997,13 @@ const OfflineHealthRecordDetail = () => {
           {editing ? (
             <textarea
               name="notes"
-              value={
-                formData.notes
-              }
-              onChange={
-                handleChange
-              }
+              value={formData.notes}
+              onChange={handleChange}
               rows={4}
               className="mt-2 w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
             />
           ) : (
-            <div className="mt-2 rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800 whitespace-pre-wrap">
+            <div className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 px-3 py-3 text-sm text-slate-800">
               {selectedHealthRecord.notes ||
                 "No notes recorded."}
             </div>
@@ -1044,9 +1013,7 @@ const OfflineHealthRecordDetail = () => {
 
       </form>
 
-      {/* =================================================
-          RECORD METADATA
-      ================================================= */}
+      {/* RECORD METADATA */}
 
       <div className="rounded-xl border bg-white p-6">
 
@@ -1062,9 +1029,7 @@ const OfflineHealthRecordDetail = () => {
             </p>
 
             <p className="mt-1 break-all text-sm font-medium text-slate-800">
-              {
-                selectedHealthRecord.id
-              }
+              {selectedHealthRecord.id}
             </p>
           </div>
 
