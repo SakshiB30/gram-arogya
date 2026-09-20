@@ -31,11 +31,11 @@ export default function Navbar() {
     }`}>
       <Container className="flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 shadow-lg shadow-blue-500/30 ring-1 ring-white/40 transition-all duration-300 group-hover:shadow-blue-500/50 group-hover:scale-105 group-hover:rotate-3">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-lcinear-to-br from-blue-600 via-blue-600 to-indigo-700 shadow-lg shadow-blue-500/30 ring-1 ring-white/40 transition-all duration-300 group-hover:shadow-blue-500/50 group-hover:scale-105 group-hover:rotate-3">
             <ShieldPlus className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900">
-            Gram<span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Arogya</span>
+            Gram<span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Arogya</span>
           </span>
         </Link>
 
@@ -103,7 +103,7 @@ export default function Navbar() {
           <Link
             to="/register"
             onClick={closeMenu}
-            className="mt-3 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center font-semibold text-white shadow-md shadow-blue-500/25"
+            className="mt-3 rounded-full bg-linear-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center font-semibold text-white shadow-md shadow-blue-500/25"
           >
             Get Started
           </Link>

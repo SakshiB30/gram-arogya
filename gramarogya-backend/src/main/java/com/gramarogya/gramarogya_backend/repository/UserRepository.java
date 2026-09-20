@@ -7,10 +7,13 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.mongodb.repository.Query;
 
 public interface UserRepository extends MongoRepository<User, String> {
 
     Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
 
     Optional<User> findByEmployeeId(String employeeId);
 
@@ -47,4 +50,10 @@ public interface UserRepository extends MongoRepository<User, String> {
     List<User> findByVerificationStatus(VerificationStatus verificationStatus);
 
     List<User> findByRoleAndSupervisorId(Role role,String supervisorId);
+
+    @Query("{ '$or': [ { 'phone': ?0 }, { 'phone': ?1 } ] }")
+    Optional<User> findByPhoneOrNormalizedPhone(
+            String localPhone,
+            String internationalPhone
+    );
 }

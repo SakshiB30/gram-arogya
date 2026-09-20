@@ -23,6 +23,7 @@ import PendingSync from "../pages/offline/PendingSync";
 
 // Auth
 import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword";
 import Register from "../pages/Register";
 import RegisterAnm from "../pages/RegisterAnm";
 import RegisterAsha from "../pages/RegisterAsha";
@@ -120,6 +121,22 @@ const AppRoutes = () => {
             )
           }
         />
+
+          {/* Forgot Password */}
+<Route
+  path="/forgot-password"
+  element={
+    isAuthenticated ? (
+      <Navigate
+        to="/app/dashboard"
+        replace
+      />
+    ) : (
+      <ForgotPassword />
+    )
+  }
+/>
+
 
         {/* Register */}
         <Route

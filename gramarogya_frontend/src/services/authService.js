@@ -26,10 +26,47 @@ const registerAsha = async (userData) => {
     return response.data;
 };
 
+const sendForgotPasswordOtp = async (email) => {
+  const response = await axiosClient.post(
+    "/auth/forgot-password/send-otp",
+    { email }
+  );
+
+  return response.data;
+};
+
+const verifyForgotPasswordOtp = async (email, code) => {
+  const response = await axiosClient.post(
+    "/auth/forgot-password/verify-otp",
+    {
+      email,
+      code,
+    }
+  );
+
+  return response.data;
+};
+
+const resetPassword = async (resetToken, newPassword) => {
+  const response = await axiosClient.post(
+    "/auth/forgot-password/reset",
+    {
+      resetToken,
+      newPassword,
+    }
+  );
+
+  return response.data;
+};
+
+
 const authService = {
-  login,
-  registerAnm,
-  registerAsha,
+    login,
+    registerAnm,
+    registerAsha,
+    sendForgotPasswordOtp,  
+    verifyForgotPasswordOtp,
+    resetPassword
 };
 
 

@@ -10,9 +10,18 @@ import com.gramarogya.gramarogya_backend.exception.ErrorCodes;
 import com.gramarogya.gramarogya_backend.mapper.UserMapper;
 import com.gramarogya.gramarogya_backend.repository.UserRepository;
 import com.gramarogya.gramarogya_backend.security.JwtService;
+import com.gramarogya.gramarogya_backend.entity.PasswordResetOtp;
+import com.gramarogya.gramarogya_backend.repository.PasswordResetOtpRepository;
+import com.gramarogya.gramarogya_backend.security.EmailOtpService;
+import com.gramarogya.gramarogya_backend.security.OtpGenerator;
+import com.gramarogya.gramarogya_backend.entity.PasswordResetToken;
+import com.gramarogya.gramarogya_backend.repository.PasswordResetTokenRepository;
+import com.gramarogya.gramarogya_backend.security.PasswordResetTokenGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +31,11 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetOtpRepository passwordResetOtpRepository;
+    private final EmailOtpService emailOtpService;
+    private final OtpGenerator otpGenerator;
+    private final PasswordResetTokenGenerator passwordResetTokenGenerator;
 
     @Override
     public UserResponseDto registerAnm(RegisterAnmRequestDto request) {
@@ -43,18 +57,11 @@ public class AuthServiceImpl implements AuthService {
                 .taluka(request.getTaluka())
                 .district(request.getDistrict())
                 .state(request.getState())
-
                 .role(Role.ANM)
-
-                // Newly registered ANMs are not approved yet
                 .verificationStatus(VerificationStatus.PENDING)
                 .accountStatus(AccountStatus.BLOCKED)
-
-                // Employee ID will be generated after admin approval
                 .employeeId(null)
-
                 .supervisorId(null)
-
                 .build();
 
         user = userRepository.save(user);
@@ -111,21 +118,11 @@ public class AuthServiceImpl implements AuthService {
                 .taluka(request.getTaluka())
                 .district(request.getDistrict())
                 .state(request.getState())
-
                 .role(Role.ASHA)
-
-                // Supervisor ANM
                 .supervisorId(anm.getId())
-
-                // Generated after ANM approval
                 .employeeId(null)
-
-                // Pending until ANM approves
                 .verificationStatus(VerificationStatus.PENDING)
-
-                // Cannot login yet
                 .accountStatus(AccountStatus.BLOCKED)
-
                 .build();
 
         user = userRepository.save(user);
@@ -192,6 +189,186 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole())
                 .build();
     }
+
+    @Override
+    public ForgotPasswordResponseDto sendForgotPasswordOtp(
+            SendOtpRequestDto request) {
+
+        String email = request.getEmail().trim().toLowerCase();
+
+        /*
+         * Generic response prevents revealing whether
+         * this email address exists in our database.
+         */
+        String genericMessage =
+                "If the email address is registered, an OTP has been sent.";
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElse(null);
+
+        if (user == null) {
+            return new ForgotPasswordResponseDto(genericMessage);
+        }
+
+        // Remove any previous OTP and reset authorization
+        passwordResetOtpRepository.deleteByUserId(user.getId());
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
+        // Generate a new 6-digit OTP
+        String otp = otpGenerator.generateOtp();
+
+        // Hash the OTP before storing it
+        String otpHash = passwordEncoder.encode(otp);
+
+        PasswordResetOtp passwordResetOtp = PasswordResetOtp.builder()
+                .userId(user.getId())
+                .email(email)
+                .otpHash(otpHash)
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .attempts(0)
+                .verified(false)
+                .build();
+
+        passwordResetOtpRepository.save(passwordResetOtp);
+
+        // Send actual OTP to user's email
+        emailOtpService.sendOtp(email, otp);
+
+        return new ForgotPasswordResponseDto(genericMessage);
+    }
+
+    @Override
+    public ForgotPasswordResponseDto verifyForgotPasswordOtp(
+            VerifyOtpRequestDto request) {
+
+        String email = request.getEmail().trim().toLowerCase();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new BusinessValidationException(
+                                "Invalid OTP or email address."
+                        ));
+
+        PasswordResetOtp passwordResetOtp =
+                passwordResetOtpRepository.findByUserId(user.getId())
+                        .orElseThrow(() ->
+                                new BusinessValidationException(
+                                        "Invalid or expired OTP."
+                                ));
+
+        // Check OTP expiry
+        if (passwordResetOtp.getExpiresAt()
+                .isBefore(LocalDateTime.now())) {
+
+            throw new BusinessValidationException(
+                    "This OTP has expired. Please request a new OTP."
+            );
+        }
+
+        // Prevent reusing the same OTP
+        if (passwordResetOtp.isVerified()) {
+            throw new BusinessValidationException(
+                    "This OTP has already been used."
+            );
+        }
+
+        // Verify OTP against stored hash
+        boolean validOtp = passwordEncoder.matches(
+                request.getCode(),
+                passwordResetOtp.getOtpHash()
+        );
+
+        if (!validOtp) {
+            passwordResetOtp.setAttempts(
+                    passwordResetOtp.getAttempts() + 1
+            );
+
+            passwordResetOtpRepository.save(passwordResetOtp);
+
+            throw new BusinessValidationException(
+                    "Invalid OTP."
+            );
+        }
+
+        // Mark OTP as verified
+        passwordResetOtp.setVerified(true);
+        passwordResetOtpRepository.save(passwordResetOtp);
+
+        /*
+         * Delete older reset authorizations so only
+         * the newest successful verification can be used.
+         */
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
+        String resetTokenValue =
+                passwordResetTokenGenerator.generateToken();
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(resetTokenValue)
+                .userId(user.getId())
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        return new ForgotPasswordResponseDto(
+                resetTokenValue
+        );
+    }
+
+    @Override
+    public ForgotPasswordResponseDto resetPassword(
+            ResetPasswordRequestDto request) {
+
+        PasswordResetToken resetToken =
+                passwordResetTokenRepository
+                        .findByToken(request.getResetToken())
+                        .orElseThrow(() ->
+                                new BusinessValidationException(
+                                        "Invalid or expired reset token."
+                                ));
+
+        // Token already used
+        if (resetToken.isUsed()) {
+            throw new BusinessValidationException(
+                    "This reset token has already been used."
+            );
+        }
+
+        // Token expired
+        if (resetToken.getExpiresAt()
+                .isBefore(LocalDateTime.now())) {
+
+            throw new BusinessValidationException(
+                    "This reset token has expired. Please request a new OTP."
+            );
+        }
+
+        User user = userRepository.findById(resetToken.getUserId())
+                .orElseThrow(() ->
+                        new BusinessValidationException(
+                                "Unable to reset the password."
+                        ));
+
+        // Update password using BCrypt
+        user.setPassword(
+                passwordEncoder.encode(request.getNewPassword())
+        );
+
+        userRepository.save(user);
+
+        // Make the reset token one-time use
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        return new ForgotPasswordResponseDto(
+                "Password reset successfully. Please log in with your new password."
+        );
+    }
+
 
     private String getPendingVerificationMessage(User user) {
 

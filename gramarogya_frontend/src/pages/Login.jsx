@@ -7,6 +7,8 @@ import {
   getErrorTitle,
 } from "../utils/apiError";
 
+
+
 import {
   Eye,
   EyeOff,
@@ -171,12 +173,11 @@ const Login = () => {
                     <label className="text-sm font-medium text-slate-700">
                       Password
                     </label>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                    >
+                   <Link
+                      to="/forgot-password"
+                      className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer">
                       Forgot password?
-                    </button>
+                      </Link>
                   </div>
 
                   <div className="relative">

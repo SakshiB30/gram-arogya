@@ -1,8 +1,8 @@
 package com.gramarogya.gramarogya_backend.exception;
 
 import com.gramarogya.gramarogya_backend.dto.ApiErrorResponse;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
@@ -20,14 +20,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
     // =====================================================
-    // APPLICATION EXCEPTIONS
+    // AUTHENTICATION FAILED
     // =====================================================
 
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiErrorResponse> handleApiException(
-            ApiException exception,
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthenticationFailed(
+            AuthenticationFailedException exception,
             HttpServletRequest request) {
 
         return buildResponse(
