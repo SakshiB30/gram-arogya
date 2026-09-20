@@ -324,34 +324,67 @@ public class DashboardServiceImpl implements DashboardService {
                         currentUser.getId()
                 );
 
-
         // Extract ASHA IDs
         List<String> ashaIds =
                 ashas.stream()
                         .map(User::getId)
                         .toList();
 
-
         LocalDate today =
                 LocalDate.now();
 
+        // Get beneficiaries assigned to these ASHAs
+        List<Beneficiary> beneficiaries =
+                ashaIds.isEmpty()
+                        ? List.of()
+                        : beneficiaryRepository.findByUserIdIn(ashaIds);
 
-        // Build alerts once
+        // -----------------------------------------
+        // HEALTH PROGRAM COUNTS
+        // -----------------------------------------
+
+        long pregnantWomen = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("pregnant"))
+                .count();
+
+        long children = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("child"))
+                .count();
+
+        long tbPatients = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("tb"))
+                .count();
+
+        long elderly = beneficiaries.stream()
+                .filter(b -> b.getCategory() != null)
+                .filter(b -> b.getCategory()
+                        .toLowerCase()
+                        .contains("elder"))
+                .count();
+
+        // -----------------------------------------
+        // ALERTS
+        // -----------------------------------------
+
         List<AlertDto> alerts =
                 buildAlerts(currentUser);
 
-
-        // Count HIGH priority alerts
         long criticalAlerts =
                 countCriticalAlerts(alerts);
 
+        // -----------------------------------------
+        // DASHBOARD STATS
+        // -----------------------------------------
 
-        // -----------------------------------------
-        // HEALTH PROGRAMS
-        // -----------------------------------------
-        // -----------------------------------------
-        // CRITICAL ALERTS
-        // -----------------------------------------
         DashboardStatsDto stats =
                 DashboardStatsDto.builder()
 
@@ -372,10 +405,27 @@ public class DashboardServiceImpl implements DashboardService {
                         // -----------------------------------------
 
                         .totalBeneficiaries(
-                                ashaIds.isEmpty()
-                                        ? 0
-                                        : beneficiaryRepository
-                                        .countByUserIdIn(ashaIds)
+                                beneficiaries.size()
+                        )
+
+                        // -----------------------------------------
+                        // HEALTH PROGRAMS
+                        // -----------------------------------------
+
+                        .pregnantWomen(
+                                pregnantWomen
+                        )
+
+                        .children(
+                                children
+                        )
+
+                        .tbPatients(
+                                tbPatients
+                        )
+
+                        .elderly(
+                                elderly
                         )
 
                         // -----------------------------------------
@@ -417,8 +467,22 @@ public class DashboardServiceImpl implements DashboardService {
                                         .countByUserIdInAndNextVisitDateAfter(
                                                 ashaIds,
                                                 today
-                                        )).build();
+                                        )
+                        )
 
+                        // -----------------------------------------
+                        // CRITICAL ALERTS
+                        // -----------------------------------------
+
+                        .criticalAlerts(
+                                criticalAlerts
+                        )
+
+                        .build();
+
+        // -----------------------------------------
+        // ANM DASHBOARD RESPONSE
+        // -----------------------------------------
 
         return DashboardResponseDto.builder()
 
