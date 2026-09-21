@@ -2,7 +2,7 @@ import Navbar from "../components/Landing/Navbar";
 import HeroSection from "../components/Landing/HeroSection";
 import AboutSection from "../components/Landing/AboutSection";
 import FeatureSection from "../components/Landing/FeatureSection";
-import WorkflowSection from "../components/Landing/WorkflowSection";
+import WorkFlowSection from "../components/Landing/WorkFlowSection";
 import ContactSection from "../components/Landing/ContactSection";
 import Footer from "../components/Landing/Footer";
 
@@ -13,7 +13,7 @@ const LandingPage = () => {
       <HeroSection />
       <AboutSection />
       <FeatureSection />
-      <WorkflowSection />
+      <WorkFlowSection />
       <ContactSection />
       <Footer />
     </div>

@@ -1,6 +1,6 @@
 import Container from "./Container";
 
-export default function WorkflowSection() {
+export default function WorkFlowSection() {
   const steps = [
     {
       number: "01",
