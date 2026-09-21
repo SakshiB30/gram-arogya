@@ -26,22 +26,21 @@ public class AdminServiceImpl implements AdminService {
 
     private String generateAnmEmployeeId() {
 
-        Optional<User> lastAnm =
-                userRepository.findTopByRoleOrderByEmployeeIdDesc(Role.ANM);
+        String lastId = userRepository
+                .findTopByRoleOrderByEmployeeIdDesc(Role.ANM)
+                .map(User::getEmployeeId)
+                .orElse(null);
 
-        if (lastAnm.isEmpty()) {
+        if (lastId == null || lastId.isBlank()) {
             return "ANM001";
         }
 
-        String lastId = lastAnm.get().getEmployeeId();
+        int lastNumber = Integer.parseInt(lastId.substring(3));
 
-        int number = Integer.parseInt(lastId.substring(3));
+        int nextNumber = lastNumber + 1;
 
-        number++;
-
-        return String.format("ANM%03d", number);
+        return String.format("ANM%03d", nextNumber);
     }
-
 
     @Override
     public List<UserResponseDto> getPendingAnms() {
