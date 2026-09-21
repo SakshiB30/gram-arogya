@@ -17,12 +17,13 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         /*
-         * Frontend development server
+         * Frontend development, preview, and production origins.
          */
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
-                        "http://localhost:4173"
+                        "http://localhost:4173",
+                        "https://asha-one.vercel.app"
                 )
         );
 
