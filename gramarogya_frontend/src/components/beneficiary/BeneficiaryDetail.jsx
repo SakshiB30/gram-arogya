@@ -42,7 +42,9 @@ export default function BeneficiaryDetail() {
 
   const {
     beneficiaryVisits,
-  } = useSelector((state) => state.visits);
+  } = useSelector((state) => state.visit) || {
+    beneficiaryVisits: [],
+  };
 
   useEffect(() => {
     // Fetch beneficiary
