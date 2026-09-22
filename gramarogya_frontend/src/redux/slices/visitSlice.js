@@ -44,25 +44,33 @@ export const fetchVisits = createAsyncThunk(
       // =========================
 
       if (isOnline()) {
-        const visits =
+        const response =
           await visitService.getAllVisits();
 
-        const visitsForOffline =
-          Array.isArray(visits)
-            ? visits.map((visit) => ({
-                ...visit,
+        /*
+         * Handle both:
+         * 1. Direct array response
+         * 2. Spring Page response
+         */
+        const visits =
+          Array.isArray(response)
+            ? response
+            : response?.content || [];
 
-                ashaId:
-                  visit.ashaId ||
-                  visit.userId,
-              }))
-            : [];
+        const visitsForOffline =
+          visits.map((visit) => ({
+            ...visit,
+
+            ashaId:
+              visit.ashaId ||
+              visit.userId,
+          }));
 
         await saveVisitsOffline(
           visitsForOffline
         );
 
-        return visits;
+        return visitsForOffline;
       }
 
       // =========================
@@ -70,9 +78,15 @@ export const fetchVisits = createAsyncThunk(
       // =========================
 
       const offlineVisits =
-        await getOfflineVisits(user.id);
+        await getOfflineVisits(
+          user.id
+        );
 
-      return offlineVisits;
+      return Array.isArray(
+        offlineVisits
+      )
+        ? offlineVisits
+        : [];
 
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -145,10 +159,6 @@ export const fetchVisitById = createAsyncThunk(
       // OFFLINE
       // =========================
 
-      /*
-       * Only retrieve visits belonging
-       * to the logged-in ASHA.
-       */
       const offlineVisits =
         await getOfflineVisits(
           user.id
@@ -156,7 +166,8 @@ export const fetchVisitById = createAsyncThunk(
 
       const visit =
         offlineVisits.find(
-          (item) => item.id === id
+          (item) =>
+            item.id === id
         );
 
       if (!visit) {
@@ -204,26 +215,34 @@ export const fetchVisitsByBeneficiary =
           );
         }
 
-        let visits;
+        let visits = [];
 
         // =========================
         // ONLINE
         // =========================
 
         if (isOnline()) {
-          visits =
+          const response =
             await visitService.getAllVisits();
 
-          const visitsForOffline =
-            Array.isArray(visits)
-              ? visits.map((visit) => ({
-                  ...visit,
+          /*
+           * Handle both:
+           * 1. Direct array response
+           * 2. Spring Page response
+           */
+          visits =
+            Array.isArray(response)
+              ? response
+              : response?.content || [];
 
-                  ashaId:
-                    visit.ashaId ||
-                    visit.userId,
-                }))
-              : [];
+          const visitsForOffline =
+            visits.map((visit) => ({
+              ...visit,
+
+              ashaId:
+                visit.ashaId ||
+                visit.userId,
+            }));
 
           await saveVisitsOffline(
             visitsForOffline
@@ -237,10 +256,17 @@ export const fetchVisitsByBeneficiary =
         // =========================
 
         else {
-          visits =
+          const offlineVisits =
             await getOfflineVisits(
               user.id
             );
+
+          visits =
+            Array.isArray(
+              offlineVisits
+            )
+              ? offlineVisits
+              : [];
         }
 
         // =========================
@@ -390,11 +416,6 @@ export const updateVisit = createAsyncThunk(
       // OFFLINE
       // =========================
 
-      /*
-       * The service verifies that
-       * this visit belongs to the
-       * logged-in ASHA.
-       */
       const updatedVisit =
         await updateOfflineVisit(
           id,
@@ -469,11 +490,6 @@ export const deleteVisit = createAsyncThunk(
       // OFFLINE
       // =========================
 
-      /*
-       * The service verifies that
-       * this visit belongs to the
-       * logged-in ASHA.
-       */
       const deletedVisit =
         await deleteOfflineVisit(
           id,
@@ -535,25 +551,28 @@ export const fetchTodayVisits =
         // =========================
 
         if (isOnline()) {
-          const visits =
+          const response =
             await visitService.getTodayVisits();
 
-          const visitsForOffline =
-            Array.isArray(visits)
-              ? visits.map((visit) => ({
-                  ...visit,
+          const visits =
+            Array.isArray(response)
+              ? response
+              : response?.content || [];
 
-                  ashaId:
-                    visit.ashaId ||
-                    visit.userId,
-                }))
-              : [];
+          const visitsForOffline =
+            visits.map((visit) => ({
+              ...visit,
+
+              ashaId:
+                visit.ashaId ||
+                visit.userId,
+            }));
 
           await upsertVisitsOffline(
             visitsForOffline
           );
 
-          return visits;
+          return visitsForOffline;
         }
 
         // =========================
@@ -571,7 +590,11 @@ export const fetchTodayVisits =
             user.id
           );
 
-        return offlineTodayVisits;
+        return Array.isArray(
+          offlineTodayVisits
+        )
+          ? offlineTodayVisits
+          : [];
 
       } catch (error) {
         return thunkAPI.rejectWithValue(
@@ -782,23 +805,47 @@ const visitSlice = createSlice({
           const newVisit =
             action.payload;
 
-          state.visits.push(
-            newVisit
-          );
-
-          const today =
-            new Date()
-              .toISOString()
-              .split("T")[0];
-
-          if (
-            newVisit?.scheduledDate &&
-            newVisit.scheduledDate ===
-              today
-          ) {
-            state.todayVisits.push(
+          if (newVisit) {
+            state.visits.push(
               newVisit
             );
+
+            const today =
+              new Date()
+                .toISOString()
+                .split("T")[0];
+
+            if (
+              newVisit?.scheduledDate &&
+              newVisit.scheduledDate ===
+                today
+            ) {
+              state.todayVisits.push(
+                newVisit
+              );
+            }
+
+            /*
+             * If this visit belongs to
+             * the currently selected beneficiary,
+             * keep beneficiaryVisits updated.
+             */
+            if (
+              newVisit?.beneficiaryId
+            ) {
+              const alreadyExists =
+                state.beneficiaryVisits.some(
+                  (visit) =>
+                    visit.id ===
+                    newVisit.id
+                );
+
+              if (!alreadyExists) {
+                state.beneficiaryVisits.push(
+                  newVisit
+                );
+              }
+            }
           }
         }
       )
@@ -840,6 +887,11 @@ const visitSlice = createSlice({
           const updatedVisit =
             action.payload;
 
+          if (!updatedVisit) {
+            return;
+          }
+
+          // Update all visits
           const index =
             state.visits.findIndex(
               (visit) =>
@@ -852,6 +904,7 @@ const visitSlice = createSlice({
               updatedVisit;
           }
 
+          // Update selected visit
           if (
             state.selectedVisit &&
             state.selectedVisit.id ===
@@ -861,6 +914,7 @@ const visitSlice = createSlice({
               updatedVisit;
           }
 
+          // Update beneficiary visits
           const beneficiaryIndex =
             state.beneficiaryVisits.findIndex(
               (visit) =>
@@ -876,6 +930,7 @@ const visitSlice = createSlice({
             ] = updatedVisit;
           }
 
+          // Update today's visits
           const today =
             new Date()
               .toISOString()
