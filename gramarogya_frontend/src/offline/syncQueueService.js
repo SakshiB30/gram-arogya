@@ -37,16 +37,13 @@ export const addToSyncQueue = async ({
   const now =
     new Date().toISOString();
 
-  console.log(
-    "ADDING TO SYNC QUEUE:",
-    {
-      operationId,
-      entityType,
-      operation,
-      localId,
-      ashaId,
-    }
-  );
+  console.log("ADDING TO SYNC QUEUE:", {
+    operationId,
+    entityType,
+    operation,
+    localId,
+    ashaId,
+  });
 
   const queueId =
     await db.syncQueue.add({
@@ -74,10 +71,7 @@ export const addToSyncQueue = async ({
       updatedAt: now,
     });
 
-  console.log(
-    "SYNC QUEUE ADDED. ID:",
-    queueId
-  );
+  console.log("SYNC QUEUE ADDED. ID:", queueId);
 
   return queueId;
 };
@@ -286,18 +280,12 @@ export const recoverStuckSyncOperation =
       return;
     }
 
-    console.warn(
-      "RECOVERING STUCK SYNC OPERATION:",
-      {
-        id: operation.id,
-        entityType:
-          operation.entityType,
-        operation:
-          operation.operation,
-        localId:
-          operation.localId,
-      }
-    );
+    console.log("RECOVERING STUCK SYNC OPERATION:", {
+      id: operation.id,
+      entityType: operation.entityType,
+      operation: operation.operation,
+      localId: operation.localId,
+    });
 
     await db.syncQueue.update(id, {
       status: "PENDING",

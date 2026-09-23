@@ -315,10 +315,10 @@ const useDashboardData = () => {
 
   const {
     todayVisits = [],
-    loading: visitLoading,
-    error: visitError,
+    loading: visitLoading = false,
+    error: visitError = null,
   } = useSelector(
-    (state) => state.visit
+    (state) => state.visit ?? {}
   );
 
   useEffect(() => {

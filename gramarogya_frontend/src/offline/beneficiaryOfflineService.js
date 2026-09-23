@@ -15,31 +15,13 @@ import db from "./db";
 export const saveBeneficiariesOffline = async (
   beneficiaries
 ) => {
-  console.log(
-    "BENEFICIARIES RECEIVED FOR OFFLINE:",
-    beneficiaries
-  );
-
   if (!Array.isArray(beneficiaries)) {
-    console.log(
-      "NOT AN ARRAY - NOTHING SAVED"
-    );
-
     return;
   }
 
   if (beneficiaries.length === 0) {
-    console.log(
-      "EMPTY BENEFICIARY RESPONSE - EXISTING CACHE PRESERVED"
-    );
-
     return beneficiaries;
   }
-
-  console.log(
-    "FIRST BENEFICIARY:",
-    beneficiaries[0]
-  );
 
   /**
    * Update only the beneficiaries received
@@ -55,14 +37,6 @@ export const saveBeneficiariesOffline = async (
         beneficiaries
       );
     }
-  );
-
-  const stored =
-    await db.beneficiaries.toArray();
-
-  console.log(
-    "BENEFICIARIES STORED IN INDEXEDDB:",
-    stored
   );
 
   return beneficiaries;

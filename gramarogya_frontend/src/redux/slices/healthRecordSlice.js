@@ -17,6 +17,19 @@ import {
   removeOfflineHealthRecord,
 } from "../../offline/healthRecordOfflineService";
 
+const getHealthRecordOwnerId = (record) => {
+  if (!record) {
+    return null;
+  }
+
+  return (
+    record.ashaId ??
+    record.recordedBy ??
+    record.userId ??
+    null
+  );
+};
+
 import { addToSyncQueue } from "../../offline/syncQueueService";
 
 import { isOnline } from "../../offline/network";
@@ -47,14 +60,18 @@ export const fetchHealthRecords = createAsyncThunk(
         const records =
           response?.content || [];
 
-        /*
+        /**
          * Save only records belonging to
          * the logged-in ASHA locally.
          *
-         * Backend remains the final authorization layer.
+         * Backend stores the owner under recordedBy,
+         * while older local records may still use ashaId.
          */
         for (const record of records) {
-          if (record.ashaId !== user.id) {
+          const ownerId =
+            getHealthRecordOwnerId(record);
+
+          if (ownerId !== user.id) {
             continue;
           }
 
@@ -65,24 +82,18 @@ export const fetchHealthRecords = createAsyncThunk(
           });
         }
 
-        return records;
+        return records.filter(
+          (record) =>
+            getHealthRecordOwnerId(record) ===
+            user.id
+        );
       }
 
-      /*
-       * Offline mode
-       */
-      const records =
-        await getOfflineHealthRecords(
-          user.id
-        );
+      const offlineRecords =
+        await getOfflineHealthRecords(user.id);
 
-      return records;
+      return offlineRecords;
     } catch (error) {
-      console.error(
-        "Failed to fetch health records:",
-        error
-      );
-
       return rejectWithValue(
         error?.response?.data?.message ||
           error?.message ||
@@ -124,11 +135,17 @@ export const fetchHealthRecordById =
               id
             );
 
+          const ownerId =
+            getHealthRecordOwnerId(record);
+
           /*
            * Do not store another ASHA's record
            * in this ASHA's offline database.
+           *
+           * The backend returns recordedBy for current records,
+           * while older local records may still use ashaId.
            */
-          if (record?.ashaId !== user.id) {
+          if (ownerId !== user.id) {
             return rejectWithValue(
               "You are not authorized to access this health record."
             );
@@ -160,11 +177,6 @@ export const fetchHealthRecordById =
 
         return record;
       } catch (error) {
-        console.error(
-          "Failed to fetch health record:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||
@@ -211,13 +223,16 @@ export const fetchHealthRecordsByBeneficiary =
               ? records
               : records?.content || [];
 
-          /*
+          /**
            * Save only this ASHA's records locally.
+           *
+           * Backend uses recordedBy; older local rows may still use ashaId.
            */
           const authorizedRecords =
             recordsArray.filter(
               (record) =>
-                record.ashaId === user.id
+                getHealthRecordOwnerId(record) ===
+                user.id
             );
 
           for (const record of authorizedRecords) {
@@ -242,11 +257,6 @@ export const fetchHealthRecordsByBeneficiary =
 
         return records;
       } catch (error) {
-        console.error(
-          "Failed to fetch health records by beneficiary:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||
@@ -293,13 +303,16 @@ export const fetchHealthRecordsByVisit =
               ? records
               : records?.content || [];
 
-          /*
+          /**
            * Save only this ASHA's records locally.
+           *
+           * Backend uses recordedBy; older local rows may still use ashaId.
            */
           const authorizedRecords =
             recordsArray.filter(
               (record) =>
-                record.ashaId === user.id
+                getHealthRecordOwnerId(record) ===
+                user.id
             );
 
           for (const record of authorizedRecords) {
@@ -324,11 +337,6 @@ export const fetchHealthRecordsByVisit =
 
         return records;
       } catch (error) {
-        console.error(
-          "Failed to fetch health records by visit:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||
@@ -438,11 +446,6 @@ export const createHealthRecord =
 
         return offlineHealthRecord;
       } catch (error) {
-        console.error(
-          "Failed to create health record:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||
@@ -543,11 +546,6 @@ export const updateHealthRecord =
 
         return updatedRecord;
       } catch (error) {
-        console.error(
-          "Failed to update health record:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||
@@ -670,11 +668,6 @@ export const deleteHealthRecord =
 
         return id;
       } catch (error) {
-        console.error(
-          "Failed to delete health record:",
-          error
-        );
-
         return rejectWithValue(
           error?.response?.data?.message ||
             error?.message ||

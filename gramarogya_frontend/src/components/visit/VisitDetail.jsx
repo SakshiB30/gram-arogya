@@ -14,10 +14,10 @@ const VisitDetail = () => {
   const navigate = useNavigate();
 
   const {
-    selectedVisit,
-    loading,
-    error,
-  } = useSelector((state) => state.visit);
+    selectedVisit = null,
+    loading = false,
+    error = null,
+  } = useSelector((state) => state.visit ?? {});
 
   useEffect(() => {
     dispatch(fetchVisitById(id));

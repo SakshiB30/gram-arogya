@@ -1,5 +1,38 @@
 import db from "./db";
 
+const getHealthRecordOwnerId = (
+  record
+) => {
+  if (!record) {
+    return null;
+  }
+
+  return (
+    record.ashaId ??
+    record.recordedBy ??
+    record.userId ??
+    null
+  );
+};
+
+const normalizeHealthRecord = (
+  record
+) => {
+  if (!record) {
+    return record;
+  }
+
+  const ownerId =
+    getHealthRecordOwnerId(record);
+
+  return {
+    ...record,
+    ashaId: ownerId ?? record.ashaId,
+    recordedBy:
+      record.recordedBy ?? ownerId,
+  };
+};
+
 /*
  * Save a health record into IndexedDB.
  *
@@ -16,11 +49,14 @@ export const saveHealthRecordOffline = async (
     return null;
   }
 
+  const normalizedRecord =
+    normalizeHealthRecord(healthRecord);
+
   await db.healthRecords.put(
-    healthRecord
+    normalizedRecord
   );
 
-  return healthRecord;
+  return normalizedRecord;
 };
 
 /*
@@ -57,8 +93,17 @@ export const getOfflineHealthRecords = async (
     await db.healthRecords.toArray();
 
   return healthRecords.filter(
-    (record) =>
-      record.ashaId === ashaId
+    (record) => {
+      const ownerId =
+        getHealthRecordOwnerId(record);
+
+      return (
+        ownerId === ashaId ||
+        (!ownerId &&
+          (record.ashaId === ashaId ||
+            record.recordedBy === ashaId))
+      );
+    }
   );
 };
 
@@ -82,8 +127,17 @@ export const getOfflineHealthRecordsByBeneficiary =
         .toArray();
 
     return healthRecords.filter(
-      (record) =>
-        record.ashaId === ashaId
+      (record) => {
+        const ownerId =
+          getHealthRecordOwnerId(record);
+
+        return (
+          ownerId === ashaId ||
+          (!ownerId &&
+            (record.ashaId === ashaId ||
+              record.recordedBy === ashaId))
+        );
+      }
     );
   };
 
@@ -107,8 +161,17 @@ export const getOfflineHealthRecordsByVisit =
         .toArray();
 
     return healthRecords.filter(
-      (record) =>
-        record.ashaId === ashaId
+      (record) => {
+        const ownerId =
+          getHealthRecordOwnerId(record);
+
+        return (
+          ownerId === ashaId ||
+          (!ownerId &&
+            (record.ashaId === ashaId ||
+              record.recordedBy === ashaId))
+        );
+      }
     );
   };
 
@@ -135,23 +198,30 @@ export const getOfflineHealthRecordById =
       return null;
     }
 
+    const ownerId =
+      getHealthRecordOwnerId(healthRecord);
+
     if (
-      healthRecord.ashaId !== ashaId
+      ownerId !== ashaId &&
+      !(
+        !ownerId &&
+        (healthRecord.ashaId === ashaId ||
+          healthRecord.recordedBy === ashaId)
+      )
     ) {
       console.warn(
         "OFFLINE HEALTH RECORD ACCESS DENIED:",
         {
           healthRecordId: id,
           requestedAshaId: ashaId,
-          ownerAshaId:
-            healthRecord.ashaId,
+          ownerAshaId: ownerId,
         }
       );
 
       return null;
     }
 
-    return healthRecord;
+    return normalizeHealthRecord(healthRecord);
   };
 
 /*

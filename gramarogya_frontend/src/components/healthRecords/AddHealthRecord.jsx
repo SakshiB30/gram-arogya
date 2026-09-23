@@ -21,7 +21,7 @@ const AddHealthRecord = () => {
 
   const {
     visits = [],
-  } = useSelector((state) => state.visit);
+  } = useSelector((state) => state.visit ?? {});
 
   const {
     healthRecords = [],

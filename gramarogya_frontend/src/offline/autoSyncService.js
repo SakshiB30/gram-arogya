@@ -10,7 +10,6 @@ import { fetchHealthRecords } from "../redux/slices/healthRecordSlice";
 let isSyncing = false;
 
 export const startAutoSync = (dispatch) => {
-
   /**
    * Run synchronization.
    *
@@ -27,10 +26,6 @@ export const startAutoSync = (dispatch) => {
      * Only synchronize when internet is available.
      */
     if (!navigator.onLine) {
-      console.log(
-        "Device is offline. Sync skipped."
-      );
-
       return;
     }
 
@@ -45,19 +40,17 @@ export const startAutoSync = (dispatch) => {
         await recoverAllStuckSyncOperations();
 
       if (recoveredCount > 0) {
-        console.log(
+        console.info(
           `Recovered ${recoveredCount} stuck sync operation(s).`
         );
       }
 
-      console.log(
-        "Starting automatic sync..."
-      );
+      console.info("Starting automatic sync...");
 
       const result =
         await syncPendingOperations();
 
-      console.log(
+      console.info(
         "Automatic sync result:",
         result
       );
@@ -75,13 +68,11 @@ export const startAutoSync = (dispatch) => {
         dispatch(fetchVisits());
         dispatch(fetchHealthRecords());
       }
-
     } catch (error) {
       console.error(
         "Automatic sync failed:",
         error
       );
-
     } finally {
       isSyncing = false;
     }
@@ -91,10 +82,7 @@ export const startAutoSync = (dispatch) => {
    * Internet restored.
    */
   const handleOnline = async () => {
-    console.log(
-      "Internet restored."
-    );
-
+    console.info("Internet restored.");
     await runSync();
   };
 

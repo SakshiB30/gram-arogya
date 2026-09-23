@@ -17,11 +17,11 @@ const VisitPage = () => {
 
 
   const {
-    visits,
-    loading,
-    error
+    visits = [],
+    loading = false,
+    error = null,
   } = useSelector(
-    (state)=>state.visit
+    (state) => state.visit ?? {}
   );
 
 

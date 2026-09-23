@@ -752,17 +752,12 @@ export const syncPendingOperations =
 
         failed++;
 
-        console.log(
-          "SYNC OPERATION SKIPPED:",
-          {
-            entityType,
-            operation:
-              operationType,
-            localId,
-            reason:
-              dependencyError,
-          }
-        );
+        console.log("SYNC OPERATION SKIPPED:", {
+          entityType,
+          operation: operationType,
+          localId,
+          reason: dependencyError,
+        });
 
         continue;
       }
@@ -804,14 +799,10 @@ export const syncPendingOperations =
 
             failed++;
 
-            console.log(
-              "HEALTH RECORD WAITING FOR VISIT:",
-              {
-                healthRecord:
-                  localId,
-                visitId,
-              }
-            );
+            console.log("HEALTH RECORD WAITING FOR VISIT:", {
+              healthRecord: localId,
+              visitId,
+            });
 
             continue;
           }
@@ -837,15 +828,11 @@ export const syncPendingOperations =
             `${entityType}:${localId}`
           );
 
-          console.log(
-            "CREATE FAILED:",
-            {
-              entityType,
-              localId,
-              error:
-                result.error,
-            }
-          );
+          console.log("CREATE FAILED:", {
+            entityType,
+            localId,
+            error: result.error,
+          });
         }
       }
     }
