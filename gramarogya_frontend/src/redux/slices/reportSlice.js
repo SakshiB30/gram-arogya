@@ -3,12 +3,35 @@ import reportService from "../../services/reportService";
 import { normalizeApiError } from "../../utils/apiError";
 
 // =====================================================
-// HELPER
+// HELPERS
 // =====================================================
 
 const getReportError = (error) =>
   normalizeApiError(error, "Failed to load reports.");
 
+const normalizeReportData = (data) => {
+  // API directly returns an array
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  // Spring Page response
+  if (Array.isArray(data?.content)) {
+    return data.content;
+  }
+
+  // API returns { data: [...] }
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  // API returns { results: [...] }
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  return [];
+};
 
 // =====================================================
 // FETCH REPORT SUMMARY
@@ -25,7 +48,6 @@ export const fetchSummary = createAsyncThunk(
   }
 );
 
-
 // =====================================================
 // FETCH BENEFICIARY REPORT
 // =====================================================
@@ -40,7 +62,6 @@ export const fetchBeneficiaryReport = createAsyncThunk(
     }
   }
 );
-
 
 // =====================================================
 // FETCH VISIT REPORT
@@ -57,7 +78,6 @@ export const fetchVisitReport = createAsyncThunk(
   }
 );
 
-
 // =====================================================
 // FETCH INVENTORY REPORT
 // =====================================================
@@ -72,7 +92,6 @@ export const fetchInventoryReport = createAsyncThunk(
     }
   }
 );
-
 
 // =====================================================
 // FETCH HEALTH RECORD REPORT
@@ -89,7 +108,6 @@ export const fetchHealthRecordReport = createAsyncThunk(
   }
 );
 
-
 // =====================================================
 // FETCH LOW STOCK REPORT
 // =====================================================
@@ -104,7 +122,6 @@ export const fetchLowStockReport = createAsyncThunk(
     }
   }
 );
-
 
 // =====================================================
 // FETCH OUT OF STOCK REPORT
@@ -121,13 +138,11 @@ export const fetchOutOfStockReport = createAsyncThunk(
   }
 );
 
-
 // =====================================================
 // INITIAL STATE
 // =====================================================
 
 const initialState = {
-  // Summary
   summary: {
     totalBeneficiaries: 0,
     totalVisits: 0,
@@ -137,7 +152,6 @@ const initialState = {
     outOfStockMedicines: 0,
   },
 
-  // Reports
   beneficiaryReport: [],
   visitReport: [],
   inventoryReport: [],
@@ -145,12 +159,10 @@ const initialState = {
   lowStockReport: [],
   outOfStockReport: [],
 
-  // UI state
   loading: false,
   success: false,
   error: null,
 };
-
 
 // =====================================================
 // SLICE
@@ -162,7 +174,6 @@ const reportSlice = createSlice({
   initialState,
 
   reducers: {
-
     resetReportState: (state) => {
       state.loading = false;
       state.success = false;
@@ -172,11 +183,9 @@ const reportSlice = createSlice({
     clearReportError: (state) => {
       state.error = null;
     },
-
   },
 
   extraReducers: (builder) => {
-
     // =================================================
     // SUMMARY
     // =================================================
@@ -193,7 +202,7 @@ const reportSlice = createSlice({
 
         state.summary = {
           ...state.summary,
-          ...action.payload,
+          ...(action.payload || {}),
         };
       })
 
@@ -202,7 +211,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // BENEFICIARY REPORT
@@ -217,7 +225,10 @@ const reportSlice = createSlice({
       .addCase(fetchBeneficiaryReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.beneficiaryReport = action.payload;
+
+        state.beneficiaryReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchBeneficiaryReport.rejected, (state, action) => {
@@ -225,7 +236,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // VISIT REPORT
@@ -240,7 +250,10 @@ const reportSlice = createSlice({
       .addCase(fetchVisitReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.visitReport = action.payload;
+
+        state.visitReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchVisitReport.rejected, (state, action) => {
@@ -248,7 +261,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // INVENTORY REPORT
@@ -263,7 +275,10 @@ const reportSlice = createSlice({
       .addCase(fetchInventoryReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.inventoryReport = action.payload;
+
+        state.inventoryReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchInventoryReport.rejected, (state, action) => {
@@ -271,7 +286,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // HEALTH RECORD REPORT
@@ -286,7 +300,10 @@ const reportSlice = createSlice({
       .addCase(fetchHealthRecordReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.healthRecordReport = action.payload;
+
+        state.healthRecordReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchHealthRecordReport.rejected, (state, action) => {
@@ -294,7 +311,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // LOW STOCK
@@ -309,7 +325,10 @@ const reportSlice = createSlice({
       .addCase(fetchLowStockReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.lowStockReport = action.payload;
+
+        state.lowStockReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchLowStockReport.rejected, (state, action) => {
@@ -317,7 +336,6 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
 
     // =================================================
     // OUT OF STOCK
@@ -332,7 +350,10 @@ const reportSlice = createSlice({
       .addCase(fetchOutOfStockReport.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.outOfStockReport = action.payload;
+
+        state.outOfStockReport = normalizeReportData(
+          action.payload
+        );
       })
 
       .addCase(fetchOutOfStockReport.rejected, (state, action) => {
@@ -340,10 +361,8 @@ const reportSlice = createSlice({
         state.success = false;
         state.error = action.payload;
       });
-
   },
 });
-
 
 // =====================================================
 // EXPORT ACTIONS
@@ -353,7 +372,6 @@ export const {
   resetReportState,
   clearReportError,
 } = reportSlice.actions;
-
 
 // =====================================================
 // EXPORT REDUCER

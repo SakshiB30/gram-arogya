@@ -17,9 +17,11 @@ import {
   fetchLowStockReport,
   fetchOutOfStockReport,
 } from "../redux/slices/reportSlice";
+
 import { getErrorMessage } from "../utils/apiError";
 
 export default function ReportsPage() {
+
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
@@ -36,6 +38,16 @@ export default function ReportsPage() {
     error,
   } = useSelector((state) => state.reports);
 
+  
+  console.log("===== REPORT DEBUG =====");
+console.log("Selected Report Type:", activeReportType);
+console.log("Visit Report:", visitReport);
+console.log("Visit Report Length:", visitReport?.length);
+console.log("Health Report:", healthRecordReport);
+console.log("Health Report Length:", healthRecordReport?.length);
+console.log("Current Reports:", currentReports);
+console.log("Current Reports Length:", currentReports?.length);
+console.log("========================");
   // =====================================================
   // STATE
   // =====================================================
@@ -43,11 +55,11 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState("beneficiary");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const activeReportType =
-    user?.role !== "ADMIN" &&
-    ["inventory", "low-stock", "out-of-stock"].includes(reportType)
-      ? "beneficiary"
-      : reportType;
+  // =====================================================
+  // ROLE-BASED REPORT TYPE
+  // =====================================================
+
+  const activeReportType = reportType;
 
   // =====================================================
   // FETCH SUMMARY
@@ -62,35 +74,35 @@ export default function ReportsPage() {
   // =====================================================
 
   useEffect(() => {
-  switch (activeReportType) {
-    case "beneficiary":
-      dispatch(fetchBeneficiaryReport());
-      break;
+    switch (activeReportType) {
+      case "beneficiary":
+        dispatch(fetchBeneficiaryReport());
+        break;
 
-    case "visit":
-      dispatch(fetchVisitReport());
-      break;
+      case "visit":
+        dispatch(fetchVisitReport());
+        break;
 
-    case "health":
-      dispatch(fetchHealthRecordReport());
-      break;
+      case "health":
+        dispatch(fetchHealthRecordReport());
+        break;
 
-    case "inventory":
-      dispatch(fetchInventoryReport());
-      break;
+      case "inventory":
+        dispatch(fetchInventoryReport());
+        break;
 
-    case "low-stock":
-      dispatch(fetchLowStockReport());
-      break;
+      case "low-stock":
+        dispatch(fetchLowStockReport());
+        break;
 
-    case "out-of-stock":
-      dispatch(fetchOutOfStockReport());
-      break;
+      case "out-of-stock":
+        dispatch(fetchOutOfStockReport());
+        break;
 
-    default:
-      dispatch(fetchBeneficiaryReport());
-  }
-}, [activeReportType, dispatch]);
+      default:
+        dispatch(fetchBeneficiaryReport());
+    }
+  }, [activeReportType, dispatch]);
 
   // =====================================================
   // GET CURRENT REPORT DATA
@@ -99,22 +111,34 @@ export default function ReportsPage() {
   const currentReports = useMemo(() => {
     switch (activeReportType) {
       case "beneficiary":
-        return beneficiaryReport;
+        return Array.isArray(beneficiaryReport)
+          ? beneficiaryReport
+          : [];
 
       case "visit":
-        return visitReport;
+        return Array.isArray(visitReport)
+          ? visitReport
+          : [];
 
       case "health":
-        return healthRecordReport;
+        return Array.isArray(healthRecordReport)
+          ? healthRecordReport
+          : [];
 
       case "inventory":
-        return inventoryReport;
+        return Array.isArray(inventoryReport)
+          ? inventoryReport
+          : [];
 
       case "low-stock":
-        return lowStockReport;
+        return Array.isArray(lowStockReport)
+          ? lowStockReport
+          : [];
 
       case "out-of-stock":
-        return outOfStockReport;
+        return Array.isArray(outOfStockReport)
+          ? outOfStockReport
+          : [];
 
       default:
         return [];
@@ -138,7 +162,7 @@ export default function ReportsPage() {
       return currentReports;
     }
 
-    const search = searchTerm.toLowerCase();
+    const search = searchTerm.toLowerCase().trim();
 
     return currentReports.filter((item) => {
       return Object.values(item || {}).some((value) =>
@@ -150,7 +174,7 @@ export default function ReportsPage() {
   }, [currentReports, searchTerm]);
 
   // =====================================================
-  // REPORT TITLE
+  // REPORT TITLES
   // =====================================================
 
   const reportTitle = {
@@ -169,6 +193,15 @@ export default function ReportsPage() {
   const exportData = filteredReports;
 
   // =====================================================
+  // HANDLE REPORT TYPE CHANGE
+  // =====================================================
+
+  const handleReportTypeChange = (event) => {
+    setReportType(event.target.value);
+    setSearchTerm("");
+  };
+
+  // =====================================================
   // UI
   // =====================================================
 
@@ -183,12 +216,18 @@ export default function ReportsPage() {
 
         <ReportHeader />
 
+        {/* IMPORTANT:
+            Pass the currently selected report type.
+            Without this, ExportButton defaults to
+            "beneficiary".
+        */}
+
         <ExportButton
           data={exportData}
+          reportType={activeReportType}
         />
 
       </div>
-
 
       {/* =================================================
           STATISTICS
@@ -199,7 +238,6 @@ export default function ReportsPage() {
         role={user?.role}
       />
 
-
       {/* =================================================
           REPORT TYPE FILTER
       ================================================= */}
@@ -207,8 +245,6 @@ export default function ReportsPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-
-          {/* Report Type */}
 
           <div>
 
@@ -218,10 +254,7 @@ export default function ReportsPage() {
 
             <select
               value={activeReportType}
-              onChange={(e) => {
-                setReportType(e.target.value);
-                setSearchTerm("");
-              }}
+              onChange={handleReportTypeChange}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
 
@@ -237,21 +270,22 @@ export default function ReportsPage() {
                 Health Record Report
               </option>
 
-             {user?.role === "ADMIN" && (
-  <>
-    <option value="inventory">
-      Inventory Report
-    </option>
+              {user?.role === "ADMIN" && (
+                <>
+                  <option value="inventory">
+                    Inventory Report
+                  </option>
 
-    <option value="low-stock">
-      Low Stock Report
-    </option>
+                  <option value="low-stock">
+                    Low Stock Report
+                  </option>
 
-    <option value="out-of-stock">
-      Out of Stock Report
-    </option>
-  </>
-)}
+                  <option value="out-of-stock">
+                    Out of Stock Report
+                  </option>
+                </>
+              )}
+
             </select>
 
           </div>
@@ -259,7 +293,6 @@ export default function ReportsPage() {
         </div>
 
       </div>
-
 
       {/* =================================================
           SEARCH
@@ -270,19 +303,18 @@ export default function ReportsPage() {
         onSearchChange={setSearchTerm}
       />
 
-
       {/* =================================================
           ERROR
       ================================================= */}
 
       {error && (
-
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600">
-          {getErrorMessage(error, "Failed to load report.")}
+          {getErrorMessage(
+            error,
+            "Failed to load report."
+          )}
         </div>
-
       )}
-
 
       {/* =================================================
           REPORT TABLE

@@ -1,240 +1,216 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Download } from "lucide-react";
 
-import ExportButton from "./ExportButton";
+const reportConfig = {
+  beneficiary: {
+    filename: "beneficiary-report.csv",
+    headers: [
+      "Name",
+      "Age",
+      "Gender",
+      "Village",
+      "Category",
+      "Mobile Number",
+    ],
+    rows: (item) => [
+      item.name ?? "",
+      item.age ?? "",
+      item.gender ?? "",
+      item.village ?? "",
+      item.category ?? "",
+      item.mobileNumber ?? "",
+    ],
+  },
 
-const STATUS_STYLES = {
-  Completed: "bg-green-100 text-green-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Failed: "bg-red-100 text-red-700",
+  visit: {
+    filename: "visit-report.csv",
+    headers: [
+      "Beneficiary",
+      "Visit Date",
+      "Visit Type",
+      "Status",
+      "Notes",
+      "Next Visit Date",
+    ],
+    rows: (item) => [
+      item.beneficiaryName ?? "",
+      item.visitDate ?? "",
+      item.visitType ?? "",
+      item.status ?? "",
+      item.notes ?? "",
+      item.nextVisitDate ?? "",
+    ],
+  },
+
+  health: {
+    filename: "health-record-report.csv",
+    headers: [
+      "Beneficiary",
+      "Blood Pressure",
+      "Weight",
+      "Temperature",
+      "Hemoglobin",
+      "Diagnosis",
+      "Prescription",
+      "Notes",
+      "Created At",
+    ],
+    rows: (item) => [
+      item.beneficiaryName ?? "",
+      item.bloodPressure ?? "",
+      item.weight ?? "",
+      item.temperature ?? "",
+      item.hemoglobin ?? "",
+      item.diagnosis ?? "",
+      item.prescription ?? "",
+      item.notes ?? "",
+      item.createdAt ?? "",
+    ],
+  },
+
+  inventory: {
+    filename: "inventory-report.csv",
+    headers: [
+      "Medicine Name",
+      "Category",
+      "Quantity",
+      "Unit",
+      "Expiry Date",
+      "Status",
+    ],
+    rows: (item) => [
+      item.name ?? item.medicineName ?? "",
+      item.category ?? "",
+      item.quantity ?? "",
+      item.unit ?? "",
+      item.expiryDate ?? "",
+      item.status ?? "",
+    ],
+  },
+
+  "low-stock": {
+    filename: "low-stock-report.csv",
+    headers: [
+      "Medicine Name",
+      "Category",
+      "Quantity",
+      "Unit",
+      "Status",
+    ],
+    rows: (item) => [
+      item.name ?? item.medicineName ?? "",
+      item.category ?? "",
+      item.quantity ?? "",
+      item.unit ?? "",
+      item.status ?? "",
+    ],
+  },
+
+  "out-of-stock": {
+    filename: "out-of-stock-report.csv",
+    headers: [
+      "Medicine Name",
+      "Category",
+      "Quantity",
+      "Unit",
+      "Status",
+    ],
+    rows: (item) => [
+      item.name ?? item.medicineName ?? "",
+      item.category ?? "",
+      item.quantity ?? "",
+      item.unit ?? "",
+      item.status ?? "",
+    ],
+  },
 };
 
-export default function ReportDetail() {
+const escapeCsvValue = (value) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
 
-  const { id } = useParams();
+  const stringValue = String(value);
 
-  const navigate = useNavigate();
+  if (
+    stringValue.includes(",") ||
+    stringValue.includes('"') ||
+    stringValue.includes("\n")
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
 
-  /*
-   * Temporary report data.
-   *
-   * We will replace this with backend data
-   * once /reports/{id} API is implemented.
-   */
-  const report = {
-    id,
+  return stringValue;
+};
 
-    reportName: "Monthly Health Report",
+export default function ExportButton({
+  data = [],
+  reportType,
+}) {
+  console.log("=================================");
+  console.log("EXPORT BUTTON");
+  console.log("REPORT TYPE:", reportType);
+  console.log("DATA:", data);
+  console.log("=================================");
 
-    reportType: "Health",
+  const handleExport = () => {
+    console.log("EXPORT CLICKED");
+    console.log("FINAL REPORT TYPE:", reportType);
 
-    generatedBy: "ASHA Worker",
+    const selectedConfig = reportConfig[reportType];
 
-    createdAt: "10 July 2026",
+    if (!selectedConfig) {
+      alert(`Invalid report type: ${reportType}`);
+      return;
+    }
 
-    status: "Completed",
+    if (!Array.isArray(data) || data.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
 
-    totalBeneficiaries: 150,
+    const headerRow = selectedConfig.headers
+      .map(escapeCsvValue)
+      .join(",");
 
-    totalVisits: 320,
+    const dataRows = data.map((item) =>
+      selectedConfig
+        .rows(item)
+        .map(escapeCsvValue)
+        .join(",")
+    );
 
-    summary:
-      "This report contains monthly health records, visits and beneficiary statistics.",
+    const csvContent = [headerRow, ...dataRows].join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = selectedConfig.filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    console.log(
+      `Downloaded ${selectedConfig.filename}`
+    );
   };
 
-
   return (
-
-    <div className="space-y-6">
-
-      {/* =========================================
-          HEADER
-      ========================================= */}
-
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-
-        <div className="flex items-center gap-3">
-
-          {/* Back Button */}
-
-          <button
-            onClick={() => navigate("/app/reports")}
-            className="rounded-lg border p-2 hover:bg-slate-100"
-          >
-            <ArrowLeft size={18} />
-          </button>
-
-
-          {/* Heading */}
-
-          <div>
-
-            <h1 className="text-3xl font-bold text-slate-900">
-              Report Details
-            </h1>
-
-            <p className="text-slate-500">
-              View complete report information.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        {/* Export */}
-
-        <ExportButton data={[report]} />
-
-      </div>
-
-
-      {/* =========================================
-          REPORT DETAILS
-      ========================================= */}
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-          <DetailItem
-            label="Report Name"
-            value={report.reportName}
-          />
-
-
-          <DetailItem
-            label="Report Type"
-            value={report.reportType}
-          />
-
-
-          <DetailItem
-            label="Generated By"
-            value={report.generatedBy}
-          />
-
-
-          <DetailItem
-            label="Created Date"
-            value={report.createdAt}
-          />
-
-
-          {/* Status */}
-
-          <div>
-
-            <p className="text-sm font-medium text-slate-500">
-              Status
-            </p>
-
-            <span
-              className={`mt-2 inline-block rounded-full px-3 py-1 text-sm font-semibold ${
-                STATUS_STYLES[report.status]
-              }`}
-            >
-              {report.status}
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* =========================================
-          SUMMARY
-      ========================================= */}
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-
-        <h2 className="text-lg font-bold text-slate-900">
-          Report Summary
-        </h2>
-
-
-        <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
-
-          <SummaryCard
-            title="Beneficiaries"
-            value={report.totalBeneficiaries}
-          />
-
-
-          <SummaryCard
-            title="Total Visits"
-            value={report.totalVisits}
-          />
-
-
-          <SummaryCard
-            title="Report ID"
-            value={report.id}
-          />
-
-        </div>
-
-
-        <p className="mt-6 text-slate-600">
-          {report.summary}
-        </p>
-
-      </div>
-
-    </div>
-  );
-}
-
-
-/* =========================================
-   DETAIL ITEM
-========================================= */
-
-function DetailItem({
-  label,
-  value,
-}) {
-
-  return (
-
-    <div>
-
-      <p className="text-sm font-medium text-slate-500">
-        {label}
-      </p>
-
-      <p className="mt-2 font-semibold text-slate-900">
-        {value || "-"}
-      </p>
-
-    </div>
-  );
-}
-
-
-/* =========================================
-   SUMMARY CARD
-========================================= */
-
-function SummaryCard({
-  title,
-  value,
-}) {
-
-  return (
-
-    <div className="rounded-xl bg-slate-50 p-5">
-
-      <p className="text-sm text-slate-500">
-        {title}
-      </p>
-
-      <p className="mt-2 text-2xl font-bold text-slate-900">
-        {value ?? "-"}
-      </p>
-
-    </div>
+    <button
+      type="button"
+      onClick={handleExport}
+      className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+    >
+      <Download size={18} />
+      Export
+    </button>
   );
 }
