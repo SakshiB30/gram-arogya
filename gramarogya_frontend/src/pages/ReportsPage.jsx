@@ -21,7 +21,6 @@ import {
 import { getErrorMessage } from "../utils/apiError";
 
 export default function ReportsPage() {
-
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
@@ -38,16 +37,6 @@ export default function ReportsPage() {
     error,
   } = useSelector((state) => state.reports);
 
-  
-  console.log("===== REPORT DEBUG =====");
-console.log("Selected Report Type:", activeReportType);
-console.log("Visit Report:", visitReport);
-console.log("Visit Report Length:", visitReport?.length);
-console.log("Health Report:", healthRecordReport);
-console.log("Health Report Length:", healthRecordReport?.length);
-console.log("Current Reports:", currentReports);
-console.log("Current Reports Length:", currentReports?.length);
-console.log("========================");
   // =====================================================
   // STATE
   // =====================================================
@@ -56,7 +45,7 @@ console.log("========================");
   const [searchTerm, setSearchTerm] = useState("");
 
   // =====================================================
-  // ROLE-BASED REPORT TYPE
+  // ACTIVE REPORT TYPE
   // =====================================================
 
   const activeReportType = reportType;
@@ -164,14 +153,34 @@ console.log("========================");
 
     const search = searchTerm.toLowerCase().trim();
 
-    return currentReports.filter((item) => {
-      return Object.values(item || {}).some((value) =>
+    return currentReports.filter((item) =>
+      Object.values(item || {}).some((value) =>
         String(value ?? "")
           .toLowerCase()
           .includes(search)
-      );
-    });
+      )
+    );
   }, [currentReports, searchTerm]);
+
+  // =====================================================
+  // DEBUG
+  // =====================================================
+
+  console.log("===== REPORT DEBUG =====");
+  console.log("Selected Report Type:", activeReportType);
+  console.log("Visit Report:", visitReport);
+  console.log("Visit Report Length:", visitReport?.length);
+  console.log("Health Report:", healthRecordReport);
+  console.log(
+    "Health Report Length:",
+    healthRecordReport?.length
+  );
+  console.log("Current Reports:", currentReports);
+  console.log(
+    "Current Reports Length:",
+    currentReports?.length
+  );
+  console.log("========================");
 
   // =====================================================
   // REPORT TITLES
@@ -207,47 +216,29 @@ console.log("========================");
 
   return (
     <div className="space-y-6">
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* HEADER */}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
         <ReportHeader />
-
-        {/* IMPORTANT:
-            Pass the currently selected report type.
-            Without this, ExportButton defaults to
-            "beneficiary".
-        */}
 
         <ExportButton
           data={exportData}
           reportType={activeReportType}
         />
-
       </div>
 
-      {/* =================================================
-          STATISTICS
-      ================================================= */}
+      {/* STATISTICS */}
 
       <ReportStats
         summary={summary}
         role={user?.role}
       />
 
-      {/* =================================================
-          REPORT TYPE FILTER
-      ================================================= */}
+      {/* REPORT TYPE FILTER */}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-
           <div>
-
             <label className="mb-2 block text-sm font-semibold text-slate-700">
               Report Type
             </label>
@@ -257,7 +248,6 @@ console.log("========================");
               onChange={handleReportTypeChange}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
-
               <option value="beneficiary">
                 Beneficiary Report
               </option>
@@ -285,27 +275,19 @@ console.log("========================");
                   </option>
                 </>
               )}
-
             </select>
-
           </div>
-
         </div>
-
       </div>
 
-      {/* =================================================
-          SEARCH
-      ================================================= */}
+      {/* SEARCH */}
 
       <ReportFilter
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
       />
 
-      {/* =================================================
-          ERROR
-      ================================================= */}
+      {/* ERROR */}
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600">
@@ -316,27 +298,20 @@ console.log("========================");
         </div>
       )}
 
-      {/* =================================================
-          REPORT TABLE
-      ================================================= */}
+      {/* REPORT TABLE */}
 
       {!loading && filteredReports.length === 0 ? (
-
         <EmptyReports
           reportType={activeReportType}
         />
-
       ) : (
-
         <ReportTable
           reports={filteredReports}
           loading={loading}
           reportType={activeReportType}
           title={reportTitle[activeReportType]}
         />
-
       )}
-
     </div>
   );
 }
