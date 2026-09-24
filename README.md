@@ -41,7 +41,7 @@ The system provides:
 
 When the network is unavailable, ASHA workers can store field data locally and synchronize it with the central system when connectivity is restored.
 
-<img width="750" alt="asha workflow" src="https://github.com/user-attachments/assets/c06129d3-fc29-4d21-af81-127a890584e7" />
+<img width="750" alt="asha workflow" src="https://github.com/user-attachments/assets/15b62ec2-9537-4012-999f-836f898e819c" />
 
 
 ---
