@@ -63,15 +63,6 @@ Performs field-level healthcare activities, manages assigned beneficiaries, reco
 
 ## ⭐ Key Features
 
-* 👥 Beneficiary Management
-* 🩺 Digital Health Records
-* 📋 Field Visit Management
-* 💊 Medicine Management
-* 🔔 Notifications
-* 📊 Role-Based Dashboards
-* 🔐 Secure Authentication
-* 📶 Offline Field Operations
-* 🔄 Data Synchronization
 
 <img width="750" alt="Key Features" src="https://github.com/user-attachments/assets/0d3daf4d-c017-45ff-a67c-8aa20a2eeb19" />
 
@@ -137,7 +128,7 @@ ASHA aims to:
 * Improved ASHA scheduling
 * Mobile application support
 
-<img width="750" alt="Future Scope" src="https://github.com/user-attachments/assets/c761de90-3f9e-4954-abcf-2774f33d3ddb" />
+<!-- <img width="750" alt="Future Scope" src="https://github.com/user-attachments/assets/c761de90-3f9e-4954-abcf-2774f33d3ddb" /> -->
 
 ---
 
