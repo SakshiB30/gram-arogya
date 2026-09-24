@@ -1,4 +1,4 @@
-# 🩺 ASHA
+# ASHA
 
 ### Offline-First Rural Healthcare Management System
 
@@ -41,7 +41,8 @@ The system provides:
 
 When the network is unavailable, ASHA workers can store field data locally and synchronize it with the central system when connectivity is restored.
 
-![ASHA Workflow](https://private-user-images.githubusercontent.com/252722354/658108782-c06129d3-fc29-4d21-af81-127a890584e7.png)
+<img width="750" alt="asha workflow" src="https://github.com/user-attachments/assets/c06129d3-fc29-4d21-af81-127a890584e7" />
+
 
 ---
 
@@ -63,7 +64,7 @@ Performs field-level healthcare activities, manages assigned beneficiaries, reco
 
 ## ⭐ Key Features
 
-![Key Features](https://private-user-images.githubusercontent.com/252722354/658114220-0d3daf4d-c017-45ff-a67c-8aa20a2eeb19.png)
+<img width="750" alt="key features" src="https://github.com/user-attachments/assets/0d3daf4d-c017-45ff-a67c-8aa20a2eeb19" />
 
 ---
 
@@ -99,7 +100,8 @@ For ASHA offline operations:
 
 **ASHA → React → IndexedDB → Sync Queue → Backend → MongoDB**
 
-![System Architecture](https://private-user-images.githubusercontent.com/252722354/658117021-ca67e535-ba7c-4a72-ba97-7b4eb4a998aa.png)
+<img width="650" alt="system architecture" src="https://github.com/user-attachments/assets/ca67e535-ba7c-4a72-ba97-7b4eb4a998aa" />
+
 
 ---
 
