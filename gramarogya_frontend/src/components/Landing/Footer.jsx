@@ -7,7 +7,7 @@ export default function Footer() {
       <Container>
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <h3 className="text-xl font-bold text-white">GramArogya</h3>
+            <h3 className="text-xl font-bold text-white">ASHA</h3>
             <p className="mt-4 text-sm leading-relaxed">
               Empowering rural healthcare with an offline-first digital
               platform for ASHA workers, ANMs, and healthcare teams.
@@ -38,7 +38,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 border-t border-slate-800 pt-8 text-center text-sm">
-          <p>© {new Date().getFullYear()} GramArogya. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} ASHA. All Rights Reserved.</p>
         </div>
       </Container>
     </footer>

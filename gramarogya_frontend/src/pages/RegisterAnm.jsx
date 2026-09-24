@@ -74,7 +74,7 @@ const [formData, setFormData] = useState({
               <ShieldPlus className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">GramArogya</p>
+              <p className="text-lg font-bold text-slate-900">ASHA</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-500">
                 Rural Healthcare Management
               </p>

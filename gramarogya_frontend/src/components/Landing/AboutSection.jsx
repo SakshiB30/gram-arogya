@@ -7,7 +7,7 @@ export default function AboutSection() {
       <Container>
         <div className="max-w-3xl mx-auto text-center">
           <span className="rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-700">
-            About GramArogya
+            About ASHA
           </span>
 
           <h2 className="mt-5 text-3xl font-bold text-slate-900 md:text-4xl">
@@ -15,7 +15,7 @@ export default function AboutSection() {
           </h2>
 
           <p className="mt-4 text-lg text-slate-600">
-            GramArogya is an offline-first digital healthcare platform designed
+            ASHA is an offline-first digital healthcare platform designed
             to support ASHA workers in rural areas. It enables them to access
             assigned beneficiaries, manage visits, and record health information
             even without internet connectivity.

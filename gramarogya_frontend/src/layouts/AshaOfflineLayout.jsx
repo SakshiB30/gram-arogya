@@ -70,7 +70,7 @@ export default function AshaOfflineLayout() {
 
           <div>
             <h1 className="text-xl font-bold text-slate-900">
-              GramArogya
+              ASHA
             </h1>
 
             <p className="text-sm text-gray-500">

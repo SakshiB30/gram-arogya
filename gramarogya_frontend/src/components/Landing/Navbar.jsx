@@ -35,7 +35,7 @@ export default function Navbar() {
             <ShieldPlus className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900">
-            Gram<span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Arogya</span>
+            ASHA
           </span>
         </Link>
 

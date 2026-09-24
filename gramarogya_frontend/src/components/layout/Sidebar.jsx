@@ -64,7 +64,7 @@ const Sidebar = () => {
 
             <div>
               <h1 className="text-lg font-bold leading-tight text-slate-900">
-                GramArogya
+                ASHA
               </h1>
 
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
@@ -136,7 +136,7 @@ const Sidebar = () => {
         </button>
 
         <p className="mt-3 px-3 text-[10.5px] leading-relaxed text-slate-400">
-          GramArogya Health Information System · Data secured under IT Act, 2000
+          ASHA Health Information System · Data secured under IT Act, 2000
         </p> */}
       </div>
     </div>

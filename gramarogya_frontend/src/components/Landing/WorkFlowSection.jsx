@@ -53,7 +53,7 @@ export default function WorkFlowSection() {
           </h2>
 
           <p className="text-lg text-slate-600">
-            GramArogya keeps ASHA fieldwork moving offline and synchronizes
+            ASHA keeps ASHA fieldwork moving offline and synchronizes
             pending healthcare data when internet connectivity is restored.
           </p>
         </div>

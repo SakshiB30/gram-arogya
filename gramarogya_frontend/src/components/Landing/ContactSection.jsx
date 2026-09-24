@@ -11,10 +11,10 @@ export default function ContactSection() {
             Connect With Us
           </div>
           <h2 className="mt-6 text-3xl font-bold text-slate-900 md:text-4xl">
-            Learn More About GramArogya
+            Learn More About ASHA
           </h2>
           <p className="mt-4 text-lg text-slate-600">
-            Explore how GramArogya supports ASHA workers and rural healthcare
+            Explore how ASHA supports ASHA workers and rural healthcare
             through offline-first digital technology.
           </p>
         </div>

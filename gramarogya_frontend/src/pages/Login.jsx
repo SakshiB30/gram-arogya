@@ -82,7 +82,7 @@ const Login = () => {
               <ShieldPlus className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">GramArogya</p>
+              <p className="text-lg font-bold text-slate-900">ASHA</p>
               <p className="text-[10px] uppercase tracking-wider text-slate-500">
                 Rural Healthcare Management
               </p>
@@ -122,7 +122,7 @@ const Login = () => {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-5 border-b border-slate-200/50">
               <h1 className="text-2xl font-bold text-slate-900">Welcome Back</h1>
               <p className="mt-1 text-sm text-slate-600">
-                Sign in to access your GramArogya dashboard
+                Sign in to access your ASHA dashboard
               </p>
             </div>
 

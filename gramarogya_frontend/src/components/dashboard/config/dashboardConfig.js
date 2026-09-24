@@ -150,7 +150,7 @@ export const dashboardConfig = {
     header: {
       roleTitle: "Administrator",
       subtitle:
-        "Monitor GramArogya system, users and healthcare activities.",
+        "Monitor ASHA system, users and healthcare activities.",
     },
 
     stats: [

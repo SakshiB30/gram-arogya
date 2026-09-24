@@ -41,7 +41,7 @@ const HeroSection = () => {
           
           {/* Description */}
           <p className="mt-6 text-base sm:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
-            GramArogya helps ASHA workers manage assigned beneficiaries, record
+            ASHA helps ASHA workers manage assigned beneficiaries, record
             visits and health information offline, and synchronize data when
             internet connectivity is restored.
           </p>

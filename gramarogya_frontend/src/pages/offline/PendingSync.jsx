@@ -575,7 +575,7 @@ const PendingSync = () => {
               Offline visits and health records are
               stored locally first. When internet
               connectivity returns, these operations
-              will be synchronized with the GramArogya
+              will be synchronized with the ASHA
               server.
             </p>
           </div>
