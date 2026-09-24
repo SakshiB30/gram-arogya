@@ -33,26 +33,11 @@ Offline Data Synchronization
 
 When internet connectivity is unavailable, ASHA workers can continue recording field information locally and synchronize it with the central system when the connection is restored.
 
-👥 User Roles
-<img width="1536" height="1024" alt="asha workflow" src="https://github.com/user-attachments/assets/c06129d3-fc29-4d21-af81-127a890584e7" />
+<img width="750" alt="asha workflow" src="https://github.com/user-attachments/assets/c06129d3-fc29-4d21-af81-127a890584e7" />
 
-Admin
+<img width="750" alt="key features" src="https://github.com/user-attachments/assets/0d3daf4d-c017-45ff-a67c-8aa20a2eeb19" />
 
-Manages users, healthcare workers, verification, and overall system activities.
-
-ANM
-
-Supervises ASHA workers and manages beneficiaries, visits, and health information.
-
-ASHA
-
-Manages assigned beneficiaries, conducts field visits, records health information, and performs field activities.
-
-
-<img width="1536" height="1024" alt="key features" src="https://github.com/user-attachments/assets/0d3daf4d-c017-45ff-a67c-8aa20a2eeb19" />
-
-
-<img width="1884" height="1476" alt="Create a clean, professional system architecture diagram for a project called_ - visual selection" src="https://github.com/user-attachments/assets/c1d745a6-28c0-4a92-a60a-87d5f8d3f0af" />
+<img width="650" alt="system architecture" src="https://github.com/user-attachments/assets/ca67e535-ba7c-4a72-ba97-7b4eb4a998aa" />
 
 
 🛠️ Technology
@@ -75,7 +60,8 @@ Simplify field visit tracking
 Improve coordination between healthcare workers
 Support continuous rural healthcare operations
 
-<img width="1536" height="1024" alt="future scope" src="https://github.com/user-attachments/assets/c761de90-3f9e-4954-abcf-2774f33d3ddb" />
+
+<img width="750" alt="future scope" src="https://github.com/user-attachments/assets/c761de90-3f9e-4954-abcf-2774f33d3ddb" />
 
 
 🎯 Vision
